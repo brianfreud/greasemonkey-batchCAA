@@ -32,6 +32,7 @@ function main($, CONSTANTS) {
         }();
 
         !function initCreateDropzone() {
+            $.log('Creating drop zone.');
             $imageContainer = $('<div id="imageContainer"/>').css({ height : (screen.height - 300) + 'px'
                                                                   , width  : '100%'
                                                                   });
@@ -44,32 +45,34 @@ function main($, CONSTANTS) {
                          .append($('<br/><br/>'))
                          .append($imageContainer);
         }();
-    }();
 
-    $.log('Creating drop zone.');
-    $imageContainer.on({
-        dragenter: function dragEnter() {
-            $.log('There was a dragenter event at the drop zone.');
-            $(this).css('background-color', 'lightBlue');
-        },
-        dragleave: function dragLeave() {
-            $.log('There was a dragleave event at the drop zone.');
-            $(this).css('background-color', 'white');
-        },
-        dragover: false,
-        drop: function dragDrop(e) {
-            $.log('There was a drop event at the drop zone.');
-            jQuery.each(e.originalEvent.dataTransfer.files, function (index, file) {
-                var fileReader = new FileReader();
-                fileReader.onload = (function (file) {
-                    return function (e) {
-                        $(this).append('<div class="dataurl"><strong>' + file.fileName + '</strong>' + e.target.result + '</div>');
-                    };
-                })(file);
-                fileReader.readAsDataURL(file);
+        !function initActivateDropzone() {
+            $.log('Attaching events to drop zone.');
+            $imageContainer.on({
+                dragenter: function dragEnter() {
+                    $.log('There was a dragenter event at the drop zone.');
+                    $(this).css('background-color', 'lightBlue');
+                },
+                dragleave: function dragLeave() {
+                    $.log('There was a dragleave event at the drop zone.');
+                    $(this).css('background-color', 'white');
+                },
+                dragover: false,
+                drop: function dragDrop(e) {
+                    $.log('There was a drop event at the drop zone.');
+                    jQuery.each(e.originalEvent.dataTransfer.files, function (index, file) {
+                    var fileReader = new FileReader();
+                    fileReader.onload = (function (file) {
+                        return function (e) {
+                            $(this).append('<div class="dataurl"><strong>' + file.fileName + '</strong>' + e.target.result + '</div>');
+                        };
+                    })(file);
+                    fileReader.readAsDataURL(file);
+                    });
+                }
             });
-        }
-    });
+        }();
+    }();
 }
 
 function thirdParty($, CONSTANTS) {
