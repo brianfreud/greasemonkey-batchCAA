@@ -51,15 +51,20 @@ function main($, CONSTANTS) {
         !function initActivateDropzone() {
             $.log('Attaching events to drop zone.');
             $imageContainer.on({
-                dragenter: function dragEnter() {
+                dragenter: function dragEnter(e) {
                     $.log('There was a dragenter event at the drop zone.');
                     $(this).css('background-color', 'lightBlue');
+                    e.preventDefault();
                 },
-                dragleave: function dragLeave() {
+                dragleave: function dragLeave(e) {
                     $.log('There was a dragleave event at the drop zone.');
                     $(this).css('background-color', 'white');
+                    e.preventDefault();
                 },
-                dragover: false,
+                dragover: function dragLeave(e) {
+                    $.log('There was a dragover event at the drop zone.');
+                    e.preventDefault();
+                },
                 drop: function dragDrop(e) {
                     $.log('There was a drop event at the drop zone.');
                     jQuery.each(e.originalEvent.dataTransfer.files, function (index, file) {
