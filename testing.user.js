@@ -6,6 +6,7 @@
 // @match       http://musicbrainz.org/artist/*
 // @include     http://test.musicbrainz.org/artist/*
 // @match       http://test.musicbrainz.org/artist/*
+// @match       file://*
 // ==/UserScript==
 
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
