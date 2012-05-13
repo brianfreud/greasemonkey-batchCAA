@@ -2,6 +2,8 @@
 // @name        Testing 1
 // @version     0.1
 // @description 
+// @include     http://musicbrainz.org/artist/*
+// @match       http://musicbrainz.org/artist/*
 // @include     http://test.musicbrainz.org/artist/*
 // @match       http://test.musicbrainz.org/artist/*
 // ==/UserScript==
