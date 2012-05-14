@@ -116,7 +116,7 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var l = function l(str) {
-        return CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str];
+        return CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT['en'][str];
     };
 
     var log = function log(str) {
