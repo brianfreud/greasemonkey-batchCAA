@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0089
+// @version     0.01.0094
 // @description 
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -25,16 +25,19 @@ Opera: Compatible?  Definitely requires minimum of version 12.
 
 */
 
-var CONSTANTS = { DEBUGMODE : true
-                , LANGUAGE  : 'en'
-                , TEXT      : {
-                              en : {
-                                   'Images' : 'Images'
-                                   },
-                              fr : {
-                                   'Images' : 'Les Photos'
-                                   }
-                              }
+var CONSTANTS = { DEBUGMODE     : true
+                , IMAGESIZES    : [100, 150, 300]
+                , LANGUAGE      : 'en'
+                , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
+                , SIDEBARHEIGHT : (screen.height - 300)
+                , TEXT          : {
+                                  en : {
+                                       'Images' : 'Images'
+                                       },
+                                  fr : {
+                                       'Images' : 'Les Photos'
+                                       }
+                                  }
                 };
 
 function main ($, CONSTANTS) {
@@ -46,17 +49,15 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
     !function init () {
-        var imageAreaWidth = (Math.max(Math.round(screen.width/400), 3) * 107) + 15;
         !function init_resize_sidebar () {
-            $('#content').css('margin-right', (imageAreaWidth + 20) + 'px');
+            $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
             $('#page').css('background', 'white');
         }();
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-            var divHeight = (screen.height - 300) + 'px';
-            $imageContainer = $('<div id="imageContainer"/>').css({ height       : divHeight
-                                                                  , 'max-height' : divHeight
+            $imageContainer = $('<div id="imageContainer"/>').css({ height       : CONSTANTS.SIDEBARHEIGHT + 'px'
+                                                                  , 'max-height' : CONSTANTS.SIDEBARHEIGHT + 'px'
                                                                   , 'overflow-y' : 'scroll'
                                                                   , width        : '100%'
                                                                   });
@@ -64,7 +65,7 @@ function main ($, CONSTANTS) {
             
             $('#sidebar').css({ 'border-left'  : '1px dotted grey'
                               , 'padding-left' : '8px'
-                              , width          : imageAreaWidth + 'px'
+                              , width          : CONSTANTS.SIDEBARWIDTH + 'px'
                               })
                          .empty()
                          .append($('<h1 id="imageHeader"/>').text($.l('Images')))
@@ -76,7 +77,7 @@ function main ($, CONSTANTS) {
             $.log('Attaching events to body.');
             $('body').on('dragenter dragleave dragover drop', function bodyDrag(e) {
                     e.preventDefault();
-                    $(this).css('background-color', 'green');
+                    $.debug() && $(this).css('background-color', 'blue');
                     $.log('There was a drag event on the page.');
                 });
         }();
@@ -86,18 +87,19 @@ function main ($, CONSTANTS) {
             $.addRule('.localImage', 'padding: 3px; vertical-align: middle;');
 
             $.log('Adding css stylesheets')
-            var makeStyle = function make_style (size) {
+            var sizes = CONSTANTS.IMAGESIZES,
+                makeStyle = function make_style (size) {
                                 $('<style id="style' + size + '">.localImage { width: ' + size + 'px; }</style>').appendTo($('body'));
                             };
-            makeStyle(100);
-            makeStyle(150);
-            makeStyle(300);
+            makeStyle(sizes[0]);
+            makeStyle(sizes[1]);
+            makeStyle(sizes[2]);
 
             $.log('Adding css methods')
             var useSheets = function use_stylesheets (small, medium, big) {
-                                $('#style100').prop('disabled', !small);
-                                $('#style150').prop('disabled', !medium);
-                                $('#style300').prop('disabled', !big);
+                                $('#style' + sizes[0]).prop('disabled', !small);
+                                $('#style' + sizes[1]).prop('disabled', !medium);
+                                $('#style' + sizes[2]).prop('disabled', !big);
                             };
             $.extend({
                      imagesSmall  : function make_images_small () {
@@ -110,6 +112,8 @@ function main ($, CONSTANTS) {
                                         useSheets(0, 0, 1);
                                     }
                      });
+
+            $.log('Setting active style')
             $.imagesSmall();
         }();
 
@@ -139,9 +143,9 @@ function main ($, CONSTANTS) {
                     var files = (e.files || e.dataTransfer.files),
                         $img = $('<img/>').addClass('localImage');                                                                             
                     for (var i = 0; i < files.length; i++) {
-                        !function (i) {
+                        !function add_dropped_image (i) {
                             var reader = new FileReader();
-                            reader.onload = function (event) {
+                            reader.onload = function add_attributes_to_dropped_image(event) {
                                 var $newImg = $img.clone().attr({
                                     src: event.target.result,
                                     title: (files[i].name),
@@ -166,19 +170,24 @@ function thirdParty($, CONSTANTS) {
         document.styleSheets[0].addRule(selector, rule);
     };
 
-    var l = function l(str) {
+    var debug = function debug () {
+        return CONSTANTS.DEBUGMODE;
+    };
+
+    var l = function l (str) {
         return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT['en'][str]);
     };
 
-    var log = function log(str) {
-        if (CONSTANTS.DEBUGMODE) {
-            console.log(str);
-        }
+    var log = function log (str) {
+        debug() && console.log(str);
     };
 
     jQuery.extend({
         addRule   : function addrule_handler (selector, rule) {
                         return addRule(selector, rule);
+                  },
+        debug     : function debug_handler() {
+                        return debug();
                   },
         l         : function gettext_handler(str) {
                         return l(str);
