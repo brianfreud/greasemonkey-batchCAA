@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0085
+// @version     0.01.0089
 // @description 
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -13,6 +13,17 @@
 
 /*global console */
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
+
+/* Installation and requirements:
+
+Firefox: Install as normal.
+
+Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
+"Allow access to file URLs" for this script is checked.  Then start chrome with the --allow-file-access-from-files switch.
+
+Opera: Compatible?  Definitely requires minimum of version 12.
+
+*/
 
 var CONSTANTS = { DEBUGMODE : true
                 , LANGUAGE  : 'en'
@@ -35,7 +46,7 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
     !function init () {
-        var imageAreaWidth = (Math.max(Math.round(screen.width/400), 3) * 107);
+        var imageAreaWidth = (Math.max(Math.round(screen.width/400), 3) * 107) + 15;
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (imageAreaWidth + 20) + 'px');
             $('#page').css('background', 'white');
@@ -43,8 +54,11 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-            $imageContainer = $('<div id="imageContainer"/>').css({ height : (screen.height - 300) + 'px'
-                                                                  , width  : '100%'
+            var divHeight = (screen.height - 300) + 'px';
+            $imageContainer = $('<div id="imageContainer"/>').css({ height       : divHeight
+                                                                  , 'max-height' : divHeight
+                                                                  , 'overflow-y' : 'scroll'
+                                                                  , width        : '100%'
                                                                   });
 
             
