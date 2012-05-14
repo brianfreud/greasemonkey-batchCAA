@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Testing 1
 // @version     0.01.0094
-// @description 
+// @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
 // @include     http://test.musicbrainz.org/artist/*
@@ -62,7 +62,7 @@ function main ($, CONSTANTS) {
                                                                   , width        : '100%'
                                                                   });
 
-            
+
             $('#sidebar').css({ 'border-left'  : '1px dotted grey'
                               , 'padding-left' : '8px'
                               , width          : CONSTANTS.SIDEBARWIDTH + 'px'
@@ -141,7 +141,7 @@ function main ($, CONSTANTS) {
                     e = e.originalEvent || e;
 
                     var files = (e.files || e.dataTransfer.files),
-                        $img = $('<img/>').addClass('localImage');                                                                             
+                        $img = $('<img/>').addClass('localImage');
                     for (var i = 0; i < files.length; i++) {
                         !function add_dropped_image (i) {
                             var reader = new FileReader();
