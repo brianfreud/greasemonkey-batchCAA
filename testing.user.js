@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0054
+// @version     0.01.0085
 // @description 
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -9,7 +9,6 @@
 // @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
-// @require     http://flesler-plugins.googlecode.com/files/jquery.rule-1.0.2-min.js
 // ==/UserScript==
 
 /*global console */
@@ -20,6 +19,9 @@ var CONSTANTS = { DEBUGMODE : true
                 , TEXT      : {
                               en : {
                                    'Images' : 'Images'
+                                   },
+                              fr : {
+                                   'Images' : 'Les Photos'
                                    }
                               }
                 };
@@ -33,27 +35,30 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
     !function init () {
-        !function _init_resize_sidebar () {
-            $('#content').css('margin-right', '340px');
+        var imageAreaWidth = (Math.max(Math.round(screen.width/400), 3) * 107);
+        !function init_resize_sidebar () {
+            $('#content').css('margin-right', (imageAreaWidth + 20) + 'px');
             $('#page').css('background', 'white');
         }();
 
-        !function _init_create_dropzone () {
+        !function init_create_dropzone () {
             $.log('Creating drop zone.');
             $imageContainer = $('<div id="imageContainer"/>').css({ height : (screen.height - 300) + 'px'
                                                                   , width  : '100%'
                                                                   });
+
+            
             $('#sidebar').css({ 'border-left'  : '1px dotted grey'
                               , 'padding-left' : '8px'
-                              , width          : '315px'
+                              , width          : imageAreaWidth + 'px'
                               })
                          .empty()
-                         .append($('<h1/>').text($.l('Images')))
+                         .append($('<h1 id="imageHeader"/>').text($.l('Images')))
                          .append($('<br/><br/>'))
                          .append($imageContainer);
         }();
 
-        !function _init_activate_dnd_on_page () {
+        !function init_activate_dnd_on_page () {
             $.log('Attaching events to body.');
             $('body').on('dragenter dragleave dragover drop', function bodyDrag(e) {
                     e.preventDefault();
@@ -62,11 +67,39 @@ function main ($, CONSTANTS) {
                 });
         }();
 
-        !function _init_add_css_rules () {
-            $.rule('.localImage { padding: 3px, vertical-align: middle, width: 100px }').appendTo('style');
+        !function init_add_css () {
+            $.log('Adding css rules')
+            $.addRule('.localImage', 'padding: 3px; vertical-align: middle;');
+
+            $.log('Adding css stylesheets')
+            var makeStyle = function make_style (size) {
+                                $('<style id="style' + size + '">.localImage { width: ' + size + 'px; }</style>').appendTo($('body'));
+                            };
+            makeStyle(100);
+            makeStyle(150);
+            makeStyle(300);
+
+            $.log('Adding css methods')
+            var useSheets = function use_stylesheets (small, medium, big) {
+                                $('#style100').prop('disabled', !small);
+                                $('#style150').prop('disabled', !medium);
+                                $('#style300').prop('disabled', !big);
+                            };
+            $.extend({
+                     imagesSmall  : function make_images_small () {
+                                        useSheets(1, 0, 0);
+                                    },
+                     imagesMedium : function make_images_medium () {
+                                        useSheets(0, 1, 0);
+                                    },
+                     imagesLarge  : function make_images_big () {
+                                        useSheets(0, 0, 1);
+                                    }
+                     });
+            $.imagesSmall();
         }();
 
-        !function _init_activate_dnd_at_dropzone () {
+        !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
@@ -115,8 +148,12 @@ function thirdParty($, CONSTANTS) {
     /*jshint strict:false */
     jQuery.noConflict();
 
+    var addRule = function addRule (selector, rule) {
+        document.styleSheets[0].addRule(selector, rule);
+    };
+
     var l = function l(str) {
-        return CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT['en'][str];
+        return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT['en'][str]);
     };
 
     var log = function log(str) {
@@ -126,42 +163,44 @@ function thirdParty($, CONSTANTS) {
     };
 
     jQuery.extend({
-        l   : function gettext_handler(str) {
-                return l(str);
-            },
-        log : function log_handler(str) {
-                return log(str);
-            }
+        addRule   : function addrule_handler (selector, rule) {
+                        return addRule(selector, rule);
+                  },
+        l         : function gettext_handler(str) {
+                        return l(str);
+                  },
+        log       : function log_handler(str) {
+                        return log(str);
+                  }
     });
 }
 
-!function _main_loader(i) {
+!function main_loader(i) {
     'use strict';
     var script
       , head = document.getElementsByTagName('head')[0]
       , requires = [ 'http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'
                    , 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'
-                   , 'http://flesler-plugins.googlecode.com/files/jquery.rule-1.0.2-min.js'
                    ]
-      , makeScript = function () {
+      , makeScript = function makeScript () {
             script = document.createElement('script');
             script.type = 'text/javascript';
         }
-      , loadLocal = function (fn) {
+      , loadLocal = function loadLocal (fn) {
             makeScript();
             script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ');';
             head.appendChild(script);
         }
       ;
-    (function _script_loader (i) {
-        var _continueLoading = function () {
+    (function script_loader (i) {
+        var continueLoading = function continueLoading () {
             loadLocal(thirdParty);
             loadLocal(main);
         };
         makeScript();
-        (typeof($) !== 'undefined' && $.browser.mozilla) ? _continueLoading() : script.src = requires[i];
-        script.addEventListener('load', function () {
-            ++i !== requires.length ? _script_loader(i) : _continueLoading();
+        (typeof($) !== 'undefined' && $.browser.mozilla) ? continueLoading() : script.src = requires[i];
+        script.addEventListener('load', function loader_move_to_next_script () {
+            ++i !== requires.length ? script_loader(i) : continueLoading();
         }, true);
         head.appendChild(script);
     })(i || 0);
