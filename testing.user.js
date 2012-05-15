@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0122
+// @version     0.01.0126
 // @description
 // @include     http://musicbrainz.org/artist/*/releases
 // @match       http://musicbrainz.org/artist/*/releases
@@ -85,7 +85,7 @@ function main ($, CONSTANTS) {
 
         !function init_add_css () {
             $.log('Adding css rules');
-            $.addRule('.localImage', 'padding: 3px; vertical-align: middle;');
+            $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                       , 'border-radius'    : '7px;'
                                                       , 'color'            : 'white!important;'
@@ -198,8 +198,8 @@ function main ($, CONSTANTS) {
                                                .find('td').append($thisCAABtn).end()
                                                .prop('class', $releaseRow.prop('class'));
                     $releaseRow.after($newCAARow);
-                }
-            });
+                });
+            }
         }();
     }();
 }
