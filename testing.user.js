@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0131
+// @version     0.01.0147
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -51,13 +51,15 @@ var CONSTANTS = { DEBUGMODE     : true
 
 function main ($, CONSTANTS) {
     'use strict';
+console.log(3)
     jQuery.noConflict();
 
     var $imageContainer,
         $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
     $.log('Script initializing.');
-    !function init () {
+console.log(4)
+    var init = function init () {
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
             $('#page').css('background', 'white');
@@ -191,8 +193,7 @@ function main ($, CONSTANTS) {
             if ($releases.length) {
                 $.log('Releases found, creating caa rows for each release.');
                 var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
-                    $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />')
-    
+                    $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />');    
                 $releases.each(function (i) {
                     var $releaseRow = $(this).parents('tr');
                     var $thisCAABtn = $caaBtn.clone()
@@ -204,6 +205,14 @@ function main ($, CONSTANTS) {
                 });
             }
         }();
+    };
+
+    !function add_manual_starter_for_init () {
+        $.log('Adding manual starter link.');
+        var $triggerLink = $('<a>Add cover art</a>').wrap('<li>')
+                                                .on('click', function () { init(); })
+                                                .parent();
+        $('ul.links').find('hr:first').before($triggerLink);
     }();
 }
 
@@ -262,7 +271,9 @@ function thirdParty($, CONSTANTS) {
       ;
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
+console.log(1)
             loadLocal(thirdParty);
+console.log(2)
             loadLocal(main);
         };
         makeScript();
