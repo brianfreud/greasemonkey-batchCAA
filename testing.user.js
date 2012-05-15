@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0094
+// @version     0.01.0102
 // @description
-// @include     http://musicbrainz.org/artist/*
-// @match       http://musicbrainz.org/artist/*
-// @include     http://test.musicbrainz.org/artist/*
-// @match       http://test.musicbrainz.org/artist/*
+// @include     http://musicbrainz.org/artist/*/releases
+// @match       http://musicbrainz.org/artist/*/releases
+// @include     http://test.musicbrainz.org/artist/*/releases
+// @match       http://test.musicbrainz.org/artist/*/releases
 // @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
@@ -20,6 +20,7 @@ Firefox: Install as normal.
 
 Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
 "Allow access to file URLs" for this script is checked.  Then start chrome with the --allow-file-access-from-files switch.
+If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
 Opera: Compatible?  Definitely requires minimum of version 12.
 
@@ -58,7 +59,7 @@ function main ($, CONSTANTS) {
             $.log('Creating drop zone.');
             $imageContainer = $('<div id="imageContainer"/>').css({ height       : CONSTANTS.SIDEBARHEIGHT + 'px'
                                                                   , 'max-height' : CONSTANTS.SIDEBARHEIGHT + 'px'
-                                                                  , 'overflow-y' : 'scroll'
+                                                                  , 'overflow-y' : 'auto'
                                                                   , width        : '100%'
                                                                   });
 
@@ -83,19 +84,28 @@ function main ($, CONSTANTS) {
         }();
 
         !function init_add_css () {
-            $.log('Adding css rules')
+            $.log('Adding css rules');
             $.addRule('.localImage', 'padding: 3px; vertical-align: middle;');
+            $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
+                                                      , 'border-radius'    : '7px;'
+                                                      , 'color'            : 'white!important;'
+                                                      , 'font-size'        : '90%;'
+                                                      , 'margin-bottom'    : '16px;'
+                                                      , 'margin-top'       : '1px!important;'
+                                                      , 'opacity'          : '.35;'
+                                                      , 'padding'          : '3px 8px;'
+                                                      }));
 
-            $.log('Adding css stylesheets')
+            $.log('Adding css stylesheets');
             var sizes = CONSTANTS.IMAGESIZES,
                 makeStyle = function make_style (size) {
-                                $('<style id="style' + size + '">.localImage { width: ' + size + 'px; }</style>').appendTo($('body'));
+                                $('<style id="style' + size + '">.localImage { width: ' + size + 'px; }</style>').appendTo($('head'));
                             };
             makeStyle(sizes[0]);
             makeStyle(sizes[1]);
             makeStyle(sizes[2]);
 
-            $.log('Adding css methods')
+            $.log('Adding css methods');
             var useSheets = function use_stylesheets (small, medium, big) {
                                 $('#style' + sizes[0]).prop('disabled', !small);
                                 $('#style' + sizes[1]).prop('disabled', !medium);
@@ -113,7 +123,7 @@ function main ($, CONSTANTS) {
                                     }
                      });
 
-            $.log('Setting active style')
+            $.log('Setting active style');
             $.imagesSmall();
         }();
 
@@ -141,15 +151,19 @@ function main ($, CONSTANTS) {
                     e = e.originalEvent || e;
 
                     var files = (e.files || e.dataTransfer.files),
-                        $img = $('<img/>').addClass('localImage');
+                        $img = $('<img/>').addClass('localImage')
+                                          .data('source', 'local');
                     for (var i = 0; i < files.length; i++) {
+                        if (!files[i].type.match(/image\/p?jpeg/)) {
+                            continue;
+                        }
                         !function add_dropped_image (i) {
                             var reader = new FileReader();
                             reader.onload = function add_attributes_to_dropped_image(event) {
                                 var $newImg = $img.clone().attr({
-                                    src: event.target.result,
-                                    title: (files[i].name),
-                                    alt: (files[i].name)
+                                    src   : event.target.result,
+                                    title : (files[i].name),
+                                    alt   : (files[i].name)
                                 });
                                 $imageContainer.append($newImg);
                             };
@@ -160,6 +174,28 @@ function main ($, CONSTANTS) {
             });
         }();
     }();
+
+        /*
+$('td > a[resource^="[mbz:release-group/"]') // The RGs page
+$('td > a[resource^="[mbz:release/"]') // The releases page
+$('td > span > a[resource^="[mbz:release/"]') // A specific RG page
+*/
+
+        var $releases = $('a:regex(resource, mbz\\:release(\\-group)?)'),
+            colCount  = $releases.parents('tr:first').find('td').length;
+        var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
+            $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />')
+
+        $releases.each(function (i) {
+            var $releaseRow = $(this).parents('tr');
+            var $thisCAABtn = $caaBtn.clone()
+                                     .data('entity', $(this).prop('href').split('/')[4]);
+            var $newCAARow  = $imageRow.clone()
+                                       .find('td').append($thisCAABtn).end()
+                                       .prop('class', $releaseRow.prop('class'));
+            $releaseRow.after($newCAARow);
+        });
+
 }
 
 function thirdParty($, CONSTANTS) {
@@ -167,7 +203,7 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        document.styleSheets[0].addRule(selector, rule);
+        $('<style>' + selector + rule.replace(/[",]/g,'') + '</style>').appendTo($('head'));
     };
 
     var debug = function debug () {
@@ -175,7 +211,7 @@ function thirdParty($, CONSTANTS) {
     };
 
     var l = function l (str) {
-        return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT['en'][str]);
+        return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT.en[str]);
     };
 
     var log = function log (str) {
@@ -196,6 +232,20 @@ function thirdParty($, CONSTANTS) {
                         return log(str);
                   }
     });
+
+    // http://james.padolsey.com/javascript/regex-selector-for-jquery/
+    jQuery.expr[':'].regex = function(elem, index, match) {
+        var matchParams = match[3].split(','),
+            validLabels = /^(data|css):/,
+            attr = {
+                method: matchParams[0].match(validLabels) ? 
+                            matchParams[0].split(':')[0] : 'attr',
+                property: matchParams.shift().replace(validLabels,'')
+            },
+            regexFlags = 'ig',
+            regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
+        return regex.test(jQuery(elem)[attr.method](attr.property));
+    };
 }
 
 !function main_loader(i) {
