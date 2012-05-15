@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0102
+// @version     0.01.0122
 // @description
 // @include     http://musicbrainz.org/artist/*/releases
 // @match       http://musicbrainz.org/artist/*/releases
@@ -173,29 +173,35 @@ function main ($, CONSTANTS) {
                 }
             });
         }();
+
+        !function init_add_caa_row_controls () {
+            /*
+            $('td > a[resource^="[mbz:release-group/"]')  // The RGs page
+            $('td > a[resource^="[mbz:release/"]')        // The releases page
+            $('td > span > a[resource^="[mbz:release/"]') // A specific RG page
+            */
+
+            $.log('Getting releases list.');
+            var $releases = $('a:regex(resource, mbz\\:release(\\-group)?)'),
+                colCount  = $releases.parents('tr:first').find('td').length;
+
+            if ($releases.length) {
+                $.log('Releases found, creating caa rows for each release.');
+                var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
+                    $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />')
+    
+                $releases.each(function (i) {
+                    var $releaseRow = $(this).parents('tr');
+                    var $thisCAABtn = $caaBtn.clone()
+                                             .data('entity', $(this).prop('href').split('/')[4]);
+                    var $newCAARow  = $imageRow.clone()
+                                               .find('td').append($thisCAABtn).end()
+                                               .prop('class', $releaseRow.prop('class'));
+                    $releaseRow.after($newCAARow);
+                }
+            });
+        }();
     }();
-
-        /*
-$('td > a[resource^="[mbz:release-group/"]') // The RGs page
-$('td > a[resource^="[mbz:release/"]') // The releases page
-$('td > span > a[resource^="[mbz:release/"]') // A specific RG page
-*/
-
-        var $releases = $('a:regex(resource, mbz\\:release(\\-group)?)'),
-            colCount  = $releases.parents('tr:first').find('td').length;
-        var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
-            $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />')
-
-        $releases.each(function (i) {
-            var $releaseRow = $(this).parents('tr');
-            var $thisCAABtn = $caaBtn.clone()
-                                     .data('entity', $(this).prop('href').split('/')[4]);
-            var $newCAARow  = $imageRow.clone()
-                                       .find('td').append($thisCAABtn).end()
-                                       .prop('class', $releaseRow.prop('class'));
-            $releaseRow.after($newCAARow);
-        });
-
 }
 
 function thirdParty($, CONSTANTS) {
