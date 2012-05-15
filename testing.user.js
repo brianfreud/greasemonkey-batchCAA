@@ -1,11 +1,19 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0126
+// @version     0.01.0131
 // @description
+// @include     http://musicbrainz.org/artist/*
+// @match       http://musicbrainz.org/artist/*
+// @include     http://test.musicbrainz.org/artist/*
+// @match       http://test.musicbrainz.org/artist/*
 // @include     http://musicbrainz.org/artist/*/releases
 // @match       http://musicbrainz.org/artist/*/releases
 // @include     http://test.musicbrainz.org/artist/*/releases
 // @match       http://test.musicbrainz.org/artist/*/releases
+// @include     http://musicbrainz.org/release-group/*
+// @match       http://musicbrainz.org/release-group/*
+// @include     http://test.musicbrainz.org/release-group/*
+// @match       http://test.musicbrainz.org/release-group/*
 // @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
@@ -175,14 +183,9 @@ function main ($, CONSTANTS) {
         }();
 
         !function init_add_caa_row_controls () {
-            /*
-            $('td > a[resource^="[mbz:release-group/"]')  // The RGs page
-            $('td > a[resource^="[mbz:release/"]')        // The releases page
-            $('td > span > a[resource^="[mbz:release/"]') // A specific RG page
-            */
-
             $.log('Getting releases list.');
-            var $releases = $('a:regex(resource, mbz\\:release(\\-group)?)'),
+            /* The second selector here allows for the release links http://userscripts.org/scripts/show/93894 adds. */
+            var $releases = $('a[resource^="[mbz:release/"], a[href^="/release/"]'),
                 colCount  = $releases.parents('tr:first').find('td').length;
 
             if ($releases.length) {
@@ -193,7 +196,7 @@ function main ($, CONSTANTS) {
                 $releases.each(function (i) {
                     var $releaseRow = $(this).parents('tr');
                     var $thisCAABtn = $caaBtn.clone()
-                                             .data('entity', $(this).prop('href').split('/')[4]);
+                                             .data('entity', $(this).prop('href').split('/')[4].replace('#_',''));
                     var $newCAARow  = $imageRow.clone()
                                                .find('td').append($thisCAABtn).end()
                                                .prop('class', $releaseRow.prop('class'));
@@ -238,20 +241,6 @@ function thirdParty($, CONSTANTS) {
                         return log(str);
                   }
     });
-
-    // http://james.padolsey.com/javascript/regex-selector-for-jquery/
-    jQuery.expr[':'].regex = function(elem, index, match) {
-        var matchParams = match[3].split(','),
-            validLabels = /^(data|css):/,
-            attr = {
-                method: matchParams[0].match(validLabels) ? 
-                            matchParams[0].split(':')[0] : 'attr',
-                property: matchParams.shift().replace(validLabels,'')
-            },
-            regexFlags = 'ig',
-            regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
-        return regex.test(jQuery(elem)[attr.method](attr.property));
-    };
 }
 
 !function main_loader(i) {
