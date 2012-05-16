@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0147
+// @version     0.01.0151
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -51,14 +51,12 @@ var CONSTANTS = { DEBUGMODE     : true
 
 function main ($, CONSTANTS) {
     'use strict';
-console.log(3)
     jQuery.noConflict();
 
     var $imageContainer,
         $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
     $.log('Script initializing.');
-console.log(4)
     var init = function init () {
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
@@ -76,6 +74,8 @@ console.log(4)
 
             $('#sidebar').css({ 'border-left'  : '1px dotted grey'
                               , 'padding-left' : '8px'
+                              , position       : 'fixed'
+                              , right          : '20px'
                               , width          : CONSTANTS.SIDEBARWIDTH + 'px'
                               })
                          .empty()
@@ -139,24 +139,24 @@ console.log(4)
 
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
+            var dragfunc = function dragfunc (e, ltext) {
+                e.preventDefault();
+                $.log('There was a ' + ltext + ' event at the drop zone.');
+            }
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
-                    e.preventDefault();
-                    $.log('There was a dragenter event at the drop zone.');
+                    dragfunc(e, 'dragenter');
                     $(this).css('background-color', 'lightBlue');
                 },
                 dragleave: function dragLeave(e) {
-                    e.preventDefault();
-                    $.log('There was a dragleave event at the drop zone.');
+                    dragfunc(e, 'dragleave');
                     $(this).css('background-color', 'white');
                 },
                 dragover: function dragOver(e) {
-                    e.preventDefault();
-                    $.log('There was a dragover event at the drop zone.');
+                    dragfunc(e, 'dragover');
                 },
                 drop: function drop(e) {
-                    e.preventDefault();
-                    $.log('There was a drop event at the drop zone.');
+                    dragfunc(e, 'drop');
                     $(this).css('background-color', 'white');
                     e = e.originalEvent || e;
 
@@ -195,13 +195,22 @@ console.log(4)
                 var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
                     $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />');    
                 $releases.each(function (i) {
-                    var $releaseRow = $(this).parents('tr');
-                    var $thisCAABtn = $caaBtn.clone()
-                                             .data('entity', $(this).prop('href').split('/')[4].replace('#_',''));
-                    var $newCAARow  = $imageRow.clone()
-                                               .find('td').append($thisCAABtn).end()
-                                               .prop('class', $releaseRow.prop('class'));
-                    $releaseRow.after($newCAARow);
+                    var $releaseRow = $(this).parents('tr:first');
+                    if ($(this).text() == 'add release') {
+                        $.log('Edit links from Expand/collapse release groups script found; removing them.')
+                        $releaseRow.remove();
+                    } else {
+                        var $thisCAABtn = $caaBtn.clone()
+                                                 .data('entity', $(this).prop('href').split('/')[4].replace('#_',''));
+                        var $newCAARow  = $imageRow.clone()
+                                                   .find('td').append($thisCAABtn).end()
+                                                   .prop('class', $releaseRow.prop('class'));
+                        // Allow for script-initiated row transforms, such as TableSorter http://userscripts.org/scripts/show/25406
+                        $releaseRow.on('DOMNodeInsertedIntoDocument', function () {
+                            $releaseRow.after($newCAARow);
+                        }).trigger('DOMNodeInsertedIntoDocument');
+
+                    }
                 });
             }
         }();
