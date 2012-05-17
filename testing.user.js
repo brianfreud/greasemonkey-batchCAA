@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0151
+// @version     0.01.0226
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -20,7 +20,7 @@
 // ==/UserScript==
 
 /*global console */
-/*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
+/*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
 /* Installation and requirements:
 
@@ -53,8 +53,8 @@ function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
 
-    var $imageContainer,
-        $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
+    var $imageContainer
+      , $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
     $.log('Script initializing.');
     var init = function init () {
@@ -142,7 +142,7 @@ function main ($, CONSTANTS) {
             var dragfunc = function dragfunc (e, ltext) {
                 e.preventDefault();
                 $.log('There was a ' + ltext + ' event at the drop zone.');
-            }
+            };
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
                     dragfunc(e, 'dragenter');
@@ -160,8 +160,8 @@ function main ($, CONSTANTS) {
                     $(this).css('background-color', 'white');
                     e = e.originalEvent || e;
 
-                    var files = (e.files || e.dataTransfer.files),
-                        $img = $('<img/>').addClass('localImage')
+                    var files = (e.files || e.dataTransfer.files)
+                      , $img = $('<img/>').addClass('localImage')
                                           .data('source', 'local');
                     for (var i = 0; i < files.length; i++) {
                         if (!files[i].type.match(/image\/p?jpeg/)) {
@@ -170,11 +170,11 @@ function main ($, CONSTANTS) {
                         !function add_dropped_image (i) {
                             var reader = new FileReader();
                             reader.onload = function add_attributes_to_dropped_image(event) {
-                                var $newImg = $img.clone().attr({
-                                    src   : event.target.result,
-                                    title : (files[i].name),
-                                    alt   : (files[i].name)
-                                });
+                                var $newImg = $img.clone()
+                                                  .attr({ alt   : (files[i].name)
+                                                        , title : (files[i].name)
+                                                        , src   : event.target.result
+                                                        });
                                 $imageContainer.append($newImg);
                             };
                             reader.readAsDataURL(files[i]);
@@ -185,41 +185,85 @@ function main ($, CONSTANTS) {
         }();
 
         !function init_add_caa_row_controls () {
-            $.log('Getting releases list.');
+            $.log('Adding CAA controls and event handlers.');
+
             /* The second selector here allows for the release links http://userscripts.org/scripts/show/93894 adds. */
-            var $releases = $('a[resource^="[mbz:release/"], a[href^="/release/"]'),
-                colCount  = $releases.parents('tr:first').find('td').length;
+            var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
+              , $thisForm       = $('form[action*="merge_queue"]')
+              , $caaBtn         = $('<input type=button>').prop('value', 'Load CAA Images')
+                                                          .addClass('caaLoad')
+              , getMBID         = function get_release_MBID (attrStr) {
+                                      return attrStr.split('/')
+                                                    .pop()
+                                                    .replace('#_','');
+                                  }
+              ;
 
-            if ($releases.length) {
-                $.log('Releases found, creating caa rows for each release.');
-                var $imageRow = $('<td/>').prop('colspan', colCount).wrap('<tr>').parent(),
-                    $caaBtn   = $('<input type="button" value="Load CAA Images" class="caaLoad" />');    
-                $releases.each(function (i) {
-                    var $releaseRow = $(this).parents('tr:first');
-                    if ($(this).text() == 'add release') {
-                        $.log('Edit links from Expand/collapse release groups script found; removing them.')
-                        $releaseRow.remove();
-                    } else {
-                        var $thisCAABtn = $caaBtn.clone()
-                                                 .data('entity', $(this).prop('href').split('/')[4].replace('#_',''));
-                        var $newCAARow  = $imageRow.clone()
-                                                   .find('td').append($thisCAABtn).end()
-                                                   .prop('class', $releaseRow.prop('class'));
-                        // Allow for script-initiated row transforms, such as TableSorter http://userscripts.org/scripts/show/25406
-                        $releaseRow.on('DOMNodeInsertedIntoDocument', function () {
-                            $releaseRow.after($newCAARow);
-                        }).trigger('DOMNodeInsertedIntoDocument');
+            var addCAARow = function add_new_row_for_CAA_stuff (event) {
+                                $.log('Release row handler triggered.');
+                                var $releaseAnchor = $(this);
+                                if ('undefined' !== typeof(event) && event.hasOwnProperty('originalEvent')) {
+                                    $.log('Release row handler is running due to a mutation event.');
+                                    var $releaseRow = $(event.originalEvent.srcElement);
+                                    $releaseAnchor = $releaseRow.find('a:first');
+                                    if (event.originalEvent.srcElement.localName !== 'tr') {
+                                        $.log('Aborting; mutation event was not triggered by a tr insertion.');
+                                        return;
+                                    }
+                                    $releaseRow.find('span:first').remove();
+                                }
+                                if (typeof($releaseAnchor.attr('href')) === 'undefined') {
+                                    $.log('Aborting; not a valid release tr.');
+                                    return;
+                                }
+                                var $releaseRow = $releaseAnchor.parents('tr:first');
+                                var colCount    = $releaseRow.find('td').length
+                                  , thisMBID    = getMBID($releaseAnchor.attr('href'))
+                                  , $imageRow   = $('<td/>').prop('colspan', colCount)
+                                                            .wrap('<tr>')
+                                                            .parent()
+                                  ;
 
-                    }
-                });
-            }
+                                if ($releaseAnchor.text() === 'edit') {
+                                    $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
+                                    $releaseRow.remove();
+                                    return;
+                                // Check that this is a new release (i.e. not TableSorter http://userscripts.org/scripts/show/25406 )
+                                } else if (typeof($thisForm.data(thisMBID)) !== 'undefined') {
+                                    $.log('Preexisting release found, skipping.');
+                                    return;
+                                } else {
+                                    $.log('New release found, attaching a CAA row.');
+                                    var $thisCAABtn = $caaBtn.clone()
+                                                             .data('entity', thisMBID);
+                                    var $newCAARow  = $imageRow.clone()
+                                                               .find('td').append($thisCAABtn).end()
+                                                               .prop('class', $releaseRow.prop('class'));
+                                    $thisForm.data(thisMBID, $newCAARow);
+
+                                    // This next is done via event to allow for script-initiated row transforms (e.g. TableSorter)
+                                    $.log('Attaching DOMNodeInserted event handler.');
+                                    $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
+                                        $.log('DOMNodeInserted event handler triggered.');
+                                        $releaseRow.after($newCAARow);
+                                    }).trigger('DOMNodeInserted');
+                                }
+                            };
+
+            // handle pre-existing release rows
+            $(releaseSelector).each(addCAARow);
+
+            // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
+            $.log('Adding release row event handler.');
+            $thisForm.find('tbody:first')
+                     .on('DOMNodeInserted', 'table', addCAARow);
         }();
     };
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
         var $triggerLink = $('<a>Add cover art</a>').wrap('<li>')
-                                                .on('click', function () { init(); })
+                                                .on('click', function start_cover_art_script () { init(); })
                                                 .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
@@ -259,6 +303,20 @@ function thirdParty($, CONSTANTS) {
                         return log(str);
                   }
     });
+
+    // http://james.padolsey.com/javascript/regex-selector-for-jquery/
+    jQuery.expr[':'].regex = function jQuery_regexp (elem, index, match) {
+        var matchParams = match[3].split(','),
+            validLabels = /^(data|css):/,
+            attr = {
+                method: matchParams[0].match(validLabels) ? 
+                            matchParams[0].split(':')[0] : 'attr',
+                property: matchParams.shift().replace(validLabels,'')
+            },
+            regexFlags = 'ig',
+            regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
+        return regex.test(jQuery(elem)[attr.method](attr.property));
+    };
 }
 
 !function main_loader(i) {
@@ -280,9 +338,7 @@ function thirdParty($, CONSTANTS) {
       ;
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
-console.log(1)
             loadLocal(thirdParty);
-console.log(2)
             loadLocal(main);
         };
         makeScript();
