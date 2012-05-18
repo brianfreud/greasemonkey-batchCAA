@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0226
+// @version     0.01.0229
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -210,10 +210,13 @@ function main ($, CONSTANTS) {
                                         $.log('Aborting; mutation event was not triggered by a tr insertion.');
                                         return;
                                     }
-                                    $releaseRow.find('span:first').remove();
                                 }
                                 if (typeof($releaseAnchor.attr('href')) === 'undefined') {
                                     $.log('Aborting; not a valid release tr.');
+                                    return;
+                                }
+                                if ($releaseAnchor.parents('tr:first').find('td').length === 3) {
+                                    $.log('Aborting; tr describes a track, not a release.');
                                     return;
                                 }
                                 var $releaseRow = $releaseAnchor.parents('tr:first');
