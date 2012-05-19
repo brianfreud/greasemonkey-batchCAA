@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0230
+// @version     0.01.0341
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -335,25 +335,31 @@ function thirdParty($, CONSTANTS) {
         }
       ;
     (function script_loader (i) {
-console.log(i);
         var continueLoading = function continueLoading () {
                                   loadLocal(thirdParty);
                                   loadLocal(main);
                               };
-
-        makeScript();
         if (typeof($) !== 'undefined' && $.browser.mozilla) {
             continueLoading();
         } else if (requires.length === 1 && localStorage.getItem('jQuery') !== null) {
             i++;
-            requires.push(localStorage.getItem('jQuery'));
-            requires.push(localStorage.getItem('jQueryUI'));
+            requires[1] = 'jQuery';
+            requires[2] = 'jQueryUI';
         }
-        (i === 0) ? (script.src = requires[0])
-                  : (script.textContent = requires[i]);
-        script.addEventListener('load', function loader_move_to_next_script () {
-            ++i !== requires.length ? script_loader(i) : continueLoading();
-        }, true);
-        head.appendChild(script);
+        if (i === 0) {
+            makeScript();
+            script.src = requires[0];
+            script.addEventListener('load', function loader_move_to_next_script () {
+                script_loader(1);
+            }, true);
+            head.appendChild(script);
+        } else {
+            for (var j = 0; j < i; j++) {
+                makeScript();
+                script.textContent = localStorage.getItem(requires[i]);
+                head.appendChild(script);
+            }
+            continueLoading()
+        }
     })(i || 0);
 }();
