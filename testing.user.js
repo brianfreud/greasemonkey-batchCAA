@@ -40,8 +40,8 @@ var CONSTANTS = { DEBUGMODE     : true
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
                 , SIDEBARHEIGHT : (screen.height - 300)
                 , TEXT          : {
-                                  en : {
-                                       'Images' : 'Images'
+                                  en : { 'Add cover art'       : 'Add cover art'
+                                       , 'Images'              : 'Images'
                                        },
                                   fr : {
                                        'Images' : 'Les Photos'
@@ -260,9 +260,10 @@ function main ($, CONSTANTS) {
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
-        var $triggerLink = $('<a>Add cover art</a>').wrap('<li>')
-                                                .on('click', function start_cover_art_script () { init(); })
-                                                .parent();
+        var $triggerLink = $('<a>' + $.l('Add cover art') + '</a>').css('cursor', 'pointer')
+                                                                   .wrap('<li>')
+                                                                   .on('click', function start_cover_art_script () { init(); })
+                                                                   .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
 }
