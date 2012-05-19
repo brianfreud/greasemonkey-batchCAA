@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0229
+// @version     0.01.0230
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -209,6 +209,10 @@ function main ($, CONSTANTS) {
                                     if (event.originalEvent.srcElement.localName !== 'tr') {
                                         $.log('Aborting; mutation event was not triggered by a tr insertion.');
                                         return;
+                                    } else if ($releaseAnchor.text() === 'edit') {
+                                        $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
+                                        $releaseRow.remove();
+                                        return;
                                     }
                                 }
                                 if (typeof($releaseAnchor.attr('href')) === 'undefined') {
@@ -219,6 +223,7 @@ function main ($, CONSTANTS) {
                                     $.log('Aborting; tr describes a track, not a release.');
                                     return;
                                 }
+
                                 var $releaseRow = $releaseAnchor.parents('tr:first');
                                 var colCount    = $releaseRow.find('td').length
                                   , thisMBID    = getMBID($releaseAnchor.attr('href'))
@@ -227,30 +232,20 @@ function main ($, CONSTANTS) {
                                                             .parent()
                                   ;
 
-                                if ($releaseAnchor.text() === 'edit') {
-                                    $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
-                                    $releaseRow.remove();
-                                    return;
-                                // Check that this is a new release (i.e. not TableSorter http://userscripts.org/scripts/show/25406 )
-                                } else if (typeof($thisForm.data(thisMBID)) !== 'undefined') {
-                                    $.log('Preexisting release found, skipping.');
-                                    return;
-                                } else {
-                                    $.log('New release found, attaching a CAA row.');
-                                    var $thisCAABtn = $caaBtn.clone()
-                                                             .data('entity', thisMBID);
-                                    var $newCAARow  = $imageRow.clone()
-                                                               .find('td').append($thisCAABtn).end()
-                                                               .prop('class', $releaseRow.prop('class'));
-                                    $thisForm.data(thisMBID, $newCAARow);
+                                $.log('New release found, attaching a CAA row.');
+                                var $thisCAABtn = $caaBtn.clone()
+                                                         .data('entity', thisMBID);
+                                var $newCAARow  = $imageRow.clone()
+                                                           .find('td').append($thisCAABtn).end()
+                                                           .prop('class', $releaseRow.prop('class'));
+                                $thisForm.data(thisMBID, $newCAARow);
 
-                                    // This next is done via event to allow for script-initiated row transforms (e.g. TableSorter)
-                                    $.log('Attaching DOMNodeInserted event handler.');
-                                    $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
-                                        $.log('DOMNodeInserted event handler triggered.');
-                                        $releaseRow.after($newCAARow);
-                                    }).trigger('DOMNodeInserted');
-                                }
+                                // This next is done via event to allow for script-initiated row transforms (e.g. TableSorter)
+                                $.log('Attaching DOMNodeInserted event handler.');
+                                $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
+                                    $.log('DOMNodeInserted event handler triggered.');
+                                    $releaseRow.after($newCAARow);
+                                }).trigger('DOMNodeInserted');
                             };
 
             // handle pre-existing release rows
@@ -308,6 +303,7 @@ function thirdParty($, CONSTANTS) {
     });
 
     // http://james.padolsey.com/javascript/regex-selector-for-jquery/
+/*
     jQuery.expr[':'].regex = function jQuery_regexp (elem, index, match) {
         var matchParams = match[3].split(','),
             validLabels = /^(data|css):/,
@@ -320,15 +316,14 @@ function thirdParty($, CONSTANTS) {
             regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
         return regex.test(jQuery(elem)[attr.method](attr.property));
     };
+*/
 }
 
 !function main_loader(i) {
     'use strict';
     var script
       , head = document.getElementsByTagName('head')[0]
-      , requires = [ 'http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'
-                   , 'https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js'
-                   ]
+      , requires = ['https://raw.github.com/brianfreud/greasemonkey-batchCAA/master/scripts.js']
       , makeScript = function makeScript () {
             script = document.createElement('script');
             script.type = 'text/javascript';
@@ -343,9 +338,22 @@ function thirdParty($, CONSTANTS) {
         var continueLoading = function continueLoading () {
             loadLocal(thirdParty);
             loadLocal(main);
-        };
+            }
+          , loadRequires = function loadRequires () {
+                requires[0] = localStorage.getItem('jQuery');
+                requires[1] = localStorage.getItem('jQueryUI');
+            }
+          , loadCheck = function loadCheck () {
+                if (localStorage.getItem('jQuery') == 'null') {
+                    $.getScript(requires[0], loadRequires);
+                } else {
+                    loadRequires();
+                }
+            };
+        
         makeScript();
-        (typeof($) !== 'undefined' && $.browser.mozilla) ? continueLoading() : script.src = requires[i];
+        (typeof($) !== 'undefined' && $.browser.mozilla) ? continueLoading()
+                                                         : loadCheck();
         script.addEventListener('load', function loader_move_to_next_script () {
             ++i !== requires.length ? script_loader(i) : continueLoading();
         }, true);
