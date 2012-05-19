@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0341
+// @version     0.01.0357
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -35,6 +35,7 @@ Opera: Compatible?  Definitely requires minimum of version 12.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
+                , COVERTYPES    : []
                 , IMAGESIZES    : [100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
@@ -43,12 +44,28 @@ var CONSTANTS = { DEBUGMODE     : true
                                   en : { 'Add cover art'       : 'Add cover art'
                                        , 'Images'              : 'Images'
                                        , 'Load CAA images'     : 'Load CAA images'
+                                       , 'coverType:Front'     : 'Front'
+                                       , 'coverType:Back'      : 'Back'
+                                       , 'coverType:Booklet'   : 'Booklet'
+                                       , 'coverType:Medium'    : 'Medium'
+                                       , 'coverType:Obi'       : 'Obi'
+                                       , 'coverType:Spine'     : 'Spine'
+                                       , 'coverType:Track'     : 'Track'
+                                       , 'coverType:Other'     : 'Other'
                                        },
                                   fr : {
                                        'Images' : 'Les Photos'
                                        }
                                   }
                 };
+CONSTANTS.COVERTYPES[1] = 'coverType:Front';
+CONSTANTS.COVERTYPES[2] = 'coverType:Back';
+CONSTANTS.COVERTYPES[3] = 'coverType:Booklet';
+CONSTANTS.COVERTYPES[4] = 'coverType:Medium';
+CONSTANTS.COVERTYPES[5] = 'coverType:Obi';
+CONSTANTS.COVERTYPES[6] = 'coverType:Spine';
+CONSTANTS.COVERTYPES[7] = 'coverType:Track';
+CONSTANTS.COVERTYPES[8] = 'coverType:Other';
 
 function main ($, CONSTANTS) {
     'use strict';
@@ -97,6 +114,20 @@ function main ($, CONSTANTS) {
         !function init_add_css () {
             $.log('Adding css rules');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
+            $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
+            $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
+            $.addRule('.CAAdropbox', JSON.stringify({ 'float'            : 'left;'
+                                                    , 'margin'           : '6px;'
+                                                    , 'min-height'       : '126px;'
+                                                    , 'padding'          : '3px;'
+                                                    , 'vertical-align'   : 'middle;'
+                                                    , 'width'            : '126px;'
+                                                    }));
+
+            $.addRule('.CAAdropbox > img', '{ width: 120px; margin: 3px; }');
+            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; }');
+            $.addRule('.existingCAAimage > img', '{ border: 0px none; }');
+            $.addRule('.newCAAimage > img', '{ min-height: 120px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                       , 'border-radius'    : '7px;'
                                                       , 'color'            : 'white!important;'
@@ -147,7 +178,7 @@ function main ($, CONSTANTS) {
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
                     dragfunc(e, 'dragenter');
-                    $(this).css('background-color', 'lightBlue');
+                    $(this).css('background-color', '#F2F2FC;');
                 },
                 dragleave: function dragLeave(e) {
                     dragfunc(e, 'dragleave');
@@ -200,6 +231,13 @@ function main ($, CONSTANTS) {
                                   }
               ;
 
+            var makeDropbox = function makeDropbox (mbid) {
+                                  $.log('Creating dropbox.');
+                                  var dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
+                                                             .append($('<img><figcaption>'));
+                                  return dropbox;
+                             };
+
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
                                 $.log('Release row handler triggered.');
                                 var $releaseAnchor = $(this);
@@ -247,6 +285,14 @@ function main ($, CONSTANTS) {
                                     $.log('DOMNodeInserted event handler triggered.');
                                     $releaseRow.after($newCAARow);
                                 }).trigger('DOMNodeInserted');
+
+                                $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
+                                    $.log('Add CAA images to release row button triggered.');
+                                    $(this).hide();
+                                    for (var i = 0, repeats = Math.round($('.caaLoad:first').parent().width()/132) - 2; i < repeats; i++) {
+                                           $(this).after(makeDropbox($(this).data('entity')));
+                                    }
+                                });
                             };
 
             // handle pre-existing release rows
