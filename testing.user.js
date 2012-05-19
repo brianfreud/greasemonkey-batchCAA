@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0357
+// @version     0.01.0373
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -35,7 +35,15 @@ Opera: Compatible?  Definitely requires minimum of version 12.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , COVERTYPES    : []
+                , COVERTYPES    : [ 'coverType:Front'
+                                  , 'coverType:Back'
+                                  , 'coverType:Booklet'
+                                  , 'coverType:Medium'
+                                  , 'coverType:Obi'
+                                  , 'coverType:Spine'
+                                  , 'coverType:Track'
+                                  , 'coverType:Other'
+                                  ]
                 , IMAGESIZES    : [100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
@@ -58,14 +66,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                        }
                                   }
                 };
-CONSTANTS.COVERTYPES[1] = 'coverType:Front';
-CONSTANTS.COVERTYPES[2] = 'coverType:Back';
-CONSTANTS.COVERTYPES[3] = 'coverType:Booklet';
-CONSTANTS.COVERTYPES[4] = 'coverType:Medium';
-CONSTANTS.COVERTYPES[5] = 'coverType:Obi';
-CONSTANTS.COVERTYPES[6] = 'coverType:Spine';
-CONSTANTS.COVERTYPES[7] = 'coverType:Track';
-CONSTANTS.COVERTYPES[8] = 'coverType:Other';
 
 function main ($, CONSTANTS) {
     'use strict';
@@ -123,9 +123,16 @@ function main ($, CONSTANTS) {
                                                     , 'vertical-align'   : 'middle;'
                                                     , 'width'            : '126px;'
                                                     }));
-
             $.addRule('.CAAdropbox > img', '{ width: 120px; margin: 3px; }');
-            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; }');
+            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 12em; }');
+            $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
+                                                                          , 'clip'             : 'rect(2px 49px 128px 2px);'
+                                                                          , 'color'            : '#555;'
+                                                                          , 'font-size'        : 'inherit;'
+                                                                          , 'position'         : 'absolute;'
+                                                                          , 'text-align'       : 'center;'
+                                                                          , 'left'             : '36px;'
+                                                                          }));
             $.addRule('.existingCAAimage > img', '{ border: 0px none; }');
             $.addRule('.newCAAimage > img', '{ min-height: 120px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
@@ -203,7 +210,7 @@ function main ($, CONSTANTS) {
                             var reader = new FileReader();
                             reader.onload = function add_attributes_to_dropped_image(event) {
                                 var $newImg = $img.clone()
-                                                  .attr({ alt   : (files[i].name)
+                                                  .prop({ alt   : (files[i].name)
                                                         , title : (files[i].name)
                                                         , src   : event.target.result
                                                         });
@@ -231,12 +238,31 @@ function main ($, CONSTANTS) {
                                   }
               ;
 
-            var makeDropbox = function makeDropbox (mbid) {
+            var makeCAATypeList = function makeCAATypeList () {
+                                      $.log('Creating CAA type select.');
+                                      var types  = CONSTANTS.COVERTYPES
+                                        , $newOption
+                                        , $typeList = $('<select multiple="multiple">').prop('size', types.length)
+                                        ;
+
+                                      for (var i = 0, len = types.length; i < len; i++) {
+                                          $newOption = $('<option>').prop('value', i+1)
+                                                                    .text($.l(types[i]));
+                                          $typeList.append($newOption);
+                                      }
+                                      return $typeList;
+                                  };
+
+            var makeDropbox = function makeDropbox () {
                                   $.log('Creating dropbox.');
-                                  var dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
-                                                             .append($('<img><figcaption>'));
-                                  return dropbox;
+                                  var $types = makeCAATypeList();
+                                  var $dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
+                                                              .append($('<img>'))
+                                                              .append($('<figcaption>').append($types));
+                                  return $dropbox;
                              };
+
+            var $dropBox = makeDropbox();
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
                                 $.log('Release row handler triggered.');
@@ -289,8 +315,14 @@ function main ($, CONSTANTS) {
                                 $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
                                     $.log('Add CAA images to release row button triggered.');
                                     $(this).hide();
-                                    for (var i = 0, repeats = Math.round($('.caaLoad:first').parent().width()/132) - 2; i < repeats; i++) {
-                                           $(this).after(makeDropbox($(this).data('entity')));
+                                    var $widthEle = $('.caaLoad:first').parent()
+                                      ,  $tableParent = $('.caaLoad:first').parents('table:first')
+                                      ;
+                                    if (!$tableParent.hasClass('tbl')) {
+                                        $widthEle = $tableParent.parents('td:first');
+                                    }
+                                    for (var i = 0, repeats = Math.round($widthEle.width()/132) - 2; i < repeats; i++) {
+                                           $(this).after($dropBox.clone());
                                     }
                                 });
                             };
@@ -407,7 +439,7 @@ function thirdParty($, CONSTANTS) {
                 script.textContent = localStorage.getItem(requires[i]);
                 head.appendChild(script);
             }
-            continueLoading()
+            continueLoading();
         }
     })(i || 0);
 }();
