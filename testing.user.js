@@ -42,6 +42,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , TEXT          : {
                                   en : { 'Add cover art'       : 'Add cover art'
                                        , 'Images'              : 'Images'
+                                       , 'Load CAA images'     : 'Load CAA images'
                                        },
                                   fr : {
                                        'Images' : 'Les Photos'
@@ -187,10 +188,10 @@ function main ($, CONSTANTS) {
         !function init_add_caa_row_controls () {
             $.log('Adding CAA controls and event handlers.');
 
-            /* The second selector here allows for the release links http://userscripts.org/scripts/show/93894 adds. */
+            /* The second selector here allows for the release links added by http://userscripts.org/scripts/show/93894 */
             var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
               , $thisForm       = $('form[action*="merge_queue"]')
-              , $caaBtn         = $('<input type=button>').prop('value', 'Load CAA Images')
+              , $caaBtn         = $('<input type=button>').prop('value', $.l('Load CAA images'))
                                                           .addClass('caaLoad')
               , getMBID         = function get_release_MBID (attrStr) {
                                       return attrStr.split('/')
@@ -347,14 +348,14 @@ function thirdParty($, CONSTANTS) {
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
         }
-        if (i === 0) {
+        if (i === 0) { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
             script.src = requires[0];
             script.addEventListener('load', function loader_move_to_next_script () {
                 script_loader(1);
             }, true);
             head.appendChild(script);
-        } else {
+        } else { /* Scripts are cached in localStorage; load them. */
             for (var j = 0; j < i; j++) {
                 makeScript();
                 script.textContent = localStorage.getItem(requires[i]);
