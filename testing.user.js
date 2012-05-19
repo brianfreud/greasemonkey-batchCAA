@@ -335,25 +335,22 @@ function thirdParty($, CONSTANTS) {
         }
       ;
     (function script_loader (i) {
+console.log(i);
         var continueLoading = function continueLoading () {
-            loadLocal(thirdParty);
-            loadLocal(main);
-            }
-          , loadRequires = function loadRequires () {
-                requires[0] = localStorage.getItem('jQuery');
-                requires[1] = localStorage.getItem('jQueryUI');
-            }
-          , loadCheck = function loadCheck () {
-                if (localStorage.getItem('jQuery') == 'null') {
-                    $.getScript(requires[0], loadRequires);
-                } else {
-                    loadRequires();
-                }
-            };
-        
+                                  loadLocal(thirdParty);
+                                  loadLocal(main);
+                              };
+
         makeScript();
-        (typeof($) !== 'undefined' && $.browser.mozilla) ? continueLoading()
-                                                         : loadCheck();
+        if (typeof($) !== 'undefined' && $.browser.mozilla) {
+            continueLoading();
+        } else if (requires.length === 1 && localStorage.getItem('jQuery') !== null) {
+            i++;
+            requires.push(localStorage.getItem('jQuery'));
+            requires.push(localStorage.getItem('jQueryUI'));
+        }
+        (i === 0) ? (script.src = requires[0])
+                  : (script.textContent = requires[i]);
         script.addEventListener('load', function loader_move_to_next_script () {
             ++i !== requires.length ? script_loader(i) : continueLoading();
         }, true);
