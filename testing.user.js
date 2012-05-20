@@ -72,6 +72,9 @@ function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
 
+    /* This just forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
+    $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
+
     var $imageContainer
       , $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
@@ -138,7 +141,7 @@ function main ($, CONSTANTS) {
                                                                           , 'left'             : '36px;'
                                                                           }));
             $.addRule('.CAAdropbox > div', '{ display: block; height: 120px; margin: 3px auto; }');
-            $.addRule('.CAAdropbox > div > img', '{ display: block; max-width: 120px; max-height: 120px; margin: 0; }');
+            $.addRule('.CAAdropbox > div > img', '{ display: block; max-width: 120px; max-height: 120px; margin: 0 auto; }');
             $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
             $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
@@ -350,8 +353,8 @@ function main ($, CONSTANTS) {
                                                               /* This next bit of code does the same thing as the lowsrc attribute.
                                                                  This would have been easier, but lowsrc seems to no longer exist. */
                                                               var $img = $emptyDropBox.find('img');
-                                                              $img.prop('src', CONSTANTS.THROBBER)
-                                                                  .css('padding-top', '20px');
+                                                              $img[0].src = CONSTANTS.THROBBER;
+                                                              $img.css('padding-top', '20px');
                                                               var realImg = new Image();
                                                               realImg.src = this.image;
                                                               realImg.onload = function () {
