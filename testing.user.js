@@ -386,13 +386,15 @@ function main ($, CONSTANTS) {
                                     $.log('Add CAA images to release row button triggered.');
                                     $(this).hide();
                                     $(this).parent().prev().show(); /* CAA add button */
-                                    var $widthEle = $('.caaLoad:first').parent()
+                                    var $widthEle = $('.caaLoad:first').parents('td:first')
                                       , $tableParent = $('.caaLoad:first').parents('table:first')
                                       , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
                                       ;
                                     if (!$tableParent.hasClass('tbl')) {
                                         $widthEle = $tableParent.parents('td:first');
                                     }
+console.log($widthEle.width())
+console.log(Math.round($widthEle.width()/132))
                                     for (var i = 0, repeats = Math.round($widthEle.width()/132) - 2; i < repeats; i++) {
                                            $(this).after($dropBox.clone());
                                     }
