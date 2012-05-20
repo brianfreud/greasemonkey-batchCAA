@@ -53,6 +53,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
                 , SIDEBARHEIGHT : (screen.height - 300)
                 , THROBBER      : localStorage.getItem('throbber')
+                , PREVIEWSIZE   : 300
                 , TEXT          : {
                                   en : { 'Add cover art'           : 'Add cover art'
                                        , 'Images'                  : 'Images'
@@ -66,6 +67,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'coverType:Spine'         : 'Spine'
                                        , 'coverType:Track'         : 'Track'
                                        , 'coverType:Other'         : 'Other'
+                                       , 'Preview Image'           : 'Preview'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
                                        , 'Add image one release'   : 'Add another empty image space to this release.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
@@ -81,13 +83,30 @@ function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
 
+    $.log('Script initializing.');
+
     /* This just forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
 
     var $imageContainer
+      , $previewContainer
       , $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
-    $.log('Script initializing.');
+    /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
+    var checkScroll = function checkScroll ($caaDiv) {
+        $.log('Adjusting negative right margin.');
+        if ('undefined' === typeof($caaDiv.data('width'))) {
+            $caaDiv.data('width', $caaDiv.width());
+        }
+        var $dropboxes = $caaDiv.find('.CAAdropbox');
+        var $dropbox   = $dropboxes.filter(':first')
+          , dbCount    = $dropboxes.length;
+        var dbWidth    = $dropbox.outerWidth(true);
+        var divWidth   = ($('.CAAdropbox').length * dbWidth);
+        $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
+        $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
+    };
+
     var init = function init () {
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
@@ -96,23 +115,17 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-            $imageContainer = $('<div id="imageContainer"/>').css({ height       : CONSTANTS.SIDEBARHEIGHT + 'px'
-                                                                  , 'max-height' : CONSTANTS.SIDEBARHEIGHT + 'px'
-                                                                  , 'overflow-y' : 'auto'
-                                                                  , width        : '100%'
-                                                                  });
+            $imageContainer = $('<div id="imageContainer"/>');
+            $previewContainer = $('<div id="previewContainer"/>').append($('<img id="previewImage"/>'));
 
 
-            $('#sidebar').css({ 'border-left'  : '1px dotted grey'
-                              , 'padding-left' : '8px'
-                              , position       : 'fixed'
-                              , right          : '20px'
-                              , width          : CONSTANTS.SIDEBARWIDTH + 'px'
-                              })
-                         .empty()
+            $('#sidebar').empty()
                          .append($('<h1 id="imageHeader"/>').text($.l('Images')))
                          .append($('<br/><br/>'))
-                         .append($imageContainer);
+                         .append($imageContainer)
+                         .append($('<hr/>').css('border-top', '1px dotted grey'))
+                         .append($('<h1 id="previewHeader"/>').text($.l('Preview Image')))
+                         .append($previewContainer);
         }();
 
         !function init_activate_dnd_on_page () {
@@ -156,6 +169,11 @@ function main ($, CONSTANTS) {
             $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
             $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
             $.addRule('.caaDiv', '{ padding-left: 25px; }');
+            $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
+            $.addRule('table.tbl * table', '{ width: 100%; }');
+            $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
+
+           /* Start control buttons */
             $.addRule('input.caaLoad, input.caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                                     , 'border'           : '1px outset #FAFAFA!important;'
                                                                     , 'border-radius'    : '7px;'
@@ -182,15 +200,34 @@ function main ($, CONSTANTS) {
                                                      }));
            $.addRule('input.caaAdd:hover, input.caaAll:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
            $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
-           $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
-            $.addRule('table.tbl * table', '{ width: 100%; }');
-            $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
+           /* End control buttons */
+
+           /* Start right side layout */
+           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : '1px dotted grey;'
+                                                , 'padding-left' : '8px;'
+                                                , 'position'     : 'fixed;'
+                                                , 'right'        : '20px;'
+                                                , 'width'        : CONSTANTS.SIDEBARWIDTH + 'px;'
+                                                }));
+           $.addRule('#imageContainer, #previewContainer', '{ overflow-y: auto; width: 100%; }');
+           var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE) + 'px;';
+           $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
+           size = (CONSTANTS.PREVIEWSIZE + 22) + 'px;';
+           $.addRule('#previewContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
+           size = (CONSTANTS.PREVIEWSIZE) + 'px;';
+           $.addRule('#previewImage', JSON.stringify({ 'display' : 'block;'
+                                                     , 'height'  : size
+                                                     , 'margin'  : '0 auto;'
+                                                     , 'padding' : '15px 0 0 0;'
+                                                     , 'width'   : size
+                                                     }));
+           /* End right side layout */
 
             /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
             $.addRule('table.tbl .count', '{ width: 6em!important; }');
 
-            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px')
+            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
             $('<style id="tblStyle1">table.tbl { table-layout: fixed; }</style>').appendTo($('head'));
             $.addRule('table.tbl * table', '{ width: 100%; }');
 
@@ -271,21 +308,6 @@ function main ($, CONSTANTS) {
                 }
             });
         }();
-
-        /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
-        var checkScroll = function checkScroll ($caaDiv) {
-            $.log('Adjusting negative right margin.');
-            if ('undefined' === typeof($caaDiv.data('width'))) {
-                $caaDiv.data('width', $caaDiv.width());
-            }
-            var $dropboxes = $caaDiv.find('.CAAdropbox');
-            var $dropbox   = $dropboxes.filter(':first')
-              , dbCount    = $dropboxes.length;
-            var dbWidth    = $dropbox.outerWidth(true);
-            var divWidth   = ($('.CAAdropbox').length * dbWidth);
-            $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
-            $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
-        };
 
         !function init_add_caa_row_controls () {
             $.log('Adding CAA controls and event handlers.');
@@ -497,15 +519,16 @@ function main ($, CONSTANTS) {
     };
 
     window.onresize = function adjust_table_after_window_resize () {
+        $.log('Screen resize detected, adjusting layout.');
         if ((window.outerHeight - window.innerHeight) > 100) {
             $('#tblStyle1').prop('disabled',true);
-            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px')
+            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
             $('#tblStyle1').prop('disabled',false);
         }
         $('div.caaDiv').each(function () {
             checkScroll($(this));
         });
-    }
+    };
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
