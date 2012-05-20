@@ -35,14 +35,14 @@ Opera: Compatible?  Definitely requires minimum of version 12.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , COVERTYPES    : [ 'coverType:Front'
-                                  , 'coverType:Back'
-                                  , 'coverType:Booklet'
-                                  , 'coverType:Medium'
-                                  , 'coverType:Obi'
-                                  , 'coverType:Spine'
-                                  , 'coverType:Track'
-                                  , 'coverType:Other'
+                , COVERTYPES    : [ 'Front'
+                                  , 'Back'
+                                  , 'Booklet'
+                                  , 'Medium'
+                                  , 'Obi'
+                                  , 'Spine'
+                                  , 'Track'
+                                  , 'Other'
                                   ]
                 , IMAGESIZES    : [100, 150, 300]
                 , LANGUAGE      : 'en'
@@ -123,18 +123,23 @@ function main ($, CONSTANTS) {
                                                     , 'vertical-align'   : 'middle;'
                                                     , 'width'            : '126px;'
                                                     }));
-            $.addRule('.CAAdropbox > img', '{ width: 120px; margin: 3px; }');
-            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 12em; }');
+            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 14em; }');
+            $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ font-size: 80%; clear: both; }');
+            $.addRule('.CAAdropbox > figcaption > div', '{ height: 2.5em; }');
             $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
-                                                                          , 'clip'             : 'rect(2px 49px 128px 2px);'
+                                                                          , 'clear'            : 'both;'
+                                                                          , 'clip'             : 'rect(2px 49px 136px 2px);'
                                                                           , 'color'            : '#555;'
                                                                           , 'font-size'        : 'inherit;'
+                                                                          , 'padding-top'      : '8px;'
                                                                           , 'position'         : 'absolute;'
                                                                           , 'text-align'       : 'center;'
                                                                           , 'left'             : '36px;'
                                                                           }));
-            $.addRule('.existingCAAimage > img', '{ border: 0px none; }');
-            $.addRule('.newCAAimage > img', '{ min-height: 120px; }');
+            $.addRule('.CAAdropbox > div', '{ display: block; height: 120px; margin: 3px auto; }');
+            $.addRule('.CAAdropbox > div > img', '{ display: block; max-width: 120px; max-height: 120px; margin: 0; }');
+            $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
+            $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                       , 'border-radius'    : '7px;'
                                                       , 'color'            : 'white!important;'
@@ -185,7 +190,7 @@ function main ($, CONSTANTS) {
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
                     dragfunc(e, 'dragenter');
-                    $(this).css('background-color', '#F2F2FC;');
+                    $(this).css('background-color', 'lightblue;');
                 },
                 dragleave: function dragLeave(e) {
                     dragfunc(e, 'dragleave');
@@ -247,7 +252,7 @@ function main ($, CONSTANTS) {
 
                                       for (var i = 0, len = types.length; i < len; i++) {
                                           $newOption = $('<option>').prop('value', i+1)
-                                                                    .text($.l(types[i]));
+                                                                    .text($.l('coverType:' + types[i]));
                                           $typeList.append($newOption);
                                       }
                                       return $typeList;
@@ -257,8 +262,9 @@ function main ($, CONSTANTS) {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
                                   var $dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
-                                                              .append($('<img>'))
-                                                              .append($('<figcaption>').append($types));
+                                                              .append($('<img>').wrap('<div>').parent())
+                                                              .append($('<figcaption>').append($('<input type="text"/></br>'))
+                                                                                       .append($types));
                                   return $dropbox;
                              };
 
@@ -266,10 +272,11 @@ function main ($, CONSTANTS) {
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
                                 $.log('Release row handler triggered.');
-                                var $releaseAnchor = $(this);
+                                var $releaseAnchor = $(this),
+                                    $releaseRow;
                                 if ('undefined' !== typeof(event) && event.hasOwnProperty('originalEvent')) {
                                     $.log('Release row handler is running due to a mutation event.');
-                                    var $releaseRow = $(event.originalEvent.srcElement);
+                                    $releaseRow = $(event.originalEvent.srcElement);
                                     $releaseAnchor = $releaseRow.find('a:first');
                                     if (event.originalEvent.srcElement.localName !== 'tr') {
                                         $.log('Aborting; mutation event was not triggered by a tr insertion.');
@@ -289,7 +296,7 @@ function main ($, CONSTANTS) {
                                     return;
                                 }
 
-                                var $releaseRow = $releaseAnchor.parents('tr:first');
+                                $releaseRow = $releaseAnchor.parents('tr:first');
                                 var colCount    = $releaseRow.find('td').length
                                   , thisMBID    = getMBID($releaseAnchor.attr('href'))
                                   , $imageRow   = $('<td/>').prop('colspan', colCount)
@@ -316,7 +323,8 @@ function main ($, CONSTANTS) {
                                     $.log('Add CAA images to release row button triggered.');
                                     $(this).hide();
                                     var $widthEle = $('.caaLoad:first').parent()
-                                      ,  $tableParent = $('.caaLoad:first').parents('table:first')
+                                      , $tableParent = $('.caaLoad:first').parents('table:first')
+                                      , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
                                       ;
                                     if (!$tableParent.hasClass('tbl')) {
                                         $widthEle = $tableParent.parents('td:first');
@@ -324,6 +332,27 @@ function main ($, CONSTANTS) {
                                     for (var i = 0, repeats = Math.round($widthEle.width()/132) - 2; i < repeats; i++) {
                                            $(this).after($dropBox.clone());
                                     }
+                                    $.log('Requesting CAA info for ' + $(this).data('entity'));
+                                    $.ajax({ context: this
+                                           , url: caaRequest
+                                           , dataType: 'json'
+                                           , success: function caaResponseHandler (response) {
+                                                          $.log('Received CAA, parsing...');
+                                                          $.each(response.images, function parseCAAResponse (i) {
+                                                              $.log('Parsing CAA response: image #' + i);
+                                                              var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
+                                                              $emptyDropBox.find('img').prop('src', this.image).end()
+                                                                           .find('input').replaceWith($('<div>').text(this.comment)).end()
+                                                                           .find('br').remove().end()
+                                                                           .find('select').prop('disabled', true).end()
+                                                                           .removeClass('newCAAimage');
+                                                              $.each(this.types, function (i) {
+                                                                  var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
+                                                                  $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
+                                                              });
+                                                          });
+                                                      }
+                                           });
                                 });
                             };
 
