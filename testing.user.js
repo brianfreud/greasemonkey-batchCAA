@@ -183,15 +183,16 @@ function main ($, CONSTANTS) {
            $.addRule('input.caaAdd:hover, input.caaAll:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
            $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
            $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
+            $.addRule('table.tbl * table', '{ width: 100%; }');
+            $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
 
             /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
             $.addRule('table.tbl .count', '{ width: 6em!important; }');
-            /* Explicitly set the width on the title field. */
+
             $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px')
-            $.addRule('table.tbl', '{ table-layout: fixed; }');
+            $('<style id="tblStyle1">table.tbl { table-layout: fixed; }</style>').appendTo($('head'));
             $.addRule('table.tbl * table', '{ width: 100%; }');
-            $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
 
             $.log('Adding css stylesheets');
             var sizes = CONSTANTS.IMAGESIZES,
@@ -271,6 +272,21 @@ function main ($, CONSTANTS) {
             });
         }();
 
+        /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
+        var checkScroll = function checkScroll ($caaDiv) {
+            $.log('Adjusting negative right margin.');
+            if ('undefined' === typeof($caaDiv.data('width'))) {
+                $caaDiv.data('width', $caaDiv.width());
+            }
+            var $dropboxes = $caaDiv.find('.CAAdropbox');
+            var $dropbox   = $dropboxes.filter(':first')
+              , dbCount    = $dropboxes.length;
+            var dbWidth    = $dropbox.outerWidth(true);
+            var divWidth   = ($('.CAAdropbox').length * dbWidth);
+            $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
+            $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
+        };
+
         !function init_add_caa_row_controls () {
             $.log('Adding CAA controls and event handlers.');
 
@@ -321,21 +337,6 @@ function main ($, CONSTANTS) {
                              };
 
             var $dropBox = makeDropbox();
-
-            /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
-            var checkScroll = function checkScroll ($caaDiv) {
-                                  $.log('Adjusting negative right margin.');
-                                  if ('undefined' === typeof($caaDiv.data('width'))) {
-                                      $caaDiv.data('width', $caaDiv.width());
-                                  }
-                                  var $dropboxes = $caaDiv.find('.CAAdropbox');
-                                  var $dropbox   = $dropboxes.filter(':first')
-                                    , dbCount    = $dropboxes.length;
-                                  var dbWidth    = $dropbox.outerWidth(true);
-                                  var divWidth   = ($('.CAAdropbox').length * dbWidth);
-                                  $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
-                                  $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
-            };
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
                                 $.log('Release row handler triggered.');
@@ -494,6 +495,17 @@ function main ($, CONSTANTS) {
             });
         }();
     };
+
+    window.onresize = function adjust_table_after_window_resize () {
+        if ((window.outerHeight - window.innerHeight) > 100) {
+            $('#tblStyle1').prop('disabled',true);
+            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px')
+            $('#tblStyle1').prop('disabled',false);
+        }
+        $('div.caaDiv').each(function () {
+            checkScroll($(this));
+        });
+    }
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
