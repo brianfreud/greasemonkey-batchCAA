@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0505
+// @version     0.01.0509
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -154,6 +154,7 @@ function main ($, CONSTANTS) {
             $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
             $.addRule('.caaDiv', '{ padding-left: 25px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
+                                                      , 'border'           : '1px outset #FAFAFA!important;'
                                                       , 'border-radius'    : '7px;'
                                                       , 'color'            : 'white!important;'
                                                       , 'font-size'        : '90%;'
@@ -163,6 +164,7 @@ function main ($, CONSTANTS) {
                                                       , 'padding'          : '3px 8px;'
                                                       }));
             $.addRule('input.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
+                                                     , 'border'           : '1px outset #FAFAFA!important;'
                                                      , 'border-radius'    : '16px;'
                                                      , 'color'            : 'white!important;'
                                                      , 'float'            : 'left;'
@@ -170,11 +172,13 @@ function main ($, CONSTANTS) {
                                                      , 'font-weight'      : '900!important;'
                                                      , 'left'             : '2em;'
                                                      , 'margin-left'      : '-1.2em;!important;'
-                                                     , 'opacity'          : '0.65;'
+                                                     , 'opacity'          : '0.5;'
                                                      , 'padding-bottom'   : '0px;'
                                                      , 'padding-top'      : '0px;'
                                                      , 'position'         : 'absolute;'
                                                      }));
+           $.addRule('input.caaAdd:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
+           $.addRule('input.caaAdd:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
 
             /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
