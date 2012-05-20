@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0509
+// @version     0.01.0510
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -402,9 +402,7 @@ function main ($, CONSTANTS) {
                                     if (!$tableParent.hasClass('tbl')) {
                                         $widthEle = $tableParent.parents('td:first');
                                     }
-console.log($widthEle.width())
-console.log(Math.round($widthEle.width()/132))
-                                    for (var i = 0, repeats = Math.round($widthEle.width()/132) - 2; i < repeats; i++) {
+                                    for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
                                            $(this).after($dropBox.clone());
                                     }
                                     $.log('Requesting CAA info for ' + $(this).data('entity'));
