@@ -341,11 +341,22 @@ function main ($, CONSTANTS) {
                                                           $.each(response.images, function parseCAAResponse (i) {
                                                               $.log('Parsing CAA response: image #' + i);
                                                               var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                                                              $emptyDropBox.find('img').prop('src', this.image).end()
-                                                                           .find('input').replaceWith($('<div>').text(this.comment)).end()
+                                                              $emptyDropBox.find('input').replaceWith($('<div>').text(this.comment)).end()
                                                                            .find('br').remove().end()
                                                                            .find('select').prop('disabled', true).end()
                                                                            .removeClass('newCAAimage');
+
+                                                              /* This next bit of code does the same thing as the lowsrc attribute.
+                                                                 This would have been easier, but lowsrc seems to no longer exist. */
+                                                              var $img = $emptyDropBox.find('img');
+                                                              $img.prop('src', localStorage.getItem('throbber'));
+                                                              var realImg = new Image();
+                                                              realImg.src = this.image;
+                                                              realImg.onload = function () {
+                                                                  $img.prop('src', this.image);
+                                                              };
+                                                              /* End lowsrc workaround. */
+
                                                               $.each(this.types, function (i) {
                                                                   var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
                                                                   $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
