@@ -14,6 +14,10 @@
 // @match       http://musicbrainz.org/release-group/*
 // @include     http://test.musicbrainz.org/release-group/*
 // @match       http://test.musicbrainz.org/release-group/*
+// @include     http://musicbrainz.org/label/*
+// @match       http://musicbrainz.org/label/*
+// @include     http://test.musicbrainz.org/label/*
+// @match       http://test.musicbrainz.org/label/*
 // @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
