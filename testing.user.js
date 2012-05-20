@@ -56,7 +56,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , TEXT          : {
                                   en : { 'Add cover art'          : 'Add cover art'
                                        , 'Images'                 : 'Images'
-                                       , 'Load CAA images'        : 'Load CAA images'
+                                       , 'Load CAA images'        : 'Load images from the Cover Art Archive'
                                        , 'coverType:Front'        : 'Front'
                                        , 'coverType:Back'         : 'Back'
                                        , 'coverType:Booklet'      : 'Booklet'
@@ -127,7 +127,8 @@ function main ($, CONSTANTS) {
             $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
-            $.addRule('.CAAdropbox', JSON.stringify({ 'float'            : 'left;'
+            $.addRule('.CAAdropbox', JSON.stringify({ 'border-radius'    : '6px;'
+                                                    , 'float'            : 'left;'
                                                     , 'margin'           : '6px;'
                                                     , 'min-height'       : '126px;'
                                                     , 'padding'          : '3px;'
