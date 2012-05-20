@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0373
+// @version     0.01.0416
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -129,6 +129,7 @@ function main ($, CONSTANTS) {
                                                     }));
             $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 14em; }');
             $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ font-size: 80%; clear: both; }');
+            $.addRule('.newCAAimage > div', '{ border: 1px dotted grey; background-color: #E0E0FF; margin-bottom: 6px!important; }');
             $.addRule('.CAAdropbox > figcaption > div', '{ height: 2.5em; }');
             $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
                                                                           , 'clear'            : 'both;'
@@ -153,6 +154,14 @@ function main ($, CONSTANTS) {
                                                       , 'opacity'          : '.35;'
                                                       , 'padding'          : '3px 8px;'
                                                       }));
+            /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break 
+               when table-layout: fixed is set. */
+            $.addRule('table.tbl .count', '{ width: 6em!important; }');
+            /* Explicitly set the width on the title field. */
+            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px')
+            $.addRule('table.tbl', '{ table-layout: fixed; }');
+            $.addRule('table.tbl * table', '{ width: 100%; }');
+            $.addRule('.imageRow', '{ overflow-x: auto; }');
 
             $.log('Adding css stylesheets');
             var sizes = CONSTANTS.IMAGESIZES,
@@ -274,6 +283,16 @@ function main ($, CONSTANTS) {
 
             var $dropBox = makeDropbox();
 
+            /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
+            var checkScroll = function checkScroll ($caaDiv) {
+                                  var $dropboxes = $caaDiv.find('.CAAdropbox');
+                                  var $dropbox   = $dropboxes.filter(':first')
+                                    , dbCount    = $dropboxes.length;
+                                  var dbWidth    = $dropbox.outerWidth(true);
+                                  var divWidth   = $('.CAAdropbox').length * dbWidth) + 'px';
+                                  $caaDiv.css('margin-right', Math.min(0, $caaDiv.width() - divWidth);
+            }
+
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
                                 $.log('Release row handler triggered.');
                                 var $releaseAnchor = $(this),
@@ -304,6 +323,7 @@ function main ($, CONSTANTS) {
                                 var colCount    = $releaseRow.find('td').length
                                   , thisMBID    = getMBID($releaseAnchor.attr('href'))
                                   , $imageRow   = $('<td/>').prop('colspan', colCount)
+                                                            .addClass('imageRow')
                                                             .wrap('<tr>')
                                                             .parent()
                                   ;
@@ -312,7 +332,8 @@ function main ($, CONSTANTS) {
                                 var $thisCAABtn = $caaBtn.clone()
                                                          .data('entity', thisMBID);
                                 var $newCAARow  = $imageRow.clone()
-                                                           .find('td').append($thisCAABtn).end()
+                                                           .find('td').append($('<div>').addClass('caaDiv')
+                                                                                        .append($thisCAABtn)).end()
                                                            .prop('class', $releaseRow.prop('class'));
                                 $thisForm.data(thisMBID, $newCAARow);
 
@@ -408,7 +429,10 @@ function thirdParty($, CONSTANTS) {
     var l = function l (str) {
         return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT.en[str]);
     };
-
+var addRule = function addRule (selector, rule) {
+        $('<style>' + selector + rule.replace(/[",]/g,'') + '</style>').appendTo($('head'));
+    };
+addRule('table.tbl .count', '{ width: 6em!important; }');
     var log = function log (str) {
         debug() && console.log(str);
     };
