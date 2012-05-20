@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0512
+// @version     0.01.0523
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -54,20 +54,22 @@ var CONSTANTS = { DEBUGMODE     : true
                 , SIDEBARHEIGHT : (screen.height - 300)
                 , THROBBER      : localStorage.getItem('throbber')
                 , TEXT          : {
-                                  en : { 'Add cover art'          : 'Add cover art'
-                                       , 'Images'                 : 'Images'
-                                       , 'Load CAA images'        : 'Load images from the Cover Art Archive'
-                                       , 'coverType:Front'        : 'Front'
-                                       , 'coverType:Back'         : 'Back'
-                                       , 'coverType:Booklet'      : 'Booklet'
-                                       , 'coverType:Medium'       : 'Medium'
-                                       , 'coverType:Obi'          : 'Obi'
-                                       , 'coverType:Spine'        : 'Spine'
-                                       , 'coverType:Track'        : 'Track'
-                                       , 'coverType:Other'        : 'Other'
-                                       , 'Add image one release'  : 'Add another empty image space to this release.'
-                                       , 'Load text one release'  : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
-                                       , 'Load text all releases' : 'Loads images and creates editing spaces, for all displayed releases.'
+                                  en : { 'Add cover art'           : 'Add cover art'
+                                       , 'Images'                  : 'Images'
+                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive'
+                                       , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
+                                       , 'coverType:Front'         : 'Front'
+                                       , 'coverType:Back'          : 'Back'
+                                       , 'coverType:Booklet'       : 'Booklet'
+                                       , 'coverType:Medium'        : 'Medium'
+                                       , 'coverType:Obi'           : 'Obi'
+                                       , 'coverType:Spine'         : 'Spine'
+                                       , 'coverType:Track'         : 'Track'
+                                       , 'coverType:Other'         : 'Other'
+                                       , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
+                                       , 'Add image one release'   : 'Add another empty image space to this release.'
+                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
+                                       , 'Load text all releases'  : 'Loads images and creates editing spaces, for all displayed releases.'
                                        },
                                   fr : {
                                        'Images' : 'Les Photos'
@@ -154,16 +156,16 @@ function main ($, CONSTANTS) {
             $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
             $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
             $.addRule('.caaDiv', '{ padding-left: 25px; }');
-            $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
-                                                      , 'border'           : '1px outset #FAFAFA!important;'
-                                                      , 'border-radius'    : '7px;'
-                                                      , 'color'            : 'white!important;'
-                                                      , 'font-size'        : '90%;'
-                                                      , 'margin-bottom'    : '16px;'
-                                                      , 'margin-top'       : '1px!important;'
-                                                      , 'opacity'          : '.35;'
-                                                      , 'padding'          : '3px 8px;'
-                                                      }));
+            $.addRule('input.caaLoad, input.caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
+                                                                    , 'border'           : '1px outset #FAFAFA!important;'
+                                                                    , 'border-radius'    : '7px;'
+                                                                    , 'color'            : 'white!important;'
+                                                                    , 'font-size'        : '90%;'
+                                                                    , 'margin-bottom'    : '16px;'
+                                                                    , 'margin-top'       : '1px!important;'
+                                                                    , 'opacity'          : '.35;'
+                                                                    , 'padding'          : '3px 8px;'
+                                                                    }));
             $.addRule('input.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
                                                      , 'border'           : '1px outset #FAFAFA!important;'
                                                      , 'border-radius'    : '16px;'
@@ -178,8 +180,9 @@ function main ($, CONSTANTS) {
                                                      , 'padding-top'      : '0px;'
                                                      , 'position'         : 'absolute;'
                                                      }));
-           $.addRule('input.caaAdd:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
-           $.addRule('input.caaAdd:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
+           $.addRule('input.caaAdd:hover, input.caaAll:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
+           $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
+           $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
 
             /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
@@ -281,6 +284,10 @@ function main ($, CONSTANTS) {
                                                           .prop('title', $.l('Add image one release'))
                                                           .addClass('caaAdd')
                                                           .hide()
+              , $loadingDiv     = $('<div>').text($.l('loading'))
+                                            .prepend($('<img>').prop('src', CONSTANTS.THROBBER))
+                                            .addClass('loadingDiv')
+                                            .hide()
               , getMBID         = function get_release_MBID (attrStr) {
                                       return attrStr.split('/')
                                                     .pop()
@@ -370,9 +377,11 @@ function main ($, CONSTANTS) {
                                                          .data('entity', thisMBID);
                                 var $thisCAABtn = $caaBtn.clone()
                                                          .data('entity', thisMBID);
+                                var $thisLoadingDiv = $loadingDiv.clone();
                                 var $newCAARow  = $imageRow.clone()
                                                            .find('td').append($('<div>').addClass('caaDiv')
                                                                                         .before($thisAddBtn)
+                                                                                        .before($thisLoadingDiv)
                                                                                         .append($thisCAABtn)).end()
                                                            .prop('class', $releaseRow.prop('class'));
                                 $thisForm.data(thisMBID, $newCAARow);
@@ -394,8 +403,9 @@ function main ($, CONSTANTS) {
 
                                 $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
                                     $.log('Add CAA images to release row button triggered.');
-                                    $(this).hide();
-                                    $newCAARow.find('div').slideUp();
+                                    $newCAARow.find('.loadingDiv').show();
+                                    $newCAARow.find('.caaLoad').hide();
+                                    $newCAARow.find('.caaDiv').slideUp();
                                     var $widthEle = $('.caaLoad:first').parents('td:first')
                                       , $tableParent = $('.caaLoad:first').parents('table:first')
                                       , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
@@ -413,8 +423,8 @@ function main ($, CONSTANTS) {
                                            , error    : function handler(jqXHR, textStatus, errorThrown) {
                                                             /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
                                                             $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-                                                            $newCAARow.find('div').slideDown('slow')
-                                                                      .prev().show(); /* CAA add button */
+                                                            $newCAARow.find('div.loadingDiv, input.caaAdd').toggle();
+                                                            $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
                                            , success  : function caaResponseHandler (response) {
                                                             $.log('Received CAA, parsing...');
@@ -440,20 +450,20 @@ function main ($, CONSTANTS) {
                                                                     $img.css('padding-top', '20px');
                                                                     var realImg = new Image();
                                                                     realImg.src = this.image;
-                                                                    realImg.onload = function () {
+                                                                    realImg.onload = function assign_real_caa_image () {
                                                                         $img.prop('src', realImg.src)
                                                                             .css('padding-top', '0px');
                                                                     };
                                                                     /* End lowsrc workaround. */
 
-                                                                    $.each(this.types, function (i) {
+                                                                    $.each(this.types, function assign_image_type (i) {
                                                                         var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
                                                                         $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
                                                                     });
                                                                 });
                                                             }
-                                                        $newCAARow.find('div').slideDown('slow')
-                                                                              .prev().show(); /* CAA add button */
+                                                        $newCAARow.find('div.loadingDiv, input.caaAdd').toggle();
+                                                        $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
                                            });
                                 });
@@ -466,6 +476,22 @@ function main ($, CONSTANTS) {
             $.log('Adding release row event handler.');
             $thisForm.find('tbody:first')
                      .on('DOMNodeInserted', 'table', addCAARow);
+        }();
+
+        !function init_add_caa_table_controls () {
+            $.log('Adding CAA load all releases button.');
+            var $caaAllBtn = $('<input type=button>').prop('value', $.l('Load CAA images for all'))
+                                                     .prop('title', $.l('Load text all releases'))
+                                                     .addClass('caaAll');
+            $('table.tbl').before($('<br/>'))
+                          .before($caaAllBtn);
+            $caaAllBtn.on('click', function caaAllBtn_click_handler () {
+                $.log('CAA load all releases\' images button has been clicked.');
+                $('.caaLoad:visible').each(function caaAllBtn_click_each_release_button () {
+                    $.log('Triggering a click on a CAA load images button.');
+                    $(this).trigger('click');
+                });
+            });
         }();
     };
 
