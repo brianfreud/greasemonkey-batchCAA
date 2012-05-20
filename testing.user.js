@@ -148,6 +148,7 @@ function main ($, CONSTANTS) {
             $.addRule('.CAAdropbox > div > img', '{ display: block; max-width: 120px; max-height: 120px; margin: 0 auto; }');
             $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
             $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
+            $.addRule('.caaDiv', '{ padding-left: 25px; }');
             $.addRule('input.caaLoad', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                       , 'border-radius'    : '7px;'
                                                       , 'color'            : 'white!important;'
@@ -164,7 +165,7 @@ function main ($, CONSTANTS) {
                                                      , 'font-size'        : '175%;'
                                                      , 'font-weight'      : '900!important;'
                                                      , 'left'             : '2em;'
-                                                     , 'margin-top'       : '-1.5em!important;'
+                                                     , 'margin-left'      : '-1.2em;!important;'
                                                      , 'opacity'          : '0.65;'
                                                      , 'padding-bottom'   : '0px;'
                                                      , 'padding-top'      : '0px;'
@@ -317,7 +318,7 @@ function main ($, CONSTANTS) {
                                   var dbWidth    = $dropbox.outerWidth(true);
                                   var divWidth   = ($('.CAAdropbox').length * dbWidth);
                                   $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
-                                  $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 90) + 'px');
+                                  $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
             };
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
