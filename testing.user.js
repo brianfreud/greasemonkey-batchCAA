@@ -171,7 +171,7 @@ function main ($, CONSTANTS) {
                                                      , 'position'         : 'absolute;'
                                                      }));
 
-            /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break 
+            /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
             $.addRule('table.tbl .count', '{ width: 6em!important; }');
             /* Explicitly set the width on the title field. */
@@ -379,7 +379,7 @@ function main ($, CONSTANTS) {
                                     var $imageDiv = $(this).next();
                                     $imageDiv.append($dropBox.clone());
                                     checkScroll($imageDiv);
-                                                            
+
                                 });
 
                                 $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
@@ -419,7 +419,7 @@ function main ($, CONSTANTS) {
                                                                                  .find('br').remove().end()
                                                                                  .find('select').prop('disabled', true).end()
                                                                                  .removeClass('newCAAimage');
-      
+
                                                                     /* This next bit of code does the same thing as the lowsrc attribute.  This would have
                                                                        been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
                                                                        http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
@@ -433,7 +433,7 @@ function main ($, CONSTANTS) {
                                                                             .css('padding-top', '0px');
                                                                     };
                                                                     /* End lowsrc workaround. */
-    
+
                                                                     $.each(this.types, function (i) {
                                                                         var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
                                                                         $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
@@ -506,7 +506,7 @@ function thirdParty($, CONSTANTS) {
         var matchParams = match[3].split(','),
             validLabels = /^(data|css):/,
             attr = {
-                method: matchParams[0].match(validLabels) ? 
+                method: matchParams[0].match(validLabels) ?
                             matchParams[0].split(':')[0] : 'attr',
                 property: matchParams.shift().replace(validLabels,'')
             },
