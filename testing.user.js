@@ -48,6 +48,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
                 , SIDEBARHEIGHT : (screen.height - 300)
+                , THROBBER      : localStorage.getItem('throbber')
                 , TEXT          : {
                                   en : { 'Add cover art'       : 'Add cover art'
                                        , 'Images'              : 'Images'
@@ -349,11 +350,13 @@ function main ($, CONSTANTS) {
                                                               /* This next bit of code does the same thing as the lowsrc attribute.
                                                                  This would have been easier, but lowsrc seems to no longer exist. */
                                                               var $img = $emptyDropBox.find('img');
-                                                              $img.prop('src', localStorage.getItem('throbber'));
+                                                              $img.prop('src', CONSTANTS.THROBBER)
+                                                                  .css('padding-top', '20px');
                                                               var realImg = new Image();
                                                               realImg.src = this.image;
                                                               realImg.onload = function () {
-                                                                  $img.prop('src', this.image);
+                                                                  $img.prop('src', realImg.src)
+                                                                      .css('padding-top', '0px');
                                                               };
                                                               /* End lowsrc workaround. */
 
