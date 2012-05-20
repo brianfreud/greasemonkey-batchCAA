@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0510
+// @version     0.01.0512
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -395,7 +395,7 @@ function main ($, CONSTANTS) {
                                 $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
                                     $.log('Add CAA images to release row button triggered.');
                                     $(this).hide();
-                                    $(this).parent().prev().show(); /* CAA add button */
+                                    $newCAARow.find('div').slideUp();
                                     var $widthEle = $('.caaLoad:first').parents('td:first')
                                       , $tableParent = $('.caaLoad:first').parents('table:first')
                                       , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
@@ -413,6 +413,8 @@ function main ($, CONSTANTS) {
                                            , error    : function handler(jqXHR, textStatus, errorThrown) {
                                                             /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
                                                             $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
+                                                            $newCAARow.find('div').slideDown('slow')
+                                                                      .prev().show(); /* CAA add button */
                                                         }
                                            , success  : function caaResponseHandler (response) {
                                                             $.log('Received CAA, parsing...');
@@ -450,6 +452,8 @@ function main ($, CONSTANTS) {
                                                                     });
                                                                 });
                                                             }
+                                                        $newCAARow.find('div').slideDown('slow')
+                                                                              .prev().show(); /* CAA add button */
                                                         }
                                            });
                                 });
