@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0500
+// @version     0.01.0502
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -397,41 +397,50 @@ function main ($, CONSTANTS) {
                                            $(this).after($dropBox.clone());
                                     }
                                     $.log('Requesting CAA info for ' + $(this).data('entity'));
-                                    $.ajax({ context: this
-                                           , url: caaRequest
-                                           , dataType: 'json'
-                                           , success: function caaResponseHandler (response) {
-                                                          $.log('Received CAA, parsing...');
-                                                          $.each(response.images, function parseCAAResponse (i) {
-                                                              $.log('Parsing CAA response: image #' + i);
-                                                              if ($newCAARow.find('.newCAAimage').length === 0) {
-                                                                  $thisAddBtn.trigger('click');
-                                                              }
-                                                              var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                                                              $emptyDropBox.find('input').replaceWith($('<div>').text(this.comment)).end()
-                                                                           .find('br').remove().end()
-                                                                           .find('select').prop('disabled', true).end()
-                                                                           .removeClass('newCAAimage');
-
-                                                              /* This next bit of code does the same thing as the lowsrc attribute.
-                                                                 This would have been easier, but lowsrc seems to no longer exist. */
-                                                              var $img = $emptyDropBox.find('img');
-                                                              $img[0].src = CONSTANTS.THROBBER;
-                                                              $img.css('padding-top', '20px');
-                                                              var realImg = new Image();
-                                                              realImg.src = this.image;
-                                                              realImg.onload = function () {
-                                                                  $img.prop('src', realImg.src)
-                                                                      .css('padding-top', '0px');
-                                                              };
-                                                              /* End lowsrc workaround. */
-
-                                                              $.each(this.types, function (i) {
-                                                                  var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
-                                                                  $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
-                                                              });
-                                                          });
-                                                      }
+                                    $.ajax({ cache    : false
+                                           , context  : this
+                                           , url      : caaRequest
+                                           , error    : function handler(jqXHR, textStatus, errorThrown) {
+                                                            /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
+                                                            $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
+                                                        }
+                                           , success  : function caaResponseHandler (response) {
+                                                            $.log('Received CAA, parsing...');
+                                                            if (jQuery.isEmptyObject(response)) {
+                                                                $.log('CAA response: no images in CAA for this release.');
+                                                            } else {
+                                                                $.each(response.images, function parseCAAResponse (i) {
+                                                                    $.log('Parsing CAA response: image #' + i);
+                                                                    if ($newCAARow.find('.newCAAimage').length === 0) {
+                                                                        $thisAddBtn.trigger('click');
+                                                                    }
+                                                                    var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
+                                                                    $emptyDropBox.find('input').replaceWith($('<div>').text(this.comment)).end()
+                                                                                 .find('br').remove().end()
+                                                                                 .find('select').prop('disabled', true).end()
+                                                                                 .removeClass('newCAAimage');
+      
+                                                                    /* This next bit of code does the same thing as the lowsrc attribute.  This would have
+                                                                       been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
+                                                                       http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
+                                                                    var $img = $emptyDropBox.find('img');
+                                                                    $img[0].src = CONSTANTS.THROBBER;
+                                                                    $img.css('padding-top', '20px');
+                                                                    var realImg = new Image();
+                                                                    realImg.src = this.image;
+                                                                    realImg.onload = function () {
+                                                                        $img.prop('src', realImg.src)
+                                                                            .css('padding-top', '0px');
+                                                                    };
+                                                                    /* End lowsrc workaround. */
+    
+                                                                    $.each(this.types, function (i) {
+                                                                        var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
+                                                                        $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
+                                                                    });
+                                                                });
+                                                            }
+                                                        }
                                            });
                                 });
                             };
