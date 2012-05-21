@@ -323,7 +323,8 @@ function main ($, CONSTANTS) {
                                                           .addClass('caaAdd')
                                                           .hide()
               , $loadingDiv     = $('<div>').text($.l('loading'))
-                                            .prepend($('<img>').prop('src', CONSTANTS.THROBBER))
+                                            .prepend($('<img>').prop('src', CONSTANTS.THROBBER)
+                                                               .addClass('throbberImage'))
                                             .addClass('loadingDiv')
                                             .hide()
               , getMBID         = function get_release_MBID (attrStr) {
@@ -352,7 +353,8 @@ function main ($, CONSTANTS) {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
                                   var $dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
-                                                              .append($('<img>').wrap('<div>').parent())
+                                                              .append($('<img>').addClass('dropBoxImage')
+                                                                                .wrap('<div>').parent())
                                                               .append($('<figcaption>').append($('<input type="text"/></br>'))
                                                                                        .append($types));
                                   return $dropbox;
@@ -518,6 +520,13 @@ function main ($, CONSTANTS) {
         }();
     };
 
+    /* Preview functionality */
+    $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
+        $.log('Setting new image for preview box.');
+        $('#previewImage').prop('src', $(this).prop('src'));
+    });
+
+    /* Adjust the table layout and CAA rows after a screen resize event occurs. */
     window.onresize = function adjust_table_after_window_resize () {
         $.log('Screen resize detected, adjusting layout.');
         if ((window.outerHeight - window.innerHeight) > 100) {
