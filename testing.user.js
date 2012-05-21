@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0523
+// @version     0.01.0766
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -39,6 +39,11 @@ Opera: Compatible?  Definitely requires minimum of version 12.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
+                , DEBUGLOG_OVER : false
+                , COLORS        : { ACTIVE  : 'lightSteelBlue'
+                                  , BORDERS : '1px dotted grey'
+                                  , EDITING : '#C1FFC1'
+                                  }
                 , COVERTYPES    : [ 'Front'
                                   , 'Back'
                                   , 'Booklet'
@@ -54,6 +59,9 @@ var CONSTANTS = { DEBUGMODE     : true
                 , SIDEBARHEIGHT : (screen.height - 300)
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
+                , BEINGDRAGGED  : { OPACITY : '0.4'
+                                  , SHRINK  : '0.7'
+                                  }
                 , TEXT          : {
                                   en : { 'Add cover art'           : 'Add cover art'
                                        , 'Images'                  : 'Images'
@@ -110,31 +118,24 @@ function main ($, CONSTANTS) {
     var init = function init () {
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
-            $('#page').css('background', 'white');
+            $('#page').css('background', '#FFF');
         }();
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
             $imageContainer = $('<div id="imageContainer"/>');
-            $previewContainer = $('<div id="previewContainer"/>').append($('<img id="previewImage"/>'));
+            $previewContainer = $('<div id="previewContainer"/>').append($('<img id="previewImage"/>'))
+                                                                 .append($('<br/>'))
+                                                                 .append($('<div id="previewText"/>'));
 
 
             $('#sidebar').empty()
                          .append($('<h1 id="imageHeader"/>').text($.l('Images')))
                          .append($('<br/><br/>'))
                          .append($imageContainer)
-                         .append($('<hr/>').css('border-top', '1px dotted grey'))
+                         .append($('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS))
                          .append($('<h1 id="previewHeader"/>').text($.l('Preview Image')))
                          .append($previewContainer);
-        }();
-
-        !function init_activate_dnd_on_page () {
-            $.log('Attaching events to body.');
-            $('body').on('dragenter dragleave dragover drop', function bodyDrag(e) {
-                    e.preventDefault();
-                    $.debug() && $(this).css('background-color', 'blue');
-                    $.log('There was a drag event on the page.');
-                });
         }();
 
         !function init_add_css () {
@@ -142,6 +143,7 @@ function main ($, CONSTANTS) {
             $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
+            $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
             $.addRule('.CAAdropbox', JSON.stringify({ 'border-radius'    : '6px;'
                                                     , 'float'            : 'left;'
                                                     , 'margin'           : '6px;'
@@ -152,7 +154,11 @@ function main ($, CONSTANTS) {
                                                     }));
             $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 14em; }');
             $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ font-size: 80%; clear: both; }');
-            $.addRule('.newCAAimage > div', '{ border: 1px dotted grey; background-color: #E0E0FF; margin-bottom: 6px!important; }');
+            $.addRule('.newCAAimage > div', JSON.stringify({ 'background-color' : '#E0E0FF;'
+                                                           , 'border'           : CONSTANTS.COLORS.BORDERS + ';'
+                                                           , 'margin-bottom'    : '6px!important;'
+                                                           }));
+            $.addRule('.workingCAAimage > div', '{ margin-bottom: 8px!important; }');
             $.addRule('.CAAdropbox > figcaption > div', '{ height: 2.5em; }');
             $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
                                                                           , 'clear'            : 'both;'
@@ -172,12 +178,20 @@ function main ($, CONSTANTS) {
             $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
             $.addRule('table.tbl * table', '{ width: 100%; }');
             $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
+            var shrink = 'scale(' + CONSTANTS.BEINGDRAGGED.SHRINK + ');';
+            $.addRule('.beingDragged', JSON.stringify({ 'opacity'    : CONSTANTS.BEINGDRAGGED.OPACITY + ';'
+                                                      , 'transform'         : shrink
+                                                      , '-webkit-transform' : shrink
+                                                      , '-o-transform'      : shrink
+                                                      , '-moz-transform'    : shrink
+                                                      }));
+            $.addRule('.over', '{ background-color: ' + CONSTANTS.COLORS.ACTIVE + '; }');
 
            /* Start control buttons */
             $.addRule('input.caaLoad, input.caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
                                                                     , 'border'           : '1px outset #FAFAFA!important;'
                                                                     , 'border-radius'    : '7px;'
-                                                                    , 'color'            : 'white!important;'
+                                                                    , 'color'            : '#FFF!important;'
                                                                     , 'font-size'        : '90%;'
                                                                     , 'margin-bottom'    : '16px;'
                                                                     , 'margin-top'       : '1px!important;'
@@ -187,7 +201,7 @@ function main ($, CONSTANTS) {
             $.addRule('input.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
                                                      , 'border'           : '1px outset #FAFAFA!important;'
                                                      , 'border-radius'    : '16px;'
-                                                     , 'color'            : 'white!important;'
+                                                     , 'color'            : '#FFF!important;'
                                                      , 'float'            : 'left;'
                                                      , 'font-size'        : '175%;'
                                                      , 'font-weight'      : '900!important;'
@@ -199,22 +213,23 @@ function main ($, CONSTANTS) {
                                                      , 'position'         : 'absolute;'
                                                      }));
            $.addRule('input.caaAdd:hover, input.caaAll:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
-           $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: white; border-style: inset!important; }');
+           $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: #FFF; border-style: inset!important; }');
            /* End control buttons */
 
            /* Start right side layout */
-           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : '1px dotted grey;'
+           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : CONSTANTS.COLORS.BORDERS + ';'
                                                 , 'padding-left' : '8px;'
                                                 , 'position'     : 'fixed;'
                                                 , 'right'        : '20px;'
                                                 , 'width'        : CONSTANTS.SIDEBARWIDTH + 'px;'
                                                 }));
-           $.addRule('#imageContainer, #previewContainer', '{ overflow-y: auto; width: 100%; }');
+           $.addRule('#imageContainer, #previewContainer', '{ width: 100%; }');
+           $.addRule('#imageContainer', '{ width: 100%; }');
            var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE) + 'px;';
            $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
-           size = (CONSTANTS.PREVIEWSIZE + 22) + 'px;';
-           $.addRule('#previewContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
-           size = (CONSTANTS.PREVIEWSIZE) + 'px;';
+           size = (CONSTANTS.PREVIEWSIZE + 37);
+           $.addRule('#previewContainer', '{ height: ' + size + 'px; max-height: ' + size + 'px; }');
+           size = (CONSTANTS.PREVIEWSIZE + 15) + 'px;';
            $.addRule('#previewImage', JSON.stringify({ 'display' : 'block;'
                                                      , 'height'  : size
                                                      , 'margin'  : '0 auto;'
@@ -264,45 +279,52 @@ function main ($, CONSTANTS) {
 
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
-            var dragfunc = function dragfunc (e, ltext) {
-                e.preventDefault();
-                $.log('There was a ' + ltext + ' event at the drop zone.');
-            };
             $imageContainer.on({
                 dragenter: function dragEnter(e) {
-                    dragfunc(e, 'dragenter');
-                    $(this).css('background-color', 'lightblue;');
+                    $.log('imageContainer: dragenter.');
+                    $(this).addClass('over');
                 },
                 dragleave: function dragLeave(e) {
-                    dragfunc(e, 'dragleave');
-                    $(this).css('background-color', 'white');
+                    $.log('imageContainer: dragleave.');
+                    $(this).removeClass('over');
                 },
                 dragover: function dragOver(e) {
-                    dragfunc(e, 'dragover');
+                    $.log('imageContainer: dragover.', 1);
+                    e.preventDefault();
                 },
                 drop: function drop(e) {
-                    dragfunc(e, 'drop');
-                    $(this).css('background-color', 'white');
+                    $.log('imageContainer: drop.');
+                    $(this).removeClass('over');
                     e = e.originalEvent || e;
 
                     var files = (e.files || e.dataTransfer.files)
                       , $img = $('<img/>').addClass('localImage')
+                                          .prop('draggable', true)
                                           .data('source', 'local');
                     for (var i = 0; i < files.length; i++) {
                         if (!files[i].type.match(/image\/p?jpeg/)) {
                             continue;
                         }
                         !function add_dropped_image (i) {
-                            var reader = new FileReader();
-                            reader.onload = function add_attributes_to_dropped_image(event) {
+                            var dataURLreader = new FileReader()
+                              , binaryReader  = new FileReader();
+                            dataURLreader.onload = function add_attributes_to_dropped_image (event) {
                                 var $newImg = $img.clone()
                                                   .prop({ alt   : (files[i].name)
                                                         , title : (files[i].name)
                                                         , src   : event.target.result
                                                         });
-                                $imageContainer.append($newImg);
+                                $imageContainer.append($newImg.data('file', files[i]));
                             };
-                            reader.readAsDataURL(files[i]);
+                            binaryReader.onloadend = function get_exif_for_dropped_image (event) {
+                                var jpeg = new JpegMeta.JpegFile(this.result, files[i].name);
+                                console.dir(jpeg);
+                                
+                                
+                                
+                            };
+                            binaryReader.readAsBinaryString(files[i]);
+                            dataURLreader.readAsDataURL(files[i]);
                         }(i);
                     }
                 }
@@ -485,6 +507,7 @@ function main ($, CONSTANTS) {
                                                                         var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
                                                                         $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
                                                                     });
+                                                                    checkScroll($newCAARow.find('div.loadingDiv'));
                                                                 });
                                                             }
                                                         $newCAARow.find('div.loadingDiv, input.caaAdd').toggle();
@@ -524,7 +547,75 @@ function main ($, CONSTANTS) {
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         $.log('Setting new image for preview box.');
         $('#previewImage').prop('src', $(this).prop('src'));
+//previewText
     });
+
+    /* START: functionality to allow dragging from the Images box to a specific caa image box. */
+    var $draggedImage = null,
+        inChild       = false;
+
+    /* http://weblog.bocoup.com/using-datatransfer-with-jquery-events/ */
+    jQuery.event.props.push('dataTransfer');
+
+    $('body').on({
+                 dragstart : function localImage_dragStart (e) {
+                                 $.log('localImage: dragstart');
+                                 $draggedImage = $(this).addClass('beingDragged');
+                                 e.dataTransfer.dropEffect='move';
+                                 e.dataTransfer.effectAllowed = 'move';
+                             },
+                 dragend   : function localImage_dragEnd (e) {
+                                 $.log('localImage: dragend');
+                                 if ($draggedImage !== null) {
+                                     $draggedImage.removeClass('beingDragged');
+                                     $('figure').removeClass('over');
+                                 }
+                                 $draggedImage = null;
+                             }
+    }, '.localImage');
+
+    $('body').on({
+                dragover : function newCAAimage_dragOver (e) {
+                                $.log('newCAAimage: dragover');
+                                e.preventDefault();
+                                return false;
+                            },
+                dragenter : function newCAAimage_dragEnter (e) {
+                                $.log('newCAAimage: dragenter');
+                                e.preventDefault();
+                                if ($draggedImage !== null) {
+                                    inChild = !$(e.target).hasClass('newCAAimage');
+                                    $('figure').removeClass('over');
+                                    $(this).addClass('over');
+                                }
+                                return false;
+                            },
+                dragleave : function newCAAimage_dragLeave (e) {
+                                $.log('loadingDiv: dragleave');
+                                e.preventDefault();
+                                if ($draggedImage !== null) {
+                                    /* https://bugs.webkit.org/show_bug.cgi?id=66547 */
+                                    if (!inChild) {
+                                        $(this).removeClass('over');
+                                    }
+                                }
+                                return false;
+                            },
+                drop      : function newCAAimage_drop (e) {
+                                $.log('newCAAimage: drop');
+                                e.preventDefault();
+                                if ($draggedImage !== null) {
+                                    $(this).find('.dropBoxImage').replaceWith($draggedImage);
+                                    $draggedImage.toggleClass('beingDragged dropBoxImage localImage')
+                                                 .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
+                                                                         .css('background-color', CONSTANTS.COLORS.EDITING);
+                                    $('figure').removeClass('over');
+                                    $draggedImage = null;
+                                }
+                                return false;
+                }
+    }, '.newCAAimage');
+    /* END: functionality to allow dragging from the Images box to a specific caa image box. */
 
     /* Adjust the table layout and CAA rows after a screen resize event occurs. */
     window.onresize = function adjust_table_after_window_resize () {
@@ -565,8 +656,9 @@ function thirdParty($, CONSTANTS) {
         return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT.en[str]);
     };
 
-    var log = function log (str) {
-        debug() && console.log(str);
+    var log = function log (str, over) {
+        'undefined' === typeof(over) && (over = false);
+        debug() && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
     };
 
     jQuery.extend({
@@ -627,6 +719,7 @@ function thirdParty($, CONSTANTS) {
             i++;
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
+            requires[3] = 'jsjpegmeta';
         }
         if (i === 0) { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
@@ -636,9 +729,9 @@ function thirdParty($, CONSTANTS) {
             }, true);
             head.appendChild(script);
         } else { /* Scripts are cached in localStorage; load them. */
-            for (var j = 0; j < i; j++) {
+            for (var j = 1, k = requires.length; j < k; j++) {
                 makeScript();
-                script.textContent = localStorage.getItem(requires[i]);
+                script.textContent = localStorage.getItem(requires[j]);
                 head.appendChild(script);
             }
             continueLoading();
