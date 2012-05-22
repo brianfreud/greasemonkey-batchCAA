@@ -240,7 +240,7 @@ function main ($, CONSTANTS) {
                                                 , 'width'        : CONSTANTS.SIDEBARWIDTH + 'px;'
                                                 }));
            $.addRule('#imageContainer, #previewContainer', '{ width: 100%; }');
-           $.addRule('#imageContainer', '{ overflow-y: scroll; }');
+           $.addRule('#imageContainer', '{ overflow-y: auto; }');
            var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE) + 'px;';
            $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
            size = (CONSTANTS.PREVIEWSIZE + 37);
@@ -250,9 +250,25 @@ function main ($, CONSTANTS) {
                                                      , 'height'  : size
                                                      , 'margin'  : '0 auto;'
                                                      , 'padding' : '15px 0 0 0;'
-                                                     , 'width'   : size
+                                                     , 'max-width'   : size
                                                      }));
            /* End right side layout */
+
+           $.addRule('.closeButton', JSON.stringify({ 'background-color' : '#FFD0DB;'
+                                                    , 'border'           : '1px solid #EEC9C8;'
+                                                    , 'border-radius'    : '8px;'
+                                                    , 'cursor'           : 'pointer;'
+                                                    , 'float'            : 'right;'
+                                                    , 'line-height'      : '.8em;'
+                                                    , 'margin-right'     : '-1em;'
+                                                    , 'margin-top'       : '-1em;'
+                                                    , 'opacity'          : '0.9;'
+                                                    , 'padding'          : '2px 4px 5px 4px;'
+                                                     }));
+           $.addRule('.closeButton:hover', JSON.stringify({ 'background-color' : '#FF82AB;'
+                                                    , 'font-weight'      : '900;'
+                                                    , 'opacity'          : '1.0;'
+                                                     }));
 
             /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
                when table-layout: fixed is set. */
@@ -398,10 +414,17 @@ function main ($, CONSTANTS) {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
                                   var $dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
+                                                              .append($('<header>').text('x')
+                                                                                   .addClass('closeButton'))
                                                               .append($('<img>').addClass('dropBoxImage')
                                                                                 .wrap('<div>').parent())
                                                               .append($('<figcaption>').append($('<input type="text"/></br>'))
-                                                                                       .append($types));
+                                                                                       .append($types))
+                                                              .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
+                                                                                               $.log('Removing drop box');
+//TODO: Test if image already is in dropbox.  Move it back to the image store, if true.
+                                                                                               $(this).parent().remove();
+                                                                                           });
                                   return $dropbox;
                              };
 
@@ -466,7 +489,7 @@ function main ($, CONSTANTS) {
                                 $thisAddBtn.on('click', function invoke_Add_image_space_button_click_handler () {
                                     $.log('Add new CAA image space button triggered.');
                                     var $imageDiv = $(this).next();
-                                    $imageDiv.append($dropBox.clone());
+                                    $imageDiv.append($dropBox.clone(true));
                                     checkScroll($imageDiv);
 
                                 });
@@ -484,7 +507,7 @@ function main ($, CONSTANTS) {
                                         $widthEle = $tableParent.parents('td:first');
                                     }
                                     for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
-                                           $(this).after($dropBox.clone());
+                                           $(this).after($dropBox.clone(true));
                                     }
                                     $.log('Requesting CAA info for ' + $(this).data('entity'));
                                     $.ajax({ cache    : false
@@ -508,7 +531,7 @@ function main ($, CONSTANTS) {
                                                                     }
                                                                     var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
                                                                     $emptyDropBox.find('input').replaceWith($('<div>').text(this.comment)).end()
-                                                                                 .find('br').remove().end()
+                                                                                 .find('br, .closeButton').remove().end()
                                                                                  .find('select').prop('disabled', true).end()
                                                                                  .removeClass('newCAAimage');
 
