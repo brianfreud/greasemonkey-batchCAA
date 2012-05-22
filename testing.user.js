@@ -240,7 +240,7 @@ function main ($, CONSTANTS) {
                                                 , 'width'        : CONSTANTS.SIDEBARWIDTH + 'px;'
                                                 }));
            $.addRule('#imageContainer, #previewContainer', '{ width: 100%; }');
-           $.addRule('#imageContainer', '{ width: 100%; }');
+           $.addRule('#imageContainer', '{ overflow-y: scroll; }');
            var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE) + 'px;';
            $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
            size = (CONSTANTS.PREVIEWSIZE + 37);
@@ -341,7 +341,7 @@ function main ($, CONSTANTS) {
                                 $image.data('size', addCommas($image.data('size')));
                                 $image.data('name', files[i].name || files[i].fileName);
                                 var logStr = 'Loaded new image: ' + $image.data('name') +
-                                             '.  Image has resolution: ' + $image.data('resolution') + ', ' +
+                                             '.  Image has a resolution of ' + $image.data('resolution') + ', ' +
                                              $image.data('depth') + '-bit color depth, ' + 
                                             'and a filesize of ' + $image.data('size') + ' bytes.';
                                 $.log(logStr);
