@@ -422,7 +422,10 @@ function main ($, CONSTANTS) {
                                                                                        .append($types))
                                                               .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
                                                                                                $.log('Removing drop box');
-//TODO: Test if image already is in dropbox.  Move it back to the image store, if true.
+                                                                                               $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
+                                                                                                      .appendTo($('#imageContainer'))
+                                                                                                      .addClass('localImage')
+                                                                                                      .removeClass('dropBoxImage')
                                                                                                $(this).parent().remove();
                                                                                            });
                                   return $dropbox;
