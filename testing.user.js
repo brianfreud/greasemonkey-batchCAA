@@ -23,7 +23,7 @@
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
 // ==/UserScript==
 
-/*global console */
+/*global console JpegMeta */
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
 /* Installation and requirements:
@@ -113,6 +113,22 @@ function main ($, CONSTANTS) {
         var divWidth   = ($('.CAAdropbox').length * dbWidth);
         $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
         $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
+    };
+
+    /* Converts a number into a comma-separated number. */
+    var addCommas = function addCommas (numberString) {
+        var x
+          , x1
+          , x2
+          , separatorRegexp = /(\d+)(\d{3})/;
+
+        x = ('' + numberString).split('.');
+        x1 = x[0];
+        x2 = x.length > 1 ? '.' + x[1] : '';
+        while (separatorRegexp.test(x1)) {
+            x1 = x1.replace(separatorRegexp, '$1' + ',' + '$2');
+        }
+        return x1 + x2;
     };
 
     var init = function init () {
@@ -317,11 +333,18 @@ function main ($, CONSTANTS) {
                                 $imageContainer.append($newImg.data('file', files[i]));
                             };
                             binaryReader.onloadend = function get_exif_for_dropped_image (event) {
-                                var jpeg = new JpegMeta.JpegFile(this.result, files[i].name);
-                                console.dir(jpeg);
-                                
-                                
-                                
+                                var jpeg = new JpegMeta.JpegFile(this.result, files[i].name)
+                                  , $image = $imageContainer.find('.localImage:last');
+                                $image.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
+                                $image.data('depth', jpeg.general.depth.value);
+                                $image.data('size', files[i].size || files[i].fileSize);
+                                $image.data('size', addCommas($image.data('size')));
+                                $image.data('name', files[i].name || files[i].fileName);
+                                var logStr = 'Loaded new image: ' + $image.data('name') +
+                                             '.  Image has resolution: ' + $image.data('resolution') + ', ' +
+                                             $image.data('depth') + '-bit color depth, ' + 
+                                            'and a filesize of ' + $image.data('size') + ' bytes.';
+                                $.log(logStr);
                             };
                             binaryReader.readAsBinaryString(files[i]);
                             dataURLreader.readAsDataURL(files[i]);
