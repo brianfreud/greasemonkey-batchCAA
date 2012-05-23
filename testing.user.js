@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0796
+// @version     0.01.0799
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -349,7 +349,18 @@ function main ($, CONSTANTS) {
             }
         };
 
-        var loadRemoteFile = function load_remote_file (uris) {
+        var testImageUri = function test_for_valid_image_uri (uri) {
+            /* Testing for: jpg jpeg jpe jfif jif pjpeg */
+            var jpegTest = /\.p?j(pg|peg?|f?if)$/i;
+            return jpegTest.test(uri);
+        };
+
+        var loadRemoteFile = function load_remote_file (uri) {
+            if (!testImageUri(uri)) {
+                $.log(uri + ' does not appear to be a jpeg, skipping.');
+                return;
+            }
+            $.log(uri + ' appears to be a jpeg, continuing.');
 //TODO
         };
 
@@ -374,23 +385,32 @@ function main ($, CONSTANTS) {
 
                     e = e.originalEvent || e;
 
-                    var urlTest = /(\b(https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/gi;
+                    var uriTest = /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi;
                     var dropped = { file_list : e.dataTransfer.files
-                                  , text      : e.dataTransfer.getData('Text').match(urlTest)
+                                  , text      : e.dataTransfer.getData('Text').match(uriTest) || ''
                                   , uri       : e.dataTransfer.getData('text/uri-list')
                                   };
-                    if (dropped.file_list.length) { // local file
-                        $.log('imageContainer: drop ==> local file');
-                        loadLocalFile(e);
-                    } else if (dropped.uri.length) { // remote image drag/dropped
-                        $.log('imageContainer: drop ==> image uri');
-                        loadRemoteFile(dropped.uri);
-                    } else if (dropped.text.length) { // plaintext list of urls drag/dropped
-                        $.log('imageContainer: drop ==> list of uris');
-                        for (var i = 0, len = dropped.text.length; i < len; i++) {
-                            loadRemoteFile(dropped.text[i]);
-                        }
+
+                    $.log(dropped);
+                    switch (!0) {
+                        case !!dropped.file_list.length: // local file
+                            $.log('imageContainer: drop ==> local file'); 
+                            loadLocalFile(e); 
+                            break;
+                        case !!dropped.uri.length: // remote image drag/dropped
+                            $.log('imageContainer: drop ==> image uri');
+                            loadRemoteFile(dropped.uri);
+                            break;
+                        case !!dropped.text.length: // plaintext list of urls drag/dropped
+                            $.log('imageContainer: drop ==> list of uris');
+                            for (var i = 0, len = dropped.text.length; i < len; i++) {
+                                loadRemoteFile(dropped.text[i]);
+                            }
+                            break;
+                        default:
+                            $.log('Whatever was just dropped is not something which can provide a jpeg.');
                     }
+                    
                 }
             });
         }();
@@ -621,7 +641,7 @@ function main ($, CONSTANTS) {
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         $.log('Setting new image for preview box.');
         $('#previewImage').prop('src', $(this).prop('src'));
-//previewText
+//TODO: previewText
     });
 
     /* START: functionality to allow dragging from the Images box to a specific caa image box. */
