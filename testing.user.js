@@ -372,16 +372,21 @@ function main ($, CONSTANTS) {
                     $.log('imageContainer: drop.');
                     $(this).removeClass('over');
 
+                    e = e.originalEvent || e;
+
                     var urlTest = /(\b(https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/gi;
                     var dropped = { file_list : e.dataTransfer.files
                                   , text      : e.dataTransfer.getData('Text').match(urlTest)
                                   , uri       : e.dataTransfer.getData('text/uri-list')
                                   };
                     if (dropped.file_list.length) { // local file
+                        $.log('imageContainer: drop ==> local file');
                         loadLocalFile(e);
                     } else if (dropped.uri.length) { // remote image drag/dropped
+                        $.log('imageContainer: drop ==> image uri');
                         loadRemoteFile(dropped.uri);
                     } else if (dropped.text.length) { // plaintext list of urls drag/dropped
+                        $.log('imageContainer: drop ==> list of uris');
                         for (var i = 0, len = dropped.text.length; i < len; i++) {
                             loadRemoteFile(dropped.text[i]);
                         }
