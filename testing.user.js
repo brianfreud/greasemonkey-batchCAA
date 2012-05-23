@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0787
+// @version     0.01.0796
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -309,6 +309,50 @@ function main ($, CONSTANTS) {
             $.imagesSmall();
         }();
 
+        var loadLocalFile = function load_local_file (e) {
+            var files = (e.files || e.dataTransfer.files)
+              , $img = $('<img/>').addClass('localImage')
+                                          .prop('draggable', true)
+                                          .data('source', 'local');
+            for (var i = 0; i < files.length; i++) {
+                if (!files[i].type.match(/image\/p?jpeg/)) {
+                    continue;
+                }
+                !function add_dropped_image (i) {
+                    var dataURLreader = new FileReader()
+                      , binaryReader  = new FileReader();
+                    dataURLreader.onload = function add_attributes_to_dropped_image (event) {
+                        var $newImg = $img.clone()
+                                          .prop({ alt   : (files[i].name)
+                                                , title : (files[i].name)
+                                                , src   : event.target.result
+                                                });
+                        $imageContainer.append($newImg.data('file', files[i]));
+                    };
+                    binaryReader.onloadend = function get_exif_for_dropped_image (event) {
+                        var jpeg = new JpegMeta.JpegFile(this.result, files[i].name)
+                          , $image = $imageContainer.find('.localImage:last');
+                        $image.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
+                        $image.data('depth', jpeg.general.depth.value);
+                        $image.data('size', files[i].size || files[i].fileSize);
+                        $image.data('size', addCommas($image.data('size')));
+                        $image.data('name', files[i].name || files[i].fileName);
+                        var logStr = 'Loaded new image: ' + $image.data('name') +
+                                     '.  Image has a resolution of ' + $image.data('resolution') + ', ' +
+                                     $image.data('depth') + '-bit color depth, ' + 
+                                    'and a filesize of ' + $image.data('size') + ' bytes.';
+                        $.log(logStr);
+                    };
+                    binaryReader.readAsBinaryString(files[i]);
+                    dataURLreader.readAsDataURL(files[i]);
+                }(i);
+            }
+        };
+
+        var loadRemoteFile = function load_remote_file (uris) {
+//TODO
+        };
+
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
             $imageContainer.on({
@@ -327,44 +371,20 @@ function main ($, CONSTANTS) {
                 drop: function drop(e) {
                     $.log('imageContainer: drop.');
                     $(this).removeClass('over');
-                    e = e.originalEvent || e;
 
-                    var files = (e.files || e.dataTransfer.files)
-                      , $img = $('<img/>').addClass('localImage')
-                                          .prop('draggable', true)
-                                          .data('source', 'local');
-                    for (var i = 0; i < files.length; i++) {
-                        if (!files[i].type.match(/image\/p?jpeg/)) {
-                            continue;
+                    var urlTest = /(\b(https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|])/gi;
+                    var dropped = { file_list : e.dataTransfer.files
+                                  , text      : e.dataTransfer.getData('Text').match(urlTest)
+                                  , uri       : e.dataTransfer.getData('text/uri-list')
+                                  };
+                    if (dropped.file_list.length) { // local file
+                        loadLocalFile(e);
+                    } else if (dropped.uri.length) { // remote image drag/dropped
+                        loadRemoteFile(dropped.uri);
+                    } else if (dropped.text.length) { // plaintext list of urls drag/dropped
+                        for (var i = 0, len = dropped.text.length; i < len; i++) {
+                            loadRemoteFile(dropped.text[i]);
                         }
-                        !function add_dropped_image (i) {
-                            var dataURLreader = new FileReader()
-                              , binaryReader  = new FileReader();
-                            dataURLreader.onload = function add_attributes_to_dropped_image (event) {
-                                var $newImg = $img.clone()
-                                                  .prop({ alt   : (files[i].name)
-                                                        , title : (files[i].name)
-                                                        , src   : event.target.result
-                                                        });
-                                $imageContainer.append($newImg.data('file', files[i]));
-                            };
-                            binaryReader.onloadend = function get_exif_for_dropped_image (event) {
-                                var jpeg = new JpegMeta.JpegFile(this.result, files[i].name)
-                                  , $image = $imageContainer.find('.localImage:last');
-                                $image.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
-                                $image.data('depth', jpeg.general.depth.value);
-                                $image.data('size', files[i].size || files[i].fileSize);
-                                $image.data('size', addCommas($image.data('size')));
-                                $image.data('name', files[i].name || files[i].fileName);
-                                var logStr = 'Loaded new image: ' + $image.data('name') +
-                                             '.  Image has a resolution of ' + $image.data('resolution') + ', ' +
-                                             $image.data('depth') + '-bit color depth, ' + 
-                                            'and a filesize of ' + $image.data('size') + ' bytes.';
-                                $.log(logStr);
-                            };
-                            binaryReader.readAsBinaryString(files[i]);
-                            dataURLreader.readAsDataURL(files[i]);
-                        }(i);
                     }
                 }
             });
@@ -425,7 +445,7 @@ function main ($, CONSTANTS) {
                                                                                                $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
                                                                                                       .appendTo($('#imageContainer'))
                                                                                                       .addClass('localImage')
-                                                                                                      .removeClass('dropBoxImage')
+                                                                                                      .removeClass('dropBoxImage');
                                                                                                $(this).parent().remove();
                                                                                            });
                                   return $dropbox;
