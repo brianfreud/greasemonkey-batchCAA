@@ -1,29 +1,39 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0799
+// @version     0.01.0805
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
+// @include     http://beta.musicbrainz.org/artist/*
+// @match       http://beta.musicbrainz.org/artist/*
 // @include     http://test.musicbrainz.org/artist/*
 // @match       http://test.musicbrainz.org/artist/*
 // @include     http://musicbrainz.org/artist/*/releases
 // @match       http://musicbrainz.org/artist/*/releases
+// @include     http://beta.musicbrainz.org/artist/*/releases
+// @match       http://beta.musicbrainz.org/artist/*/releases
 // @include     http://test.musicbrainz.org/artist/*/releases
 // @match       http://test.musicbrainz.org/artist/*/releases
 // @include     http://musicbrainz.org/release-group/*
 // @match       http://musicbrainz.org/release-group/*
+// @include     http://beta.musicbrainz.org/release-group/*
+// @match       http://beta.musicbrainz.org/release-group/*
 // @include     http://test.musicbrainz.org/release-group/*
 // @match       http://test.musicbrainz.org/release-group/*
 // @include     http://musicbrainz.org/label/*
 // @match       http://musicbrainz.org/label/*
+// @include     http://beta.musicbrainz.org/label/*
+// @match       http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
 // @match       http://test.musicbrainz.org/label/*
 // @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
+// @require     https://github.com/brianfreud/greasemonkey-batchCAA/blob/master/jsjpegmeta.js
 // ==/UserScript==
 
-/*global console JpegMeta */
+/*global console JpegMeta Blob BlobBuilder */
+// See https://github.com/jshint/jshint/issues/541
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
 /* Installation and requirements:
@@ -31,7 +41,7 @@
 Firefox: Install as normal.
 
 Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
-"Allow access to file URLs" for this script is checked.  Then start chrome with the --allow-file-access-from-files switch.
+"Allow access to file URLs" for this script is checked.  Then restart Chrome, with the --allow-file-access-from-files switch.
 If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
 Opera: Compatible?  Definitely requires minimum of version 12.
@@ -53,6 +63,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Track'
                                   , 'Other'
                                   ]
+                , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
@@ -132,6 +143,21 @@ function main ($, CONSTANTS) {
     };
 
     var init = function init () {
+
+        /* This creates a temporary local file system to use to store remote image files. */
+        var localFS;
+        var storeFS = function store_created_local_file_system (fsObj) {
+            $.log('Temporary local file system created. ');
+            $.log(fsObj);
+            localFS = fsObj;
+        };
+        window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
+        window.requestFileSystem(window.TEMPORARY, CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function (e) {
+            $.log('Requesting a temporary local file system failed.  Error message is:');
+            $.log(e);
+        });
+        /* End temporary local file system code. */
+
         !function init_resize_sidebar () {
             $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
             $('#page').css('background', '#FFF');
@@ -358,10 +384,71 @@ function main ($, CONSTANTS) {
         var loadRemoteFile = function load_remote_file (uri) {
             if (!testImageUri(uri)) {
                 $.log(uri + ' does not appear to be a jpeg, skipping.');
-                return;
+//                return;
             }
             $.log(uri + ' appears to be a jpeg, continuing.');
-//TODO
+
+            var loadStage = 'the initial request';
+
+            var handleError = function error_handler_for_loadRemoteFile_XHR (e) {
+              $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.');
+              $.log(e);
+            };
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', uri, true);
+            /* Requesting the remote image file as an ArrayBuffer. */
+            xhr.responseType = 'arraybuffer';
+
+            xhr.onload = function(e) {
+                var thisImageFilename = 'image' + Date.now() + '.jpg';
+                /* Create a new file in the temp local file system. */
+                loadStage = 'getFile';
+                localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
+                    /* Write to the new file. */
+                    loadStage = 'createWriter';
+                    thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
+                        /* Set up handlers for potential outcomes of attempting to write the file. */
+                        loadStage = 'createWriter: problem within the writer.';
+                        fileWriter.onerror = handleError(e);
+                        loadStage = 'createWriter: abort within the writer.';
+                        fileWriter.onabort = handleError(e);
+                        fileWriter.onwrite = function fileWriter_onwrite () {
+                            $.log('fileWriter wrote to a file.');
+                        };
+                        var blob
+                          , jpegTest = /pjpeg$/i;
+                        var mime     = 'image/' + (jpegTest.test(uri) ? 'pjpeg' : 'jpeg');
+
+                        if (typeof(Blob) !== 'undefined') {
+                            /* New form */
+                            blob = new Blob([xhr.response], {type: mime});
+                        } else if (typeof(BlobBuilder) !== 'undefined') {
+                            /* Deprecated form */
+                            var builder = new BlobBuilder();
+                            builder.append(xhr.response);
+                            blob = builder.getBlob(mime);
+                        } else {
+                            $.log('No support for either the Blob or the BlobBuilder constructors found.  Aborting.');
+                            return;
+                        }
+                        fileWriter.write(blob);
+                        $.log('Remote file has been retrieved and writen.')
+                        $.log(localFS);
+// TODO: Call image inserter here
+                    }, handleError);
+                }, handleError);
+            };
+
+            /* Set up handlers for potential problems. */
+            xhr.onerror = handleError;
+            loadStage = 'the initial request: timeout';
+            xhr.ontimeout = handleError;
+            loadStage = 'the initial request: request aborted';
+            xhr.onabort = handleError;
+
+            /* Send the request. */
+            xhr.send();
         };
 
         !function init_activate_dnd_at_dropzone () {
@@ -463,7 +550,9 @@ function main ($, CONSTANTS) {
                                                                                    .addClass('closeButton'))
                                                               .append($('<img>').addClass('dropBoxImage')
                                                                                 .wrap('<div>').parent())
-                                                              .append($('<figcaption>').append($('<input type="text"/></br>'))
+                                                              .append($('<figcaption>').append($('<input type="text"/>').prop('placeholder', 'image comment')
+                                                                                                                        .css('font-size', '12px'))
+                                                                                       .append($('</br>'))
                                                                                        .append($types))
                                                               .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
                                                                                                $.log('Removing drop box');
