@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0805
+// @version     0.01.0807
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @match       http://musicbrainz.org/artist/*
@@ -46,15 +46,28 @@ If you reinstall or upgrade the script, you may need to restart the browser befo
 
 Opera: Compatible?  Definitely requires minimum of version 12.
 
+EXTRA REQUIREMENTS:
+If you want to also enable loading images dragged from other sites, or dragging in a list of image urls from a text editor 
+(or view source), you need to disable some browser security.
+
+Firefox: Install https://addons.mozilla.org/en-US/firefox/addon/forcecors/ .  Whenever you want to drag in remote images or a list of
+urls, first hit the button to enable that addon.
+
+Chrome: In addition to --allow-file-access-from-files, you also need to use the --disable-web-security switch.  So for windows and linux,
+start Chrome with 'chrome --allow-file-access-from-files --disable-web-security'.  For Mac users, I think the command would be
+'chrome --args --allow-file-access-from-files --disable-web-security'.
+
+Opera: I don't know of any easy way to temporarily disable Same Origin Policy enforcement in Opera.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
+                , IMAGEPROXY    : ''
                 , DEBUGLOG_OVER : false
                 , COLORS        : { ACTIVE  : 'lightSteelBlue'
                                   , BORDERS : '1px dotted grey'
                                   , EDITING : '#C1FFC1'
                                   }
-                , COVERTYPES    : [ 'Front'
+                , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
                                   , 'Back'
                                   , 'Booklet'
                                   , 'Medium'
@@ -384,7 +397,7 @@ function main ($, CONSTANTS) {
         var loadRemoteFile = function load_remote_file (uri) {
             if (!testImageUri(uri)) {
                 $.log(uri + ' does not appear to be a jpeg, skipping.');
-//                return;
+                return;
             }
             $.log(uri + ' appears to be a jpeg, continuing.');
 
@@ -396,7 +409,7 @@ function main ($, CONSTANTS) {
             };
 
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', uri, true);
+            xhr.open('GET', CONSTANTS.IMAGEPROXY + uri, true);
             /* Requesting the remote image file as an ArrayBuffer. */
             xhr.responseType = 'arraybuffer';
 
@@ -420,16 +433,16 @@ function main ($, CONSTANTS) {
                           , jpegTest = /pjpeg$/i;
                         var mime     = 'image/' + (jpegTest.test(uri) ? 'pjpeg' : 'jpeg');
 
-                        if (typeof(Blob) !== 'undefined') {
-                            /* New form */
-                            blob = new Blob([xhr.response], {type: mime});
-                        } else if (typeof(BlobBuilder) !== 'undefined') {
-                            /* Deprecated form */
+                        /* New constructor form, not implemented in most browsers yet. */
+//                      blob = new Blob([xhr.response], {type: mime});
+                        /* The deprecated BlobBuilder format is normally prefixed; we need to find the right one. */
+                        var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder; 
+                        if (typeof(BlobBuilder) !== 'undefined') {
                             var builder = new BlobBuilder();
                             builder.append(xhr.response);
                             blob = builder.getBlob(mime);
                         } else {
-                            $.log('No support for either the Blob or the BlobBuilder constructors found.  Aborting.');
+                            $.log('No Blob support found.  Aborting.');
                             return;
                         }
                         fileWriter.write(blob);
