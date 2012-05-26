@@ -506,6 +506,7 @@ function main ($, CONSTANTS) {
                event, which will then continue the import. */           
                                          .on('dblclick', function create_blob_and_add_thumbnail (e) {
                                                              $.log('dblclick detected on comlink; creating file and thumbnail.');
+                                                             var $comlink = $(this);
                                                              var imageBase64 = $(this).text();
                                                              var jpegTest = /pjpeg$/i;
                                                              var mime = jpegTest.test(uri) ? 'pjpeg' : 'jpeg';
@@ -542,7 +543,8 @@ function main ($, CONSTANTS) {
                                     .data('source', 'local');
               $imageContainer.append($img);
 // END TEMP CODE
-
+                                                                     $.log('Deleting comlink.');
+                                                                     $comlink.remove();
 // TODO: Move add_dropped_image out of loadLocalFile.  Call add_dropped_image here using our new blob.
 
                                                                  }, handleError);
