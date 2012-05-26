@@ -1,40 +1,27 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0807
+// @version     0.01.0827
 // @description
 // @include     http://musicbrainz.org/artist/*
-// @match       http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
-// @match       http://beta.musicbrainz.org/artist/*
 // @include     http://test.musicbrainz.org/artist/*
-// @match       http://test.musicbrainz.org/artist/*
 // @include     http://musicbrainz.org/artist/*/releases
-// @match       http://musicbrainz.org/artist/*/releases
 // @include     http://beta.musicbrainz.org/artist/*/releases
-// @match       http://beta.musicbrainz.org/artist/*/releases
 // @include     http://test.musicbrainz.org/artist/*/releases
-// @match       http://test.musicbrainz.org/artist/*/releases
 // @include     http://musicbrainz.org/release-group/*
-// @match       http://musicbrainz.org/release-group/*
 // @include     http://beta.musicbrainz.org/release-group/*
-// @match       http://beta.musicbrainz.org/release-group/*
 // @include     http://test.musicbrainz.org/release-group/*
-// @match       http://test.musicbrainz.org/release-group/*
 // @include     http://musicbrainz.org/label/*
-// @match       http://musicbrainz.org/label/*
 // @include     http://beta.musicbrainz.org/label/*
-// @match       http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
-// @match       http://test.musicbrainz.org/label/*
-// @match       file://*
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
 // @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
 // @require     https://github.com/brianfreud/greasemonkey-batchCAA/blob/master/jsjpegmeta.js
 // ==/UserScript==
 
-/*global console JpegMeta Blob BlobBuilder */
+/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest */
 // See https://github.com/jshint/jshint/issues/541
-/*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, bitwise:true, strict:true, undef:true, curly:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
+/*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
 /* Installation and requirements:
 
@@ -44,20 +31,19 @@ Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensi
 "Allow access to file URLs" for this script is checked.  Then restart Chrome, with the --allow-file-access-from-files switch.
 If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
-Opera: Compatible?  Definitely requires minimum of version 12.
+Opera: Compatible?  Definitely requires minimum of version 12.  Also may NOT work for loading remote images; I need to look into it more...
+http://userscripts.org/topics/2026 :
+"it is possible to have cross-domain GM_xmlhttpRequest in Opera. To do so you need the following: 
+- cross-domain XMLHttpRequest implementation scripts (a-lib-stacktrace.js and a-lib-xmlhttp-cd.js) from here: 
+http://my.opera.com/community/forums/findpost.p... (I suggest to read the entire thread) 
+- wrapper for GM_* functions (aagmfunctions.js) from here: http://www.howtocreate.co.uk/operaStuff/userjs/... (this is the up-to-date 
+location for the script mentioned by znerp) 
+- enable the following options in Opera: opera:config#UserPrefs|UserJavaScript and opera:config#UserPrefs|UserJavaScriptonHTTPS 
+- modify the aagmfunctions.js script to use the cross-domain XMLHttpRequest implementation by changing the following line 
+var request = new XMLHttpRequest(); 
+into 
+var request = new opera.XMLHttpRequest();"
 
-EXTRA REQUIREMENTS:
-If you want to also enable loading images dragged from other sites, or dragging in a list of image urls from a text editor 
-(or view source), you need to disable some browser security.
-
-Firefox: Install https://addons.mozilla.org/en-US/firefox/addon/forcecors/ .  Whenever you want to drag in remote images or a list of
-urls, first hit the button to enable that addon.
-
-Chrome: In addition to --allow-file-access-from-files, you also need to use the --disable-web-security switch.  So for windows and linux,
-start Chrome with 'chrome --allow-file-access-from-files --disable-web-security'.  For Mac users, I think the command would be
-'chrome --args --allow-file-access-from-files --disable-web-security'.
-
-Opera: I don't know of any easy way to temporarily disable Same Origin Policy enforcement in Opera.
 */
 
 var CONSTANTS = { DEBUGMODE     : true
@@ -110,6 +96,103 @@ var CONSTANTS = { DEBUGMODE     : true
                                        }
                                   }
                 };
+
+
+/* START remote image accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
+   event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
+   new context loses the special permissions granted to userscripts, and thus does not have access to GM_xmlhttpRequest. */
+
+/* Create a hidden div which will be used to pass messages between javascript security contexts. */
+var body       = document.getElementsByTagName('body')[0]
+  , messageDiv = document.createElement('div')
+  ;
+messageDiv.id = 'xhrComlink';
+body.appendChild(messageDiv);
+
+/* Create an event listener, in the priviledged userscript context, which will listen for new uri additions to the xhrComlink div.
+   This cannot use custom events, as they would only exist in one of the two javascript contexts. */
+messageDiv.addEventListener('click', getUri, true);
+
+/* When a click event alerts the code that a new link is in the communications div, read that link's uri out of the linked span.
+   Then convert the binary image into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
+   trigger a doubleclick event to let the other half of this code, in the other javascript context, know that the image data has
+   been retrieved. */
+function getUri(e) {
+    var thisComlink   = e.target
+      , linkedUri     = e.target.innerHTML
+      , base64_encode = function base64_encode (data) {  // from http://phpjs.org
+                            // http://kevin.vanzonneveld.net
+                            // +   original by: Tyler Akins (http://rumkin.com)
+                            // +   improved by: Bayron Guevara
+                            // +   improved by: Thunder.m
+                            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                            // +   bugfixed by: Pellentesque Malesuada
+                            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+                            // +   improved by: Rafał Kukawski (http://kukawski.pl)
+                            // *     example 1: base64_encode('Kevin van Zonneveld');
+                            // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
+                            // mozilla has this native
+                            // - but breaks in 2.0.0.12!
+                            //}
+                            var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+                            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+                                ac = 0,
+                                enc = "",
+                                tmp_arr = [];
+                        
+                            if (!data) {
+                                return data;
+                            } do { // pack three octets into four hexets
+                                o1 = data.charCodeAt(i++);
+                                o2 = data.charCodeAt(i++);
+                                o3 = data.charCodeAt(i++);
+                        
+                                bits = o1 << 16 | o2 << 8 | o3;
+                        
+                                h1 = bits >> 18 & 0x3f;
+                                h2 = bits >> 12 & 0x3f;
+                                h3 = bits >> 6 & 0x3f;
+                                h4 = bits & 0x3f;
+                    
+                                // use hexets to index into b64, and append result to encoded string
+                                tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+                            } while (i < data.length);
+                            enc = tmp_arr.join('');
+                            var r = data.length % 3;
+                            return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+                        }
+      , data_string = function data_string (data) {
+                          // Generate a binary data string from character / multibyte data
+                          // from Tim Smart, at http://pastebin.ca/1425789
+                          var data_string='';
+                          for(var i=0,il=data.length;i<il;i++)data_string+=String.fromCharCode(data[i].charCodeAt(0)&0xff);
+                          return data_string;
+                      }
+      ;
+
+    var storeImage  = function storeImage (response) {
+        var binaryImage       = response.responseText;
+        var binaryStringImage = data_string(binaryImage);
+        var base64Image       = base64_encode(binaryStringImage);
+
+        thisComlink.innerHTML = '';
+        var newtext = document.createTextNode(base64Image);
+        thisComlink.appendChild(newtext);
+
+        var evt = document.createEvent("MouseEvents");
+        evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        thisComlink.dispatchEvent(evt);
+    };
+
+    GM_xmlhttpRequest({ method: "GET"
+                      , url: linkedUri
+                      , responseType : 'arraybuffer'
+                      , overrideMimeType: 'text/plain; charset=x-user-defined'
+                      , onload: storeImage
+                      });
+}
+/* END remote image accessor functions. */
+
 
 function main ($, CONSTANTS) {
     'use strict';
@@ -195,6 +278,7 @@ function main ($, CONSTANTS) {
 
         !function init_add_css () {
             $.log('Adding css rules');
+            $.addRule('#xhrComlink', '{ display: none; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
@@ -351,8 +435,8 @@ function main ($, CONSTANTS) {
         var loadLocalFile = function load_local_file (e) {
             var files = (e.files || e.dataTransfer.files)
               , $img = $('<img/>').addClass('localImage')
-                                          .prop('draggable', true)
-                                          .data('source', 'local');
+                                  .prop('draggable', true)
+                                  .data('source', 'local');
             for (var i = 0; i < files.length; i++) {
                 if (!files[i].type.match(/image\/p?jpeg/)) {
                     continue;
@@ -401,68 +485,66 @@ function main ($, CONSTANTS) {
             }
             $.log(uri + ' appears to be a jpeg, continuing.');
 
-            var loadStage = 'the initial request';
-
+            var loadStage = '';
             var handleError = function error_handler_for_loadRemoteFile_XHR (e) {
-              $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.');
-              $.log(e);
-            };
+                                  $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.');
+                                  $.log(e);
+                                };
 
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', CONSTANTS.IMAGEPROXY + uri, true);
-            /* Requesting the remote image file as an ArrayBuffer. */
-            xhr.responseType = 'arraybuffer';
+            var $xhrComlink = $('#xhrComlink');
+            $.log('Creating comlink signal to trigger other context to get the image.');
+            $('<pre>' + uri + '</pre>').appendTo($xhrComlink)
+                                         .trigger('click')
+            /* At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
+               event, which will then continue the import. */           
+                                         .on('dblclick', function create_blob_and_add_thumbnail (e) {
+                                                             $.log('dblclick detected on comlink; creating file and thumbnail.');
+                                                             var imageBase64 = $(this).text();
+                                                             var jpegTest = /pjpeg$/i;
+                                                             var mime = jpegTest.test(uri) ? 'pjpeg' : 'jpeg';
+                                                             var imageFile = $.dataURItoBlob(imageBase64, mime);
+                                                             var thisImageFilename = 'image' + Date.now() + '.jpg';
+                                                             /* Create a new file in the temp local file system. */
+                                                             loadStage = 'getFile';
+                                                             localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
+                                                                 /* Write to the new file. */
+                                                                 loadStage = 'createWriter';
+                                                                 thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
+                                                                     fileWriter.onwritestart = function fileWriter_onwritestart () {
+                                                                         // fileWriter.position points to 0.
+                                                                         $.log('fileWriter is writing a remote image file to a local file.');
+                                                                     };
+                                                                     fileWriter.onwriteend = function fileWriter_onwriteend () {
+                                                                         // fileWriter.position points to the next empty byte in the file.
+                                                                         $.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
+                                                                     };
 
-            xhr.onload = function(e) {
-                var thisImageFilename = 'image' + Date.now() + '.jpg';
-                /* Create a new file in the temp local file system. */
-                loadStage = 'getFile';
-                localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
-                    /* Write to the new file. */
-                    loadStage = 'createWriter';
-                    thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
-                        /* Set up handlers for potential outcomes of attempting to write the file. */
-                        loadStage = 'createWriter: problem within the writer.';
-                        fileWriter.onerror = handleError(e);
-                        loadStage = 'createWriter: abort within the writer.';
-                        fileWriter.onabort = handleError(e);
-                        fileWriter.onwrite = function fileWriter_onwrite () {
-                            $.log('fileWriter wrote to a file.');
-                        };
-                        var blob
-                          , jpegTest = /pjpeg$/i;
-                        var mime     = 'image/' + (jpegTest.test(uri) ? 'pjpeg' : 'jpeg');
+                                                                     loadStage = 'createWriter: problem within the writer.';
+                                                                     fileWriter.onerror = handleError(e);
+                                                                     loadStage = 'createWriter: abort within the writer.';
+                                                                     fileWriter.onabort = handleError(e);
 
-                        /* New constructor form, not implemented in most browsers yet. */
-//                      blob = new Blob([xhr.response], {type: mime});
-                        /* The deprecated BlobBuilder format is normally prefixed; we need to find the right one. */
-                        var BlobBuilder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder; 
-                        if (typeof(BlobBuilder) !== 'undefined') {
-                            var builder = new BlobBuilder();
-                            builder.append(xhr.response);
-                            blob = builder.getBlob(mime);
-                        } else {
-                            $.log('No Blob support found.  Aborting.');
-                            return;
-                        }
-                        fileWriter.write(blob);
-                        $.log('Remote file has been retrieved and writen.')
-                        $.log(localFS);
-// TODO: Call image inserter here
-                    }, handleError);
-                }, handleError);
-            };
+                                                                     fileWriter.write(imageFile);
+                                                                     $.log('Remote file has been retrieved and writen.');
+                                                                     $.log(localFS);
 
-            /* Set up handlers for potential problems. */
-            xhr.onerror = handleError;
-            loadStage = 'the initial request: timeout';
-            xhr.ontimeout = handleError;
-            loadStage = 'the initial request: request aborted';
-            xhr.onabort = handleError;
+// TEMP CODE
+              var $img = $('<img/>').addClass('localImage')
+                                    .prop('draggable', true)
+                                    .prop('src', 'data:image/' + mime + ';base64,' + imageBase64)
+                                    .data('source', 'local');
+              $imageContainer.append($img);
+// END TEMP CODE
 
-            /* Send the request. */
-            xhr.send();
+// TODO: Move add_dropped_image out of loadLocalFile.  Call add_dropped_image here using our new blob.
+
+                                                                 }, handleError);
+                                                             }, handleError);
+                                                         });
         };
+
+
+
 
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
@@ -857,9 +939,40 @@ function thirdParty($, CONSTANTS) {
         debug() && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
     };
 
+    // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+    var dataURItoBlob = function dataURItoBlob(dataURI, mime) {
+        // convert base64 to raw binary data held in a string
+        var byteString;
+        if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+            byteString = atob(dataURI.split(',')[1]);
+        } else {
+            byteString = unescape(dataURI.split(',')[1]);
+        }
+
+        // write the bytes of the string to an ArrayBuffer
+        var ab = new ArrayBuffer(byteString.length);
+        var ia = new Uint8Array(ab);
+        for (var i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
+
+        // write the ArrayBuffer to a blob, and you're done
+        /* The deprecated BlobBuilder format is normally prefixed;
+           we need to find the right one.  (The Blob constructor which
+           has replaced BlobBuilder is not yet implemented. */
+        var bb = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
+        bb = new bb();
+        bb.append(ab);
+        return bb.getBlob('image/' + mime);
+    };
+
+
     jQuery.extend({
         addRule   : function addrule_handler (selector, rule) {
                         return addRule(selector, rule);
+                  },
+        dataURItoBlob : function dataURItoBlob_handler (dataURI, mime) {
+                            return dataURItoBlob(dataURI, mime);
                   },
         debug     : function debug_handler() {
                         return debug();
@@ -889,6 +1002,8 @@ function thirdParty($, CONSTANTS) {
 */
 }
 
+
+
 !function main_loader(i) {
     'use strict';
     var script
@@ -900,7 +1015,7 @@ function thirdParty($, CONSTANTS) {
         }
       , loadLocal = function loadLocal (fn) {
             makeScript();
-            script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ');';
+            script.textContent = '(' + fn.toString() + ')(jQuery,' + JSON.stringify(CONSTANTS) + ');';
             head.appendChild(script);
         }
       ;
