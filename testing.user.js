@@ -344,8 +344,8 @@ function main ($, CONSTANTS) {
                                                                     , 'padding'          : '3px 8px;'
                                                                     }));
             $.addRule('input.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
-                                                     , 'border'           : '1px outset #FAFAFA!important;'
-                                                     , 'border-radius'    : '16px;'
+                                                     , 'border'           : '0px none #FAFAFA!important;'
+                                                     , 'border-radius'    : '7px;'
                                                      , 'color'            : '#FFF!important;'
                                                      , 'float'            : 'left;'
                                                      , 'font-size'        : '175%;'
