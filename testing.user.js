@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0827
+// @version     0.01.0828
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -118,6 +118,7 @@ messageDiv.addEventListener('click', getUri, true);
    trigger a doubleclick event to let the other half of this code, in the other javascript context, know that the image data has
    been retrieved. */
 function getUri(e) {
+    'use strict';
     var thisComlink   = e.target
       , linkedUri     = e.target.innerHTML
       , base64_encode = function base64_encode (data) {  // from http://phpjs.org
@@ -161,12 +162,14 @@ function getUri(e) {
                             var r = data.length % 3;
                             return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
                         }
-      , data_string = function data_string (data) {
+      , data_string = function data_string(data) {
                           // Generate a binary data string from character / multibyte data
                           // from Tim Smart, at http://pastebin.ca/1425789
-                          var data_string='';
-                          for(var i=0,il=data.length;i<il;i++)data_string+=String.fromCharCode(data[i].charCodeAt(0)&0xff);
-                          return data_string;
+                          var binary_string = '';
+                          for (var i = 0, il = data.length; i < il; i++) {
+                              binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
+                          }
+                          return binary_string;
                       }
       ;
 
@@ -184,12 +187,13 @@ function getUri(e) {
         thisComlink.dispatchEvent(evt);
     };
 
-    GM_xmlhttpRequest({ method: "GET"
-                      , url: linkedUri
-                      , responseType : 'arraybuffer'
-                      , overrideMimeType: 'text/plain; charset=x-user-defined'
-                      , onload: storeImage
-                      });
+    var gmXHR = GM_xmlhttpRequest; // GM_xmlhttpRequest is not a constructor, but it looks like one to jshint.
+    gmXHR({ method: "GET"
+          , url: linkedUri
+          , responseType : 'arraybuffer'
+          , overrideMimeType: 'text/plain; charset=x-user-defined'
+          , onload: storeImage
+          });
 }
 /* END remote image accessor functions. */
 
@@ -960,8 +964,8 @@ function thirdParty($, CONSTANTS) {
         /* The deprecated BlobBuilder format is normally prefixed;
            we need to find the right one.  (The Blob constructor which
            has replaced BlobBuilder is not yet implemented. */
-        var bb = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
-        bb = new bb();
+        var Builder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
+        var bb = new Builder();
         bb.append(ab);
         return bb.getBlob('image/' + mime);
     };
