@@ -296,7 +296,9 @@ function main ($, CONSTANTS) {
                                                     , 'width'            : '126px;'
                                                     }));
             $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 14em; }');
-            $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ font-size: 80%; clear: both; }');
+            $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ clear: both; }');
+            $.addRule('.CAAdropbox > figcaption > input', '{ font-size: 12px; width: 90%; }');
+            $.addRule('.CAAdropbox > figcaption > div', '{ font-size: 80%; }');
             $.addRule('.newCAAimage > div', JSON.stringify({ 'background-color' : '#E0E0FF;'
                                                            , 'border'           : CONSTANTS.COLORS.BORDERS + ';'
                                                            , 'margin-bottom'    : '6px!important;'
@@ -649,8 +651,7 @@ function main ($, CONSTANTS) {
                                                                                    .addClass('closeButton'))
                                                               .append($('<img>').addClass('dropBoxImage')
                                                                                 .wrap('<div>').parent())
-                                                              .append($('<figcaption>').append($('<input type="text"/>').prop('placeholder', 'image comment')
-                                                                                                                        .css('font-size', '12px'))
+                                                              .append($('<figcaption>').append($('<input type="text"/>').prop('placeholder', 'image comment'))
                                                                                        .append($('</br>'))
                                                                                        .append($types))
                                                               .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
@@ -1019,7 +1020,7 @@ function thirdParty($, CONSTANTS) {
         }
       , loadLocal = function loadLocal (fn) {
             makeScript();
-            script.textContent = '(' + fn.toString() + ')(jQuery,' + JSON.stringify(CONSTANTS) + ');';
+            script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ');';
             head.appendChild(script);
         }
       ;
