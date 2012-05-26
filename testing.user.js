@@ -282,6 +282,7 @@ function main ($, CONSTANTS) {
 
         !function init_add_css () {
             $.log('Adding css rules');
+            $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
