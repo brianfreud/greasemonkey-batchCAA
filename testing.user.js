@@ -325,9 +325,11 @@ function main ($, CONSTANTS) {
             $.addRule('.CAAdropbox > figcaption > div', '{ height: 2.5em; }');
             $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
                                                                           , 'clear'            : 'both;'
-                                                                          , 'clip'             : 'rect(2px 49px 136px 2px);'
+                                                                          , 'clip'             : 'rect(2px 49px 145px 2px);'
                                                                           , 'color'            : '#555;'
                                                                           , 'font-size'        : 'inherit;'
+                                                                          , 'padding-bottom'   : '20px;'
+                                                                          , 'padding-right'    : '20px;'
                                                                           , 'padding-top'      : '8px;'
                                                                           , 'position'         : 'absolute;'
                                                                           , 'text-align'       : 'center;'
