@@ -66,7 +66,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , IMAGESIZES    : [100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
-                , SIDEBARHEIGHT : (screen.height - 300)
+                , SIDEBARHEIGHT : (screen.height - 290)
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
                 , BEINGDRAGGED  : { OPACITY : '0.4'
@@ -74,22 +74,25 @@ var CONSTANTS = { DEBUGMODE     : true
                                   }
                 , TEXT          : {
                                   en : { 'Add cover art'           : 'Add cover art'
-                                       , 'Images'                  : 'Images'
-                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive'
-                                       , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
-                                       , 'coverType:Front'         : 'Front'
+                                       , 'Add image one release'   : 'Add another empty image space to this release.'
+                                       , 'bytes'                   : 'bytes'
                                        , 'coverType:Back'          : 'Back'
                                        , 'coverType:Booklet'       : 'Booklet'
+                                       , 'coverType:Front'         : 'Front'
                                        , 'coverType:Medium'        : 'Medium'
                                        , 'coverType:Obi'           : 'Obi'
+                                       , 'coverType:Other'         : 'Other'
                                        , 'coverType:Spine'         : 'Spine'
                                        , 'coverType:Track'         : 'Track'
-                                       , 'coverType:Other'         : 'Other'
-                                       , 'Preview Image'           : 'Preview'
+                                       , 'File size'               : 'File size'
+                                       , '(Image) Resolution'      : 'Resolution'
+                                       , 'Images'                  : 'Images'
+                                       , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
+                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
-                                       , 'Add image one release'   : 'Add another empty image space to this release.'
-                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
                                        , 'Load text all releases'  : 'Loads images and creates editing spaces, for all displayed releases.'
+                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
+                                       , 'Preview Image'           : 'Preview'
                                        },
                                   fr : {
                                        'Images' : 'Les Photos'
@@ -265,19 +268,33 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-            $imageContainer = $('<div id="imageContainer"/>');
-            $previewContainer = $('<div id="previewContainer"/>').append($('<img id="previewImage"/>'))
-                                                                 .append($('<br/>'))
-                                                                 .append($('<div id="previewText"/>'));
-
+//TODO: Add image size controls
+//TODO: Add control over loading webpages
+            $imageContainer    = $('<div id="imageContainer"/>');
+            $previewContainer  = $('<div id="previewContainer"/>');
+            var $previewInfo   = $('<dl id="previewText"/>').hide()
+              , $dtResolution  = $('<dt>').text($.l('(Image) Resolution'))
+                                          .addClass('previewDT')
+              , $ddResolution  = $('<dd id="previewResolution">')
+              , $dtFilesize    = $('<dt>').text($.l('File size'))
+                                          .addClass('previewDT')
+              , $ddFilesize    = $('<dd id="previewFilesize">')
+              ;
 
             $('#sidebar').empty()
-                         .append($('<h1 id="imageHeader"/>').text($.l('Images')))
-                         .append($('<br/><br/>'))
-                         .append($imageContainer)
-                         .append($('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS))
-                         .append($('<h1 id="previewHeader"/>').text($.l('Preview Image')))
-                         .append($previewContainer);
+                         .appendAll([ $('<h1 id="imageHeader"/>').text($.l('Images'))
+                                    , $('<br/>')
+                                    , $imageContainer
+                                    , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
+                                    , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
+                                    , $previewContainer.appendAll([ $('<img id="previewImage"/>')
+                                                                  , $previewInfo.appendAll([ $dtResolution
+                                                                                           , $ddResolution
+                                                                                           , $dtFilesize
+                                                                                           , $ddFilesize
+                                                                                           ])
+                                                                  ])
+                                    ]);
         }();
 
         !function init_add_css () {
@@ -382,6 +399,11 @@ function main ($, CONSTANTS) {
                                                      , 'padding' : '15px 0 0 0;'
                                                      , 'max-width'   : size
                                                      }));
+           $.addRule('#previewText', '{ width: 60%; margin: 0 auto; padding-top: 10px; line-height: 140%; }');
+           $.addRule('.previewDT', '{ clear: left; float: left; font-weight: 700; }');
+           $.addRule('.previewDT::after', '{ content: ~: ~; }');
+           $.addRule('#previewText > dd', '{ float: right; }');
+
            /* End right side layout */
 
            $.addRule('.closeButton', JSON.stringify({ 'background-color' : '#FFD0DB;'
@@ -391,7 +413,7 @@ function main ($, CONSTANTS) {
                                                     , 'float'            : 'right;'
                                                     , 'line-height'      : '.8em;'
                                                     , 'margin-right'     : '-1em;'
-                                                    , 'margin-top'       : '-1em;'
+                                                    , 'margin-top'       : '-0.95em;'
                                                     , 'opacity'          : '0.9;'
                                                     , 'padding'          : '2px 4px 5px 4px;'
                                                      }));
@@ -454,6 +476,7 @@ function main ($, CONSTANTS) {
                                                      , draggable : true
                                                      , title     : title
                                                      });
+
                 dataURLreader.onload = function add_attributes_to_dropped_image(event) {
                     $.log('Running addImageToDropbox -> dataURLreader.onload');
                     $img.prop('src', event.target.result);
@@ -464,8 +487,7 @@ function main ($, CONSTANTS) {
                     var jpeg = new JpegMeta.JpegFile(this.result, file.name);
                     $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
                     $img.data('depth', jpeg.general.depth.value);
-                    $img.data('size', file.size || file.fileSize);
-                    $img.data('size', addCommas($img.data('size')));
+                    $img.data('size', addCommas(file.size || file.fileSize));
                     $img.data('name', file.name || file.fileName);
                     var logStr = 'Loaded new image: ' + $img.data('name') +
                                  '.  Image has a resolution of ' + $img.data('resolution') + ', '
@@ -473,12 +495,14 @@ function main ($, CONSTANTS) {
                                  'and a filesize of ' + $img.data('size') + ' bytes.';
                     $.log(logStr);
                 };
+
                 dataURLreader.readAsDataURL(file);
                 binaryReader.readAsBinaryString(file);
             };
 
         var loadLocalFile = function load_local_file (e) {
             var files = (e.files || e.dataTransfer.files);
+
             for (var i = 0; i < files.length; i++) {
                 if (!files[i].type.match(/image\/p?jpeg/)) {
                     continue;
@@ -490,6 +514,7 @@ function main ($, CONSTANTS) {
         var testImageUri = function test_for_valid_image_uri (uri) {
             /* Testing for: jpg jpeg jpe jfif jif pjpeg */
             var jpegTest = /\.p?j(pg|peg?|f?if)$/i;
+
             return jpegTest.test(uri);
         };
 
@@ -507,6 +532,7 @@ function main ($, CONSTANTS) {
                                 };
 
             var $xhrComlink = $('#xhrComlink');
+
             $.log('Creating comlink to trigger other context to get the image.');
             $('<pre>' + uri + '</pre>').appendTo($xhrComlink)
                                          .trigger('click')
@@ -594,6 +620,7 @@ function main ($, CONSTANTS) {
                             break;
                         case !!dropped.text.length: // plaintext list of urls drag/dropped
                             $.log('imageContainer: drop ==> list of uris');
+//TODO: Add loading webpages
                             for (var i = 0, len = dropped.text.length; i < len; i++) {
                                 loadRemoteFile(dropped.text[i]);
                             }
@@ -833,7 +860,14 @@ function main ($, CONSTANTS) {
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         $.log('Setting new image for preview box.');
         $('#previewImage').prop('src', $(this).prop('src'));
-//TODO: previewText
+        if ($(this).hasClass('dropBoxImage')) {
+            $('#previewText').hide();
+// TODO: Add loading image info for CAA image boxes
+        } else {
+            $('#previewResolution').text($(this).data('resolution'));
+            $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
+            $('#previewText').show();
+        }
     });
 
     /* START: functionality to allow dragging from the Images box to a specific caa image box. */
@@ -931,7 +965,7 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        $('<style>' + selector + rule.replace(/[",]/g,'') + '</style>').appendTo($('head'));
+        $('<style>' + selector + rule.replace(/[",]/g,'').replace(/~/g,'"') + '</style>').appendTo($('head'));
     };
 
     var debug = function debug () {
@@ -992,6 +1026,11 @@ function thirdParty($, CONSTANTS) {
                         return log(str);
                   }
     });
+
+    // By Brian Schweitzer and Naftali Lubin
+    $.fn.appendAll = function(arrayToAdd) {
+        return this.append.apply(this, arrayToAdd);
+    };
 
     // http://james.padolsey.com/javascript/regex-selector-for-jquery/
 /*
