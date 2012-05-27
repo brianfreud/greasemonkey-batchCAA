@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0828
+// @version     0.01.0832
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -334,32 +334,32 @@ function main ($, CONSTANTS) {
             $.addRule('.over', '{ background-color: ' + CONSTANTS.COLORS.ACTIVE + '; }');
 
            /* Start control buttons */
-            $.addRule('input.caaLoad, input.caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
-                                                                    , 'border'           : '1px outset #FAFAFA!important;'
-                                                                    , 'border-radius'    : '7px;'
-                                                                    , 'color'            : '#FFF!important;'
-                                                                    , 'font-size'        : '90%;'
-                                                                    , 'margin-bottom'    : '16px;'
-                                                                    , 'margin-top'       : '1px!important;'
-                                                                    , 'opacity'          : '.35;'
-                                                                    , 'padding'          : '3px 8px;'
-                                                                    }));
-            $.addRule('input.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
-                                                     , 'border'           : '0px none #FAFAFA!important;'
-                                                     , 'border-radius'    : '7px;'
-                                                     , 'color'            : '#FFF!important;'
-                                                     , 'float'            : 'left;'
-                                                     , 'font-size'        : '175%;'
-                                                     , 'font-weight'      : '900!important;'
-                                                     , 'left'             : '2em;'
-                                                     , 'margin-left'      : '-1.2em;!important;'
-                                                     , 'opacity'          : '0.5;'
-                                                     , 'padding-bottom'   : '0px;'
-                                                     , 'padding-top'      : '0px;'
-                                                     , 'position'         : 'absolute;'
-                                                     }));
-           $.addRule('input.caaAdd:hover, input.caaAll:hover, input.caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
-           $.addRule('input.caaAdd:active, input.caaAll:active, input.caaLoad:active', '{ opacity: 1; color: #FFF; border-style: inset!important; }');
+            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
+                                                          , 'border'           : '1px outset #FAFAFA!important;'
+                                                          , 'border-radius'    : '7px;'
+                                                          , 'color'            : '#FFF!important;'
+                                                          , 'font-size'        : '90%;'
+                                                          , 'margin-bottom'    : '16px;'
+                                                          , 'margin-top'       : '1px!important;'
+                                                          , 'opacity'          : '.35;'
+                                                          , 'padding'          : '3px 8px;'
+                                                          }));
+            $.addRule('.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
+                                                , 'border'           : '0px none #FAFAFA!important;'
+                                                , 'border-radius'    : '7px;'
+                                                , 'color'            : '#FFF!important;'
+                                                , 'float'            : 'left;'
+                                                , 'font-size'        : '175%;'
+                                                , 'font-weight'      : '900!important;'
+                                                , 'left'             : '2em;'
+                                                , 'margin-left'      : '-1.2em;!important;'
+                                                , 'opacity'          : '0.5;'
+                                                , 'padding-bottom'   : '0px;'
+                                                , 'padding-top'      : '0px;'
+                                                , 'position'         : 'absolute;'
+                                                }));
+           $.addRule('.caaAdd:hover, .caaAll:hover, .caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
+           $.addRule('.caaAdd:active, .caaAll:active, .caaLoad:active', '{ opacity: 1; color: #FFF; border-style: inset!important; }');
            /* End control buttons */
 
            /* Start right side layout */
@@ -439,43 +439,50 @@ function main ($, CONSTANTS) {
             $.imagesSmall();
         }();
 
+        var add_dropped_image = function add_dropped_image(file, source, uri) {
+                $.log('Running add_dropped_image');
+                var dataURLreader = new FileReader()
+                  , binaryReader  = new FileReader()
+                  , title         = (source === 'local') ? 'Local file: ' + (file.name)
+                                                         : source + ' file from ' + uri
+                  ;
+                var $img          = $('<img/>').addClass('localImage')
+                                               .data('source', source)
+                                               .data('file', file)
+                                               .prop({ alt       : title
+                                                     , draggable : true
+                                                     , title     : title
+                                                     });
+                dataURLreader.onload = function add_attributes_to_dropped_image(event) {
+                    $.log('Running add_dropped_image -> dataURLreader.onload');
+                    $img.prop('src', event.target.result);
+                    $imageContainer.append($img);
+                };
+                binaryReader.onloadend = function get_exif_for_dropped_image(event) {
+                    $.log('Running add_dropped_image -> binaryReader.onloadend');
+                    var jpeg = new JpegMeta.JpegFile(this.result, file.name);
+                    $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
+                    $img.data('depth', jpeg.general.depth.value);
+                    $img.data('size', file.size || file.fileSize);
+                    $img.data('size', addCommas($img.data('size')));
+                    $img.data('name', file.name || file.fileName);
+                    var logStr = 'Loaded new image: ' + $img.data('name') +
+                                 '.  Image has a resolution of ' + $img.data('resolution') + ', '
+                                 + $img.data('depth') + '-bit color depth, ' +
+                                 'and a filesize of ' + $img.data('size') + ' bytes.';
+                    $.log(logStr);
+                };
+                dataURLreader.readAsDataURL(file);
+                binaryReader.readAsBinaryString(file);
+            };
+
         var loadLocalFile = function load_local_file (e) {
-            var files = (e.files || e.dataTransfer.files)
-              , $img = $('<img/>').addClass('localImage')
-                                  .prop('draggable', true)
-                                  .data('source', 'local');
+            var files = (e.files || e.dataTransfer.files);
             for (var i = 0; i < files.length; i++) {
                 if (!files[i].type.match(/image\/p?jpeg/)) {
                     continue;
                 }
-                !function add_dropped_image (i) {
-                    var dataURLreader = new FileReader()
-                      , binaryReader  = new FileReader();
-                    dataURLreader.onload = function add_attributes_to_dropped_image (event) {
-                        var $newImg = $img.clone()
-                                          .prop({ alt   : (files[i].name)
-                                                , title : (files[i].name)
-                                                , src   : event.target.result
-                                                });
-                        $imageContainer.append($newImg.data('file', files[i]));
-                    };
-                    binaryReader.onloadend = function get_exif_for_dropped_image (event) {
-                        var jpeg = new JpegMeta.JpegFile(this.result, files[i].name)
-                          , $image = $imageContainer.find('.localImage:last');
-                        $image.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
-                        $image.data('depth', jpeg.general.depth.value);
-                        $image.data('size', files[i].size || files[i].fileSize);
-                        $image.data('size', addCommas($image.data('size')));
-                        $image.data('name', files[i].name || files[i].fileName);
-                        var logStr = 'Loaded new image: ' + $image.data('name') +
-                                     '.  Image has a resolution of ' + $image.data('resolution') + ', ' +
-                                     $image.data('depth') + '-bit color depth, ' + 
-                                    'and a filesize of ' + $image.data('size') + ' bytes.';
-                        $.log(logStr);
-                    };
-                    binaryReader.readAsBinaryString(files[i]);
-                    dataURLreader.readAsDataURL(files[i]);
-                }(i);
+                add_dropped_image(files[i], 'local');
             }
         };
 
@@ -499,7 +506,7 @@ function main ($, CONSTANTS) {
                                 };
 
             var $xhrComlink = $('#xhrComlink');
-            $.log('Creating comlink signal to trigger other context to get the image.');
+            $.log('Creating comlink to trigger other context to get the image.');
             $('<pre>' + uri + '</pre>').appendTo($xhrComlink)
                                          .trigger('click')
             /* At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
@@ -543,9 +550,9 @@ function main ($, CONSTANTS) {
                                     .data('source', 'local');
               $imageContainer.append($img);
 // END TEMP CODE
-                                                                     $.log('Deleting comlink.');
+                                                                     $.log('Comlink has finished.  Deleting it.');
                                                                      $comlink.remove();
-// TODO: Move add_dropped_image out of loadLocalFile.  Call add_dropped_image here using our new blob.
+// TODO: Call add_dropped_image here using our new blob.
 
                                                                  }, handleError);
                                                              }, handleError);
@@ -558,19 +565,19 @@ function main ($, CONSTANTS) {
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
             $imageContainer.on({
-                dragenter: function dragEnter(e) {
+                dragenter: function dragEnter (e) {
                     $.log('imageContainer: dragenter.');
                     $(this).addClass('over');
                 },
-                dragleave: function dragLeave(e) {
+                dragleave: function dragLeave (e) {
                     $.log('imageContainer: dragleave.');
                     $(this).removeClass('over');
                 },
-                dragover: function dragOver(e) {
+                dragover: function dragOver (e) {
                     $.log('imageContainer: dragover.', 1);
                     e.preventDefault();
                 },
-                drop: function drop(e) {
+                drop: function drop (e) {
                     $.log('imageContainer: drop.');
                     $(this).removeClass('over');
 
@@ -756,7 +763,7 @@ function main ($, CONSTANTS) {
                                            , error    : function handler(jqXHR, textStatus, errorThrown) {
                                                             /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
                                                             $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-                                                            $newCAARow.find('div.loadingDiv, input.caaAdd').toggle();
+                                                            $newCAARow.find('div.loadingDiv, .caaAdd').toggle();
                                                             $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
                                            , success  : function caaResponseHandler (response) {
@@ -796,8 +803,8 @@ function main ($, CONSTANTS) {
                                                                     checkScroll($newCAARow.find('div.loadingDiv'));
                                                                 });
                                                             }
-                                                        $newCAARow.find('div.loadingDiv, input.caaAdd').toggle();
-                                                        $newCAARow.find('div.caaDiv').slideDown('slow');
+                                                        $newCAARow.find('.loadingDiv, .caaAdd').toggle();
+                                                        $newCAARow.find('.caaDiv').slideDown('slow');
                                                         }
                                            });
                                 });
