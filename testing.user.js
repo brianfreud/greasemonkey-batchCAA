@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0832
+// @version     0.01.0847
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -439,8 +439,9 @@ function main ($, CONSTANTS) {
             $.imagesSmall();
         }();
 
-        var add_dropped_image = function add_dropped_image(file, source, uri) {
-                $.log('Running add_dropped_image');
+        var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
+                $.log('Running addImageToDropbox');
+
                 var dataURLreader = new FileReader()
                   , binaryReader  = new FileReader()
                   , title         = (source === 'local') ? 'Local file: ' + (file.name)
@@ -454,12 +455,12 @@ function main ($, CONSTANTS) {
                                                      , title     : title
                                                      });
                 dataURLreader.onload = function add_attributes_to_dropped_image(event) {
-                    $.log('Running add_dropped_image -> dataURLreader.onload');
+                    $.log('Running addImageToDropbox -> dataURLreader.onload');
                     $img.prop('src', event.target.result);
                     $imageContainer.append($img);
                 };
                 binaryReader.onloadend = function get_exif_for_dropped_image(event) {
-                    $.log('Running add_dropped_image -> binaryReader.onloadend');
+                    $.log('Running addImageToDropbox -> binaryReader.onloadend');
                     var jpeg = new JpegMeta.JpegFile(this.result, file.name);
                     $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
                     $img.data('depth', jpeg.general.depth.value);
@@ -482,7 +483,7 @@ function main ($, CONSTANTS) {
                 if (!files[i].type.match(/image\/p?jpeg/)) {
                     continue;
                 }
-                add_dropped_image(files[i], 'local');
+                addImageToDropbox(files[i], 'local');
             }
         };
 
@@ -525,13 +526,19 @@ function main ($, CONSTANTS) {
                                                                  /* Write to the new file. */
                                                                  loadStage = 'createWriter';
                                                                  thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
-                                                                     fileWriter.onwritestart = function fileWriter_onwritestart () {
+                                                                     fileWriter.onwritestart = function fileWriter_onwritestart (e) {
                                                                          // fileWriter.position points to 0.
                                                                          $.log('fileWriter is writing a remote image file to a local file.');
                                                                      };
-                                                                     fileWriter.onwriteend = function fileWriter_onwriteend () {
+                                                                     fileWriter.onwriteend = function fileWriter_onwriteend (e) {
                                                                          // fileWriter.position points to the next empty byte in the file.
                                                                          $.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
+                                                                         if (fileWriter.position) {
+                                                                             $.log('Adding remote image to the drop zone.');
+                                                                             thisFile.file(function (file) {
+                                                                                 addImageToDropbox(file, 'Remote', uri);
+                                                                             });
+                                                                         }
                                                                      };
 
                                                                      loadStage = 'createWriter: problem within the writer.';
@@ -542,25 +549,11 @@ function main ($, CONSTANTS) {
                                                                      fileWriter.write(imageFile);
                                                                      $.log('Remote file has been retrieved and writen.');
                                                                      $.log(localFS);
-
-// TEMP CODE
-              var $img = $('<img/>').addClass('localImage')
-                                    .prop('draggable', true)
-                                    .prop('src', 'data:image/' + mime + ';base64,' + imageBase64)
-                                    .data('source', 'local');
-              $imageContainer.append($img);
-// END TEMP CODE
-                                                                     $.log('Comlink has finished.  Deleting it.');
                                                                      $comlink.remove();
-// TODO: Call add_dropped_image here using our new blob.
-
                                                                  }, handleError);
                                                              }, handleError);
                                                          });
         };
-
-
-
 
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
@@ -961,7 +954,7 @@ function thirdParty($, CONSTANTS) {
         if (dataURI.split(',')[0].indexOf('base64') >= 0) {
             byteString = atob(dataURI.split(',')[1]);
         } else {
-            byteString = unescape(dataURI.split(',')[1]);
+            byteString = atob(dataURI); // The followup at stackoverflow is wrong here; this version is fixed.
         }
 
         // write the bytes of the string to an ArrayBuffer
