@@ -506,7 +506,7 @@ function main ($, CONSTANTS) {
                                .show();
                         $.imagesMedium();
                         break;
-                case 5: sizeStatus = 3;
+                case 5: sizeStatus = 4;
                           /* falls through */
                 case 4:
                         $shrink.show();
