@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0847
+// @version     0.01.0849
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -268,7 +268,9 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-//TODO: Add image size controls
+            $sizeContainer     = $('<fieldset id="imageSize">');
+            $imageShrink       = $('<span id="imageShrink">').addClass('imageSize');
+            $imageMagnify      = $('<span id="imageMagnify">').addClass('imageSize');
 //TODO: Add control over loading webpages
             $imageContainer    = $('<div id="imageContainer"/>');
             $previewContainer  = $('<div id="previewContainer"/>');
@@ -283,7 +285,9 @@ function main ($, CONSTANTS) {
 
             $('#sidebar').empty()
                          .appendAll([ $('<h1 id="imageHeader"/>').text($.l('Images'))
-                                    , $('<br/>')
+                                    , $sizeContainer.appendAll([ $imageShrink.append(localStorage.getItem('magnifyingGlassMinus'))
+                                                               , $imageMagnify.append(localStorage.getItem('magnifyingGlassPlus'))
+                                                               ]
                                     , $imageContainer
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
