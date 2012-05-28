@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0870
+// @version     0.01.0871
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -90,8 +90,10 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
                                        , 'Load CAA images'         : 'Load images from the Cover Art Archive'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
-                                       , 'Load text all releases'  : 'Loads images and creates editing spaces, for all displayed releases.'
+                                       , 'Load text all releases'  : 'Loads images and creates editing spaces for all displayed releases.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
+                                       , 'Shrink image'            : 'Zoom out on the image preview area'
+                                       , 'Magnify image'           : 'Zoom in on the image preview area'
                                        , 'Preview Image'           : 'Preview'
                                        },
                                   fr : {
@@ -237,7 +239,7 @@ function main ($, CONSTANTS) {
           , x2
           , separatorRegexp = /(\d+)(\d{3})/;
 
-        x = ('' + numberString).split('.');
+        x  = ('' + numberString).split('.');
         x1 = x[0];
         x2 = x.length > 1 ? '.' + x[1] : '';
         while (separatorRegexp.test(x1)) {
@@ -247,7 +249,6 @@ function main ($, CONSTANTS) {
     };
 
     var init = function init () {
-
         /* This creates a temporary local file system to use to store remote image files. */
         var localFS;
         var storeFS = function store_created_local_file_system (fsObj) {
@@ -255,6 +256,7 @@ function main ($, CONSTANTS) {
             $.log(fsObj);
             localFS = fsObj;
         };
+
         window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
         window.requestFileSystem(window.TEMPORARY, CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function (e) {
             $.log('Requesting a temporary local file system failed.  Error message is:');
@@ -270,6 +272,7 @@ function main ($, CONSTANTS) {
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
 //TODO: Add control over loading webpages
+//TODO: Add remove image control
             $imageContainer    = $('<div id="imageContainer"/>');
             $previewContainer  = $('<div id="previewContainer"/>');
             var $previewInfo   = $('<dl id="previewText"/>').hide()
@@ -281,7 +284,9 @@ function main ($, CONSTANTS) {
               , $ddFilesize    = $('<dd id="previewFilesize">')
               , $sizeContainer = $('<div id="imageSizeControlsMenu">')
               , $imageShrink   = $('<div id="imageShrink">').addClass('imageSizeControl')
+                                                            .prop('title', $.l('Shrink image'))
               , $imageMagnify  = $('<div id="imageMagnify">').addClass('imageSizeControl')
+                                                            .prop('title', $.l('Magnify image'))
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
@@ -386,7 +391,7 @@ function main ($, CONSTANTS) {
                                                 , 'font-weight'      : '900!important;'
                                                 , 'left'             : '2em;'
                                                 , 'margin-left'      : '-1.2em;!important;'
-                                                , 'opacity'          : '0.5;'
+                                                , 'opacity'          : '0.3;'
                                                 , 'padding-bottom'   : '0px;'
                                                 , 'padding-top'      : '0px;'
                                                 , 'position'         : 'absolute;'
