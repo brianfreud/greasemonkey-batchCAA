@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0860
+// @version     0.01.0870
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -492,25 +492,25 @@ function main ($, CONSTANTS) {
                 case 0: sizeStatus = 1;
                           /* falls through */
                 case 1:
-                        $shrink.hide();
-                        $magnify.show();
+                        $shrink.vis(0);
+                        $magnify.vis(1);
                         $.imagesTiny();
                         break;
                 case 2:
-                        $shrink.show();
-                        $magnify.show();
+                        $shrink.add($magnify)
+                               .vis(1);
                         $.imagesSmall();
                         break;
                 case 3:
                         $shrink.add($magnify)
-                               .show();
+                               .vis(1);
                         $.imagesMedium();
                         break;
                 case 5: sizeStatus = 4;
                           /* falls through */
                 case 4:
-                        $shrink.show();
-                        $magnify.hide();
+                        $shrink.vis(1);
+                        $magnify.vis(0);
                         $.imagesLarge();
                         break;
             }
@@ -1086,12 +1086,18 @@ function thirdParty($, CONSTANTS) {
                   },
         log       : function log_handler(str) {
                         return log(str);
-                  }
+                  } 
     });
 
     // By Brian Schweitzer and Naftali Lubin
-    $.fn.appendAll = function(arrayToAdd) {
+    $.fn.appendAll = function (arrayToAdd) {
         return this.append.apply(this, arrayToAdd);
+    };
+
+    // By Brian Schweitzer
+    $.fn.vis = function (i) {
+        return this.css('visibility', i ? 'visible'
+                                        : 'hidden');
     };
 
     // http://james.padolsey.com/javascript/regex-selector-for-jquery/
