@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0851
+// @version     0.01.0860
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -63,7 +63,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Other'
                                   ]
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
-                , IMAGESIZES    : [100, 150, 300]
+                , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
                 , SIDEBARHEIGHT : (screen.height - 290)
@@ -212,6 +212,7 @@ function main ($, CONSTANTS) {
 
     var $imageContainer
       , $previewContainer
+      , sizeStatus
       , $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
 
     /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
@@ -278,9 +279,9 @@ function main ($, CONSTANTS) {
               , $dtFilesize    = $('<dt>').text($.l('File size'))
                                           .addClass('previewDT')
               , $ddFilesize    = $('<dd id="previewFilesize">')
-              , $sizeContainer = $('<fieldset id="imageSize">')
-              , $imageShrink   = $('<span id="imageShrink">').addClass('imageSize')
-              , $imageMagnify  = $('<span id="imageMagnify">').addClass('imageSize')
+              , $sizeContainer = $('<div id="imageSizeControlsMenu">')
+              , $imageShrink   = $('<div id="imageShrink">').addClass('imageSizeControl')
+              , $imageMagnify  = $('<div id="imageMagnify">').addClass('imageSizeControl')
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
@@ -289,9 +290,10 @@ function main ($, CONSTANTS) {
 
             $('#sidebar').empty()
                          .appendAll([ $('<h1 id="imageHeader"/>').text($.l('Images'))
-                                    , $sizeContainer.appendAll([ $imageShrink.append(minusImage)
-                                                               , $imageMagnify.append(plusImage)
+                                    , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
+                                                               , $imageShrink.append(minusImage)
                                                                ])
+                                    , $('<br/>')
                                     , $imageContainer
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
@@ -309,7 +311,11 @@ function main ($, CONSTANTS) {
             $.log('Adding css rules');
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
-            $.addRule('.localImage', '{ padding: 3px; vertical-align: middle; }');
+            $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
+            $.addRule('#imageHeader', '{ float: left; padding-bottom: 1em; width: 50%; }');
+            $.addRule('#imageSizeControlsMenu', '{ float: right; width: 110px; height: 24px; }');
+            $.addRule('.imageSizeControl', '{ float: right; height: 26px; width: 26px; cursor: pointer; opacity: 0.4;}');
+            $.addRule('.imageSizeControl:hover', '{ opacity: 1;}');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
             $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
@@ -448,28 +454,74 @@ function main ($, CONSTANTS) {
             makeStyle(sizes[0]);
             makeStyle(sizes[1]);
             makeStyle(sizes[2]);
+            makeStyle(sizes[3]);
 
             $.log('Adding css methods');
-            var useSheets = function use_stylesheets (small, medium, big) {
-                                $('#style' + sizes[0]).prop('disabled', !small);
-                                $('#style' + sizes[1]).prop('disabled', !medium);
-                                $('#style' + sizes[2]).prop('disabled', !big);
+            var useSheets = function use_stylesheets (tiny, small, medium, big) {
+                                $('#style' + sizes[0]).prop('disabled', !tiny);
+                                $('#style' + sizes[1]).prop('disabled', !small);
+                                $('#style' + sizes[2]).prop('disabled', !medium);
+                                $('#style' + sizes[3]).prop('disabled', !big);
                             };
             $.extend({
+                     imagesTiny  : function make_images_small () {
+                                        useSheets(1, 0, 0, 0);
+                                    },
                      imagesSmall  : function make_images_small () {
-                                        useSheets(1, 0, 0);
+                                        useSheets(0, 1, 0, 0);
                                     },
                      imagesMedium : function make_images_medium () {
-                                        useSheets(0, 1, 0);
+                                        useSheets(0, 0, 1, 0);
                                     },
                      imagesLarge  : function make_images_big () {
-                                        useSheets(0, 0, 1);
+                                        useSheets(0, 0, 0, 1);
                                     }
                      });
 
             $.log('Setting active style');
             $.imagesSmall();
+            sizeStatus = 2;
         }();
+
+        var imageSize = function imageSize (change) {
+            sizeStatus += change;
+            var $shrink  = $('#imageShrink')
+              , $magnify = $('#imageMagnify')
+              ;
+            switch (sizeStatus) {
+                case 0: sizeStatus = 1;
+                          /* falls through */
+                case 1:
+                        $shrink.hide();
+                        $magnify.show();
+                        $.imagesTiny();
+                        break;
+                case 2:
+                        $shrink.show();
+                        $magnify.show();
+                        $.imagesSmall();
+                        break;
+                case 3:
+                        $shrink.add($magnify)
+                               .show();
+                        $.imagesMedium();
+                        break;
+                case 5: sizeStatus = 3;
+                          /* falls through */
+                case 4:
+                        $shrink.show();
+                        $magnify.hide();
+                        $.imagesLarge();
+                        break;
+            }
+        };
+
+        $('#imageShrink').on('click', function () {
+            imageSize(-1);
+        });
+        $('#imageMagnify').on('click', function () {
+            imageSize(1);
+        });
 
         var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
                 $.log('Running addImageToDropbox');
@@ -1058,8 +1110,6 @@ function thirdParty($, CONSTANTS) {
     };
 */
 }
-
-
 
 !function main_loader(i) {
     'use strict';
