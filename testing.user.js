@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0871
+// @version     0.01.0897
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -73,8 +73,9 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , SHRINK  : '0.7'
                                   }
                 , TEXT          : {
-                                  en : { 'Add cover art'           : 'Add cover art'
-                                       , 'Add image one release'   : 'Add another empty image space to this release.'
+                                  en : { languageName              : 'English'
+                                       , 'Add cover art'           : 'Add cover art'
+                                       , 'Add image one release'   : 'Add a box for another image.'
                                        , 'bytes'                   : 'bytes'
                                        , 'coverType:Back'          : 'Back'
                                        , 'coverType:Booklet'       : 'Booklet'
@@ -87,17 +88,21 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'File size'               : 'File size'
                                        , '(Image) Resolution'      : 'Resolution'
                                        , 'Images'                  : 'Images'
+                                       , 'Language'                : 'Language'
                                        , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
-                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive'
+                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive for this release'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
-                                       , 'Load text all releases'  : 'Loads images and creates editing spaces for all displayed releases.'
-                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive, and creates spaces for new images, for this release.'
-                                       , 'Shrink image'            : 'Zoom out on the image preview area'
-                                       , 'Magnify image'           : 'Zoom in on the image preview area'
+                                       , 'Load text all releases'  : 'Loads images for all displayed releases.'
+                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
+                                       , 'Magnify image'           : 'Zoom in'
+                                       , 'Options'                 : 'Options'
                                        , 'Preview Image'           : 'Preview'
+                                       , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box to turn off image removal mode.'
+                                       , 'Remove images'           : 'Remove images'
+                                       , 'Shrink image'            : 'Zoom out'
                                        },
-                                  fr : {
-                                       'Images' : 'Les Photos'
+                                  fr : { languageName              : 'Français'
+                                       , 'Images'                  : 'Les Photos'
                                        }
                                   }
                 };
@@ -272,7 +277,6 @@ function main ($, CONSTANTS) {
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
 //TODO: Add control over loading webpages
-//TODO: Add remove image control
             $imageContainer    = $('<div id="imageContainer"/>');
             $previewContainer  = $('<div id="previewContainer"/>');
             var $previewInfo   = $('<dl id="previewText"/>').hide()
@@ -287,6 +291,15 @@ function main ($, CONSTANTS) {
                                                             .prop('title', $.l('Shrink image'))
               , $imageMagnify  = $('<div id="imageMagnify">').addClass('imageSizeControl')
                                                             .prop('title', $.l('Magnify image'))
+              , $optionsButton = $('<details id="optionsHeader"/>')
+              , $optionsTitle  = $('<summary/>')
+              , $optionsBtnCont= $('<div>' + localStorage.getItem('iconSettings') + '</div>').addClass('optionsBtnControl')
+                                                                                             .prop('title', $.l('Options'))
+              , $optionsContainer= $('<div id="optionsContainer"/>')
+              , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
+              , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>')
+              , $langLabel     = $('<label for="caaOptionLanguages"/>').text($.l('Language') )
+              , $langList      = $('<select id="caaOptionLanguages"/>')
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
@@ -298,7 +311,13 @@ function main ($, CONSTANTS) {
                                     , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
                                                                , $imageShrink.append(minusImage)
                                                                ])
-                                    , $('<br/>')
+                                    , $optionsButton.appendAll([ $optionsTitle.append($optionsBtnCont)
+                                                               , $optionsContainer.appendAll([ $removeControl
+                                                                                             , $removeLabel
+                                                                                             , $('<br/>')
+                                                                                             , $langLabel.append($langList)
+                                                                                             ])
+                                                               ])
                                     , $imageContainer
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
@@ -312,15 +331,36 @@ function main ($, CONSTANTS) {
                                     ]);
         }();
 
+// TODO: Populate the languages list
+// TODO: Use the language setting
+// TODO: Save/load language setting
+// TODO: Add remove image functionality
+// TODO: Add option to turn on/off webpage load/parsing
+
         !function init_add_css () {
             $.log('Adding css rules');
+            $.addRule('*', '{ -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }');
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
-            $.addRule('#imageHeader', '{ float: left; padding-bottom: 1em; width: 50%; }');
-            $.addRule('#imageSizeControlsMenu', '{ float: right; width: 110px; height: 24px; }');
-            $.addRule('.imageSizeControl', '{ float: right; height: 26px; width: 26px; cursor: pointer; opacity: 0.4;}');
-            $.addRule('.imageSizeControl:hover', '{ opacity: 1;}');
+            $.addRule('#imageHeader', '{ float: left; width: 30%; }');
+            $.addRule('#optionsHeader', '{ display: inline-block; float: right; margin-right: -24px; margin-top: -3px; width: 40%; }');
+            $.addRule('#optionsContainer', JSON.stringify({ 'border'        : '1px solid lightGrey;'
+                                                          , 'border-radius' : '6px;'
+                                                          , 'float'         : 'right;'
+                                                          , 'line-height'   : '2;'
+                                                          , 'margin-right'  : '-52px;'
+                                                          , 'margin-top'    : '38px;'
+                                                          , 'padding'       : '7px;'
+                                                          }));
+            $.addRule('#optionsContainer > label, #optionsContainer > label > select', '{ margin-left: 5px; }');
+            $.addRule('#optionsHeader > summary', '{ line-height: 2; }');
+            $.addRule('#optionsHeader > summary::-webkit-details-marker', '{ display:none; }'); // Gets rid of the arrow on <details>
+            $.addRule('#imageSizeControlsMenu', '{ float: right; width: 25%; height: 24px; }');
+            $.addRule('.imageSizeControl, .optionsBtnControl', '{ float: right; height: 26px; width: 26px; cursor: pointer; }');
+            $.addRule('.imageSizeControl', '{ opacity: 0.4;}');
+            $.addRule('.optionsBtnControl', '{ opacity: 0.3;}');
+            $.addRule('.imageSizeControl:hover, .optionsBtnControl:hover', '{ opacity: 1;}');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
             $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
