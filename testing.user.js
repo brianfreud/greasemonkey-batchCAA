@@ -95,10 +95,13 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Load text all releases'  : 'Loads images for all displayed releases.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
                                        , 'Magnify image'           : 'Zoom in'
+                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time this script is run.'
                                        , 'Options'                 : 'Options'
+                                       , 'Parse (help)'            : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
+                                       , 'Parse web pages'         : 'Parse web pages'
                                        , 'Preview Image'           : 'Preview'
-                                       , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box to turn off image removal mode.'
-                                       , 'Remove images'           : 'Remove images'
+                                       , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
+                                       , 'Remove images'           : 'Remove images mode'
                                        , 'Shrink image'            : 'Zoom out'
                                        },
                                   fr : { languageName              : 'Français'
@@ -207,7 +210,6 @@ function getUri(e) {
 }
 /* END remote image accessor functions. */
 
-
 function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
@@ -297,15 +299,40 @@ function main ($, CONSTANTS) {
                                                                                              .prop('title', $.l('Options'))
               , $optionsContainer= $('<div id="optionsContainer"/>')
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
-              , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>')
-              , $langLabel     = $('<label for="caaOptionLanguages"/>').text($.l('Language') )
-              , $langList      = $('<select id="caaOptionLanguages"/>')
+                                                                    .prop('title', $.l('Remove (help)'))
+              , $removeControl = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Remove (help)'))
+              , $parseLabel    = $('<label for="caaOptionRemove"/>').text($.l('Parse web pages'))
+                                                                    .prop('title', $.l('Parse (help)'))
+              , $parseControl  = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Parse (help)'))
+              , $langLabel     = $('<label id="caaOptionLanguagesLabel" for="caaOptionLanguages"/>').text($.l('Language') + ':')
+                                                                                                    .prop('title', $.l('Changed language note'))
+              , $langList      = $('<select id="caaOptionLanguages"/>').prop('size', 3)
+                                                                       .prop('title', $.l('Changed language note'))
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage      = baseImage + localStorage.getItem('magnifyingGlassPlus')
               ;
 
+            /* Populate the languages list */
+            var languages = []
+              , $option = $('<option/>')
+              ;
+            Object.keys(CONSTANTS.TEXT).forEach(function(key) {
+                languages.push([key, CONSTANTS.TEXT[key].languageName]);
+            });
+            languages.sort(function (a, b) {
+                return a[1] === b[1] ? 0                 // a[1] == b[1] ->  0
+                                     : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
+                                                   : -1; // a[1] <  b[1] -> -1
+            });
+            var $ARRlangs = languages.map(function (language) {
+                                              return $option.clone()
+                                                            .prop('value', language[0])
+                                                            .text(language[1]);
+                                          });
+
+            /* Populate the DOM */
             $('#sidebar').empty()
                          .appendAll([ $('<h1 id="imageHeader"/>').text($.l('Images'))
                                     , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
@@ -314,8 +341,10 @@ function main ($, CONSTANTS) {
                                     , $optionsButton.appendAll([ $optionsTitle.append($optionsBtnCont)
                                                                , $optionsContainer.appendAll([ $removeControl
                                                                                              , $removeLabel
+                                                                                             , $parseControl
+                                                                                             , $parseLabel
                                                                                              , $('<br/>')
-                                                                                             , $langLabel.append($langList)
+                                                                                             , $langLabel.append($langList.appendAll($ARRlangs))
                                                                                              ])
                                                                ])
                                     , $imageContainer
@@ -331,11 +360,9 @@ function main ($, CONSTANTS) {
                                     ]);
         }();
 
-// TODO: Populate the languages list
 // TODO: Use the language setting
 // TODO: Save/load language setting
 // TODO: Add remove image functionality
-// TODO: Add option to turn on/off webpage load/parsing
 
         !function init_add_css () {
             $.log('Adding css rules');
@@ -350,10 +377,11 @@ function main ($, CONSTANTS) {
                                                           , 'float'         : 'right;'
                                                           , 'line-height'   : '2;'
                                                           , 'margin-right'  : '-52px;'
-                                                          , 'margin-top'    : '38px;'
+                                                          , 'margin-top'    : '8px;'
                                                           , 'padding'       : '7px;'
                                                           }));
             $.addRule('#optionsContainer > label, #optionsContainer > label > select', '{ margin-left: 5px; }');
+            $.addRule('#optionsContainer > label > select', '{ padding: 3px; }');
             $.addRule('#optionsHeader > summary', '{ line-height: 2; }');
             $.addRule('#optionsHeader > summary::-webkit-details-marker', '{ display:none; }'); // Gets rid of the arrow on <details>
             $.addRule('#imageSizeControlsMenu', '{ float: right; width: 25%; height: 24px; }');
