@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0901
+// @version     0.01.0905
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -293,11 +293,9 @@ function main ($, CONSTANTS) {
                                                             .prop('title', $.l('Shrink image'))
               , $imageMagnify  = $('<div id="imageMagnify">').addClass('imageSizeControl')
                                                             .prop('title', $.l('Magnify image'))
-              , $optionsButton = $('<details id="optionsHeader"/>')
-              , $optionsTitle  = $('<summary/>')
-              , $optionsBtnCont= $('<div>' + localStorage.getItem('iconSettings') + '</div>').addClass('optionsBtnControl')
-                                                                                             .prop('title', $.l('Options'))
-              , $optionsContainer= $('<div id="optionsContainer"/>')
+              , $optionsControl = $('<div id="optionsHeader"/>').prop('title', $.l('Options'))
+              , optionsImage   = localStorage.getItem('iconSettings')
+              , $optionsMenu   = $('<div id="optionsMenu"/>').hide()
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
                                                                     .prop('title', $.l('Remove (help)'))
               , $removeControl = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Remove (help)'))
@@ -338,15 +336,15 @@ function main ($, CONSTANTS) {
                                     , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
                                                                , $imageShrink.append(minusImage)
                                                                ])
-                                    , $optionsButton.appendAll([ $optionsTitle.append($optionsBtnCont)
-                                                               , $optionsContainer.appendAll([ $removeControl
-                                                                                             , $removeLabel
-                                                                                             , $parseControl
-                                                                                             , $parseLabel
-                                                                                             , $('<br/>')
-                                                                                             , $langLabel.append($langList.appendAll($ARRlangs))
-                                                                                             ])
-                                                               ])
+                                    , $optionsControl.append(optionsImage)
+                                    , $optionsMenu.appendAll([ $removeControl
+                                                             , $removeLabel
+                                                             , $('<br/>')
+                                                             , $parseControl
+                                                             , $parseLabel
+                                                             , $('<br/>')
+                                                             , $langLabel.append($langList.appendAll($ARRlangs))
+                                                             ])
                                     , $imageContainer
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
@@ -358,6 +356,10 @@ function main ($, CONSTANTS) {
                                                                                            ])
                                                                   ])
                                     ]);
+
+            $optionsControl.click(function optionsControl_click_handler () {
+                                       $optionsMenu.toggle();
+                                  });
         }();
 
 // TODO: Use the language setting
@@ -372,23 +374,20 @@ function main ($, CONSTANTS) {
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
             $.addRule('#imageHeader', '{ float: left; width: 30%; }');
             $.addRule('#optionsHeader', '{ display: inline-block; float: right; margin-right: -24px; margin-top: -3px; width: 40%; }');
-            $.addRule('#optionsContainer', JSON.stringify({ 'border'        : '1px solid lightGrey;'
-                                                          , 'border-radius' : '6px;'
-                                                          , 'float'         : 'right;'
-                                                          , 'line-height'   : '2;'
-                                                          , 'margin-right'  : '-52px;'
-                                                          , 'margin-top'    : '8px;'
-                                                          , 'padding'       : '7px;'
-                                                          }));
-            $.addRule('#optionsContainer > label, #optionsContainer > label > select', '{ margin-left: 5px; }');
-            $.addRule('#optionsContainer > label > select', '{ padding: 3px; }');
-            $.addRule('#optionsHeader > summary', '{ line-height: 2; }');
-            $.addRule('#optionsHeader > summary::-webkit-details-marker', '{ display:none; }'); // Gets rid of the arrow on <details>
+            $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
+                                                     , 'border-radius' : '8px;'
+                                                     , 'line-height'   : '2;'
+                                                     , 'margin-top'    : '32px;'
+                                                     , 'padding'       : '12px;'
+                                                     }));
+            $.addRule('#optionsMenu > label, #optionsMenu > label > select', '{ margin-left: 5px; }');
+            $.addRule('#optionsMenu > label > select', '{ padding: 3px; }');
+            $.addRule('#optionsMenu > summary', '{ line-height: 2; }');
             $.addRule('#imageSizeControlsMenu', '{ float: right; width: 25%; height: 24px; }');
-            $.addRule('.imageSizeControl, .optionsBtnControl', '{ float: right; height: 26px; width: 26px; cursor: pointer; }');
+            $.addRule('.imageSizeControl, #optionsHeader', '{ float: right; height: 26px; width: 26px; cursor: pointer; }');
             $.addRule('.imageSizeControl', '{ opacity: 0.4;}');
-            $.addRule('.optionsBtnControl', '{ opacity: 0.3;}');
-            $.addRule('.imageSizeControl:hover, .optionsBtnControl:hover', '{ opacity: 1;}');
+            $.addRule('#optionsHeader', '{ opacity: 0.3;}');
+            $.addRule('.imageSizeControl:hover, #optionsHeader:hover', '{ opacity: 1;}');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
             $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
             $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
