@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0905
+// @version     0.01.0912
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -920,12 +920,12 @@ function main ($, CONSTANTS) {
                                                             $newCAARow.find('div.loadingDiv, .caaAdd').toggle();
                                                             $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
-                                           , success  : function caaResponseHandler (response) {
+                                           , success  : function caaResponseHandler (data, textStatus, jqXHR) {
                                                             $.log('Received CAA, parsing...');
-                                                            if (jQuery.isEmptyObject(response)) {
+                                                            if (jQuery.isEmptyObject(data)) {
                                                                 $.log('CAA response: no images in CAA for this release.');
                                                             } else {
-                                                                $.each(response.images, function parseCAAResponse (i) {
+                                                                $.each(data.images, function parseCAAResponse (i) {
                                                                     $.log('Parsing CAA response: image #' + i);
                                                                     if ($newCAARow.find('.newCAAimage').length === 0) {
                                                                         $thisAddBtn.trigger('click');
@@ -945,8 +945,15 @@ function main ($, CONSTANTS) {
                                                                     var realImg = new Image();
                                                                     realImg.src = this.image;
                                                                     realImg.onload = function assign_real_caa_image () {
-                                                                        $img.prop('src', realImg.src)
+                                                                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight)
                                                                             .css('padding-top', '0px');
+                                                                        var xhrReq = $.ajax({
+                                                                            url: realImg.src,
+                                                                            success: function (request) {
+                                                                                $img.data('size', addCommas(request.length))
+                                                                                    .prop('src', realImg.src);
+                                                                            }
+                                                                          });
                                                                     };
                                                                     /* End lowsrc workaround. */
 
@@ -994,14 +1001,9 @@ function main ($, CONSTANTS) {
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         $.log('Setting new image for preview box.');
         $('#previewImage').prop('src', $(this).prop('src'));
-        if ($(this).hasClass('dropBoxImage')) {
-            $('#previewText').hide();
-// TODO: Add loading image info for CAA image boxes
-        } else {
-            $('#previewResolution').text($(this).data('resolution'));
-            $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
-            $('#previewText').show();
-        }
+        $('#previewResolution').text($(this).data('resolution'));
+        $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
+        $('#previewText').show();
     });
 
     /* START: functionality to allow dragging from the Images box to a specific caa image box. */
