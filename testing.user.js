@@ -813,6 +813,7 @@ function main ($, CONSTANTS) {
                                                               .append($('<header>').text('x')
                                                                                    .addClass('closeButton'))
                                                               .append($('<img>').addClass('dropBoxImage')
+                                                                                .prop('draggable', false)
                                                                                 .wrap('<div>').parent())
                                                               .append($('<figcaption>').append($('<input type="text"/>').prop('placeholder', 'image comment'))
                                                                                        .append($('</br>'))
