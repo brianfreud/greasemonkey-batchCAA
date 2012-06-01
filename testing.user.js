@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0919
+// @version     0.01.0920
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -47,10 +47,12 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
+                , VERSION       : '0.1.0920'
                 , IMAGEPROXY    : ''
                 , DEBUGLOG_OVER : false
-                , COLORS        : { ACTIVE     : 'lightSteelBlue'
-                                  , BORDERS    : '1px dotted grey'
+                , BORDERS       : '1px dotted #808080'
+                , COLORS        : { ACTIVE     : '#B0C4DE'
+                                  , CAABUTTONS : '#4B0082'
                                   , INCOMPLETE : '#FFFF7A'
                                   , COMPLETE   : '#C1FFC1'
                                   }
@@ -111,7 +113,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                   }
                 };
 
-
 /* START remote image accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
    new context loses the special permissions granted to userscripts, and thus does not have access to GM_xmlhttpRequest. */
@@ -120,6 +121,7 @@ var CONSTANTS = { DEBUGMODE     : true
 var body       = document.getElementsByTagName('body')[0]
   , messageDiv = document.createElement('div')
   ;
+
 messageDiv.id = 'xhrComlink';
 body.appendChild(messageDiv);
 
@@ -133,80 +135,90 @@ messageDiv.addEventListener('click', getUri, true);
    been retrieved. */
 function getUri(e) {
     'use strict';
-    var thisComlink   = e.target
-      , linkedUri     = e.target.innerHTML
-      , base64_encode = function base64_encode (data) {  // from http://phpjs.org
-                            // http://kevin.vanzonneveld.net
-                            // +   original by: Tyler Akins (http://rumkin.com)
-                            // +   improved by: Bayron Guevara
-                            // +   improved by: Thunder.m
-                            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-                            // +   bugfixed by: Pellentesque Malesuada
-                            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-                            // +   improved by: Rafał Kukawski (http://kukawski.pl)
-                            // *     example 1: base64_encode('Kevin van Zonneveld');
-                            // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
-                            // mozilla has this native
-                            // - but breaks in 2.0.0.12!
-                            //}
-                            var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-                            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
-                                ac = 0,
-                                enc = "",
-                                tmp_arr = [];
-                        
-                            if (!data) {
-                                return data;
-                            } do { // pack three octets into four hexets
-                                o1 = data.charCodeAt(i++);
-                                o2 = data.charCodeAt(i++);
-                                o3 = data.charCodeAt(i++);
-                        
-                                bits = o1 << 16 | o2 << 8 | o3;
-                        
-                                h1 = bits >> 18 & 0x3f;
-                                h2 = bits >> 12 & 0x3f;
-                                h3 = bits >> 6 & 0x3f;
-                                h4 = bits & 0x3f;
-                    
-                                // use hexets to index into b64, and append result to encoded string
-                                tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
-                            } while (i < data.length);
-                            enc = tmp_arr.join('');
-                            var r = data.length % 3;
-                            return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
-                        }
-      , data_string = function data_string(data) {
-                          // Generate a binary data string from character / multibyte data
-                          // from Tim Smart, at http://pastebin.ca/1425789
-                          var binary_string = '';
-                          for (var i = 0, il = data.length; i < il; i++) {
-                              binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
-                          }
-                          return binary_string;
-                      }
-      ;
 
-    var storeImage  = function storeImage (response) {
-        var binaryImage       = response.responseText;
-        var binaryStringImage = data_string(binaryImage);
-        var base64Image       = base64_encode(binaryStringImage);
+  // START from http://phpjs.org
+  var base64_encode = function base64_encode(data) {
+            // http://kevin.vanzonneveld.net
+            // +   original by: Tyler Akins (http://rumkin.com)
+            // +   improved by: Bayron Guevara
+            // +   improved by: Thunder.m
+            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+            // +   bugfixed by: Pellentesque Malesuada
+            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+            // +   improved by: Rafał Kukawski (http://kukawski.pl)
+            // *     example 1: base64_encode('Kevin van Zonneveld');
+            // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
+            // mozilla has this native
+            // - but breaks in 2.0.0.12!
+            //}
+            var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+                ac = 0,
+                enc = "",
+                tmp_arr = [];
 
-        thisComlink.innerHTML = '';
-        var newtext = document.createTextNode(base64Image);
-        thisComlink.appendChild(newtext);
+            if (!data) {
+                return data;
+            }
+            do { // pack three octets into four hexets
+                o1 = data.charCodeAt(i++);
+                o2 = data.charCodeAt(i++);
+                o3 = data.charCodeAt(i++);
 
-        var evt = document.createEvent("MouseEvents");
-        evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-        thisComlink.dispatchEvent(evt);
+                bits = o1 << 16 | o2 << 8 | o3;
+
+                h1 = bits >> 18 & 0x3f;
+                h2 = bits >> 12 & 0x3f;
+                h3 = bits >> 6 & 0x3f;
+                h4 = bits & 0x3f;
+
+                // use hexets to index into b64, and append result to encoded string
+                tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+            } while (i < data.length);
+            enc = tmp_arr.join('');
+            var r = data.length % 3;
+            return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+        };
+    // END (phpjs.org)
+  
+    // START from Tim Smart at http://pastebin.ca/1425789
+    var data_string = function data_string(data) {
+            // Generate a binary data string from character / multibyte data
+            var binary_string = '';
+            for (var i = 0, il = data.length; i < il; i++) {
+                binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
+            }
+            return binary_string;
+        };
+    // END (Tim Smart)
+
+    var bin2base64 = function bin2base64 (binary) {
+        return base64_encode(data_string(binary));
     };
 
-    var gmXHR = GM_xmlhttpRequest; // GM_xmlhttpRequest is not a constructor, but it looks like one to jshint.
-    gmXHR({ method: "GET"
-          , url: linkedUri
-          , responseType : 'arraybuffer'
-          , overrideMimeType: 'text/plain; charset=x-user-defined'
-          , onload: storeImage
+    var storeImage = function storeImage(response) {
+            var thisComlink = e.target
+              , evt         = document.createEvent("MouseEvents")
+              ;
+
+            thisComlink.innerHTML = '';
+
+            thisComlink.appendChild(
+                document.createTextNode(
+                    bin2base64(response.responseText)
+                )
+            );
+
+            evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+            thisComlink.dispatchEvent(evt);
+        };
+
+    var gmXHR = GM_xmlhttpRequest; // Workaround to jshint, since GM_xmlhttpRequest is not a constructor but looks like one to jshint.
+    gmXHR({ method           : "GET"
+          , overrideMimeType : 'text/plain; charset=x-user-defined'
+          , onload           : storeImage
+          , responseType     : 'arraybuffer'
+          , url              : e.target.innerHTML
           });
 }
 /* END remote image accessor functions. */
@@ -217,7 +229,7 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
 
-    /* This just forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
+    /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
 
     var $imageContainer
@@ -256,6 +268,7 @@ function main ($, CONSTANTS) {
         return x1 + x2;
     };
 
+    /* Checks that an editbox has both an image and a cover type.  Returns the associate color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
             return CONSTANTS.COLORS.COMPLETE;
@@ -287,7 +300,6 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-//TODO: Add control over loading webpages
             $imageContainer    = $('<div id="imageContainer"/>');
             $previewContainer  = $('<div id="previewContainer"/>');
             var $previewInfo   = $('<dl id="previewText"/>').hide()
@@ -356,7 +368,7 @@ function main ($, CONSTANTS) {
                                                                                     , $('<br/>')
                                                                                     , $langLabel.append($langList.appendAll($ARRlangs))
                                                                                     ]))
-                                    , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
+                                    , $('<hr/>').css('border-top', CONSTANTS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
                                     , $previewContainer.appendAll([ $previewImage
                                                                   , $previewInfo.appendAll([ $dtResolution
@@ -375,6 +387,7 @@ function main ($, CONSTANTS) {
 // TODO: Use the language setting
 // TODO: Save/load language setting
 // TODO: Add remove image functionality
+// TODO: Add color picker functionality
 
         !function init_add_css () {
             $.log('Adding css rules');
@@ -414,7 +427,7 @@ function main ($, CONSTANTS) {
             $.addRule('.CAAdropbox > figcaption > input', '{ font-size: 12px; width: 90%; }');
             $.addRule('.CAAdropbox > figcaption > div', '{ font-size: 80%; }');
             $.addRule('.newCAAimage > div', JSON.stringify({ 'background-color' : '#E0E0FF;'
-                                                           , 'border'           : CONSTANTS.COLORS.BORDERS + ';'
+                                                           , 'border'           : CONSTANTS.BORDERS + ';'
                                                            , 'margin-bottom'    : '6px!important;'
                                                            }));
             $.addRule('.workingCAAimage > div', '{ margin-bottom: 8px!important; }');
@@ -449,7 +462,7 @@ function main ($, CONSTANTS) {
             $.addRule('.over', '{ background-color: ' + CONSTANTS.COLORS.ACTIVE + '; }');
 
            /* Start control buttons */
-            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : 'indigo!important;'
+            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : CONSTANTS.COLORS.CAABUTTONS + '!important;'
                                                           , 'border'           : '1px outset #FAFAFA!important;'
                                                           , 'border-radius'    : '7px;'
                                                           , 'color'            : '#FFF!important;'
@@ -478,7 +491,7 @@ function main ($, CONSTANTS) {
            /* End control buttons */
 
            /* Start right side layout */
-           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : CONSTANTS.COLORS.BORDERS + ';'
+           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : CONSTANTS.BORDERS + ';'
                                                 , 'padding-left' : '8px;'
                                                 , 'position'     : 'fixed;'
                                                 , 'right'        : '20px;'
@@ -1123,17 +1136,15 @@ function thirdParty($, CONSTANTS) {
         $('<style>' + selector + rule.replace(/[",]/g,'').replace(/~/g,'"') + '</style>').appendTo($('head'));
     };
 
-    var debug = function debug () {
-        return CONSTANTS.DEBUGMODE;
-    };
-
+    // A very basic version of a gettext function.
     var l = function l (str) {
         return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT.en[str]);
     };
 
+    // Logs a message to the console if debug mode is on.
     var log = function log (str, over) {
         'undefined' === typeof(over) && (over = false);
-        debug() && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
+        CONSTANTS.DEBUGMODE && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
     };
 
     // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
@@ -1171,9 +1182,6 @@ function thirdParty($, CONSTANTS) {
         dataURItoBlob : function dataURItoBlob_handler (dataURI, mime) {
                             return dataURItoBlob(dataURI, mime);
                   },
-        debug     : function debug_handler() {
-                        return debug();
-                  },
         l         : function gettext_handler(str) {
                         return l(str);
                   },
@@ -1183,35 +1191,22 @@ function thirdParty($, CONSTANTS) {
     });
 
     // By Brian Schweitzer and Naftali Lubin
+    // Appends an array of jQuery objects to a jQuery object
     $.fn.appendAll = function (arrayToAdd) {
         return this.append.apply(this, arrayToAdd);
     };
 
+    // Sets the css visibility using a boolean value rather than a string value
     $.fn.vis = function (i) {
         return this.css('visibility', i ? 'visible'
                                         : 'hidden');
     };
 
+    // Tests whether an element has a defined property value.
     $.fn.hasProp = function (property) {
         property = $(this).prop(property);
         return ('undefined' !== typeof property && property.length);
     };
-
-    // http://james.padolsey.com/javascript/regex-selector-for-jquery/
-/*
-    jQuery.expr[':'].regex = function jQuery_regexp (elem, index, match) {
-        var matchParams = match[3].split(','),
-            validLabels = /^(data|css):/,
-            attr = {
-                method: matchParams[0].match(validLabels) ?
-                            matchParams[0].split(':')[0] : 'attr',
-                property: matchParams.shift().replace(validLabels,'')
-            },
-            regexFlags = 'ig',
-            regex = new RegExp(matchParams.join('').replace(/^\s+|\s+$/g,''), regexFlags);
-        return regex.test(jQuery(elem)[attr.method](attr.property));
-    };
-*/
 }
 
 !function main_loader(i) {
@@ -1231,12 +1226,14 @@ function thirdParty($, CONSTANTS) {
       ;
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
-                                  loadLocal(thirdParty);
-                                  loadLocal(main);
-                              };
+            loadLocal(thirdParty);
+            loadLocal(main);
+        };
         if (typeof($) !== 'undefined' && $.browser.mozilla) {
             continueLoading();
-        } else if (requires.length === 1 && localStorage.getItem('jQuery') !== null) {
+        } else if ( requires.length === 1 &&
+                    localStorage.getItem('caaBatch') !== null &&
+                    localStorage.getItem('caaBatch') === CONSTANTS.VERSION) {
             i++;
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
@@ -1246,6 +1243,7 @@ function thirdParty($, CONSTANTS) {
             makeScript();
             script.src = requires[0];
             script.addEventListener('load', function loader_move_to_next_script () {
+                localStorage.setItem('caaBatch', CONSTANTS.VERSION);
                 script_loader(1);
             }, true);
             head.appendChild(script);
