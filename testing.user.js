@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0912
+// @version     0.01.0918
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -51,7 +51,9 @@ var CONSTANTS = { DEBUGMODE     : true
                 , DEBUGLOG_OVER : false
                 , COLORS        : { ACTIVE  : 'lightSteelBlue'
                                   , BORDERS : '1px dotted grey'
-                                  , EDITING : '#C1FFC1'
+                                  , EDIT    : { INCOMPLETE : '#FFFF7A'
+                                              , COMPLETE   : '#C1FFC1'
+                                              }                          
                                   }
                 , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
                                   , 'Back'
@@ -253,6 +255,14 @@ function main ($, CONSTANTS) {
             x1 = x1.replace(separatorRegexp, '$1' + ',' + '$2');
         }
         return x1 + x2;
+    };
+
+    var getEditColor = function get_edit_color_by_completeness ($ele) {
+        if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
+            return CONSTANTS.COLORS.EDIT.COMPLETE;
+       } else {
+            return CONSTANTS.COLORS.EDIT.INCOMPLETE;
+       }
     };
 
     var init = function init () {
@@ -798,6 +808,7 @@ function main ($, CONSTANTS) {
                                       var types  = CONSTANTS.COVERTYPES
                                         , $newOption
                                         , $typeList = $('<select multiple="multiple">').prop('size', types.length)
+                                                                                       .addClass('caaSelect')
                                         ;
 
                                       for (var i = 0, len = types.length; i < len; i++) {
@@ -1008,6 +1019,11 @@ function main ($, CONSTANTS) {
         $('#previewText').show();
     });
 
+    $('body').on('change', '.caaSelect', function select_change_handler (e) {
+        var $figure = $(e.target).parents('figure:first');
+        $figure.css('background-color', getEditColor($figure));
+    });
+
     /* START: functionality to allow dragging from the Images box to a specific caa image box. */
     var $draggedImage = null,
         inChild       = false;
@@ -1066,7 +1082,7 @@ function main ($, CONSTANTS) {
                                     $(this).find('.dropBoxImage').replaceWith($draggedImage);
                                     $draggedImage.toggleClass('beingDragged dropBoxImage localImage')
                                                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-                                                                         .css('background-color', CONSTANTS.COLORS.EDITING);
+                                                                         .css('background-color', getEditColor($(this)));
                                     $('figure').removeClass('over');
                                     $draggedImage = null;
                                 }
@@ -1099,6 +1115,8 @@ function main ($, CONSTANTS) {
 }
 
 function thirdParty($, CONSTANTS) {
+    /* Despite the name, each function in thirdParty is by Brian Schweitzer unless otherwise noted. */
+
     /*jshint strict:false */
     jQuery.noConflict();
 
@@ -1170,10 +1188,14 @@ function thirdParty($, CONSTANTS) {
         return this.append.apply(this, arrayToAdd);
     };
 
-    // By Brian Schweitzer
     $.fn.vis = function (i) {
         return this.css('visibility', i ? 'visible'
                                         : 'hidden');
+    };
+
+    $.fn.hasProp = function (property) {
+        property = $(this).prop(property);
+        return ('undefined' !== typeof property && property.length);
     };
 
     // http://james.padolsey.com/javascript/regex-selector-for-jquery/
