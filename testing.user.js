@@ -306,6 +306,8 @@ function main ($, CONSTANTS) {
                                                                                                     .prop('title', $.l('Changed language note'))
               , $langList      = $('<select id="caaOptionLanguages"/>').prop('size', 3)
                                                                        .prop('title', $.l('Changed language note'))
+
+              , $previewImage  =  $('<img id="previewImage"/>').prop('draggable', false)
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
@@ -347,7 +349,7 @@ function main ($, CONSTANTS) {
                                                                                     ]))
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
-                                    , $previewContainer.appendAll([ $('<img id="previewImage"/>')
+                                    , $previewContainer.appendAll([ $previewImage
                                                                   , $previewInfo.appendAll([ $dtResolution
                                                                                            , $ddResolution
                                                                                            , $dtFilesize
