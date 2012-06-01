@@ -337,15 +337,14 @@ function main ($, CONSTANTS) {
                                                                , $imageShrink.append(minusImage)
                                                                ])
                                     , $optionsControl.append(optionsImage)
-                                    , $optionsMenu.appendAll([ $removeControl
-                                                             , $removeLabel
-                                                             , $('<br/>')
-                                                             , $parseControl
-                                                             , $parseLabel
-                                                             , $('<br/>')
-                                                             , $langLabel.append($langList.appendAll($ARRlangs))
-                                                             ])
-                                    , $imageContainer
+                                    , $imageContainer.append($optionsMenu.appendAll([ $removeControl
+                                                                                    , $removeLabel
+                                                                                    , $('<br/>')
+                                                                                    , $parseControl
+                                                                                    , $parseLabel
+                                                                                    , $('<br/>')
+                                                                                    , $langLabel.append($langList.appendAll($ARRlangs))
+                                                                                    ]))
                                     , $('<hr/>').css('border-top', CONSTANTS.COLORS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
                                     , $previewContainer.appendAll([ $('<img id="previewImage"/>')
@@ -377,7 +376,7 @@ function main ($, CONSTANTS) {
             $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
                                                      , 'border-radius' : '8px;'
                                                      , 'line-height'   : '2;'
-                                                     , 'margin-top'    : '32px;'
+                                                     , 'margin'        : '12px;'
                                                      , 'padding'       : '12px;'
                                                      }));
             $.addRule('#optionsMenu > label, #optionsMenu > label > select', '{ margin-left: 5px; }');
