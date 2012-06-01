@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0918
+// @version     0.01.0919
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -49,11 +49,10 @@ var request = new opera.XMLHttpRequest();"
 var CONSTANTS = { DEBUGMODE     : true
                 , IMAGEPROXY    : ''
                 , DEBUGLOG_OVER : false
-                , COLORS        : { ACTIVE  : 'lightSteelBlue'
-                                  , BORDERS : '1px dotted grey'
-                                  , EDIT    : { INCOMPLETE : '#FFFF7A'
-                                              , COMPLETE   : '#C1FFC1'
-                                              }                          
+                , COLORS        : { ACTIVE     : 'lightSteelBlue'
+                                  , BORDERS    : '1px dotted grey'
+                                  , INCOMPLETE : '#FFFF7A'
+                                  , COMPLETE   : '#C1FFC1'
                                   }
                 , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
                                   , 'Back'
@@ -259,9 +258,9 @@ function main ($, CONSTANTS) {
 
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
-            return CONSTANTS.COLORS.EDIT.COMPLETE;
+            return CONSTANTS.COLORS.COMPLETE;
        } else {
-            return CONSTANTS.COLORS.EDIT.INCOMPLETE;
+            return CONSTANTS.COLORS.INCOMPLETE;
        }
     };
 
