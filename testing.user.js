@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0990
+// @version     0.01.0991
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -47,7 +47,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0990'
+                , VERSION       : '0.1.0991'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -469,7 +469,6 @@ function main ($, CONSTANTS) {
             });
 //TODO: Catch the new color change event, then store the new color to localStorage.
 
-            });
             var $firstOption = $('#colorSelect').find('option:first');
             $firstOption.prop('selected', true);
             myPicker.fromString(CONSTANTS.COLORS[$firstOption.val()]);
