@@ -273,7 +273,7 @@ function main ($, CONSTANTS) {
 
     /* Checks that an editbox has both an image and a cover type.  Returns the associate color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
-        $.log('Testing edit status to determine background color for dropbox.')
+        $.log('Testing edit status to determine background color for dropbox.');
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
             return CONSTANTS.COLORS.COMPLETE;
        } else {
@@ -283,7 +283,7 @@ function main ($, CONSTANTS) {
 
     // Converts a hex color string into an rgba color string
     var hexToRGBA = function hexToRGBA (hex, opacity) {
-        $.log('Converting ' + hex + ' to RGBA.')
+        $.log('Converting ' + hex + ' to RGBA.');
         hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
         var R = parseInt(hex.substring(0, 2), 16)
           , G = parseInt(hex.substring(2, 4), 16)
@@ -359,7 +359,7 @@ function main ($, CONSTANTS) {
                                                                        .prop('title', $.l('Changed language note'))
 
               , $previewImage  = $('<img id="previewImage"/>').prop('draggable', false)
-              , $colorPicker   = $('<input type="color"/>)
+              , $colorPicker   = $('<input type="color"/>')
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
