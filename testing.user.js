@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0946
+// @version     0.01.0990
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -19,7 +19,7 @@
 // @require     https://github.com/brianfreud/greasemonkey-batchCAA/blob/master/jsjpegmeta.js
 // ==/UserScript==
 
-/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest */
+/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
 // See https://github.com/jshint/jshint/issues/541
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
@@ -47,8 +47,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0946'
-                , IMAGEPROXY    : ''
+                , VERSION       : '0.1.0990'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -82,6 +81,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Add cover art'           : 'Add cover art'
                                        , 'Add image one release'   : 'Add a box for another image.'
                                        , 'bytes'                   : 'bytes'
+                                       , 'Colors'                  : 'Colors'
                                        , 'coverType:Back'          : 'Back'
                                        , 'coverType:Booklet'       : 'Booklet'
                                        , 'coverType:Front'         : 'Front'
@@ -90,6 +90,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'coverType:Other'         : 'Other'
                                        , 'coverType:Spine'         : 'Spine'
                                        , 'coverType:Track'         : 'Track'
+                                       , 'default'                 : 'default'
                                        , 'File size'               : 'File size'
                                        , '(Image) Resolution'      : 'Resolution'
                                        , 'Images'                  : 'Images'
@@ -100,7 +101,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Load text all releases'  : 'Loads images for all displayed releases.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
                                        , 'Magnify image'           : 'Zoom in'
-                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time this script is run.'
                                        , 'Options'                 : 'Options'
                                        , 'Parse (help)'            : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
                                        , 'Parse web pages'         : 'Parse web pages'
@@ -109,6 +109,16 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Shrink image'            : 'Zoom out'
+                                       , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
+                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
+                                       , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
+                                                                   /* Try to keep the text for these last few very short. */
+                                       , ACTIVE                    : 'Droppable area'
+                                       , CAABOX                    : 'Empty CAA box'
+                                       , CAABUTTONS                : 'Load CAA buttons'
+                                       , INCOMPLETE                : 'Incomplete edits'
+                                       , COMPLETE                  : 'Edits ready to submit'
+                                       , REMOVE                    : 'Remove image highlight'
                                        },
                                   fr : { languageName              : 'Français'
                                        , 'Images'                  : 'Les Photos'
@@ -232,6 +242,9 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
 
+//TODO: Override values in CONTANTS with saved language/color/parse web settings.
+
+
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
 
@@ -346,7 +359,8 @@ function main ($, CONSTANTS) {
                                                             .prop('title', $.l('Magnify image'))
               , $optionsControl = $('<div id="optionsHeader"/>').prop('title', $.l('Options'))
               , optionsImage   = localStorage.getItem('iconSettings')
-              , $optionsMenu   = $('<div id="optionsMenu"/>').hide()
+              , $optionsMenu   = $('<fieldset id="optionsMenu"/>').hide()
+              , $optionsLegend = $('<legend/>').text($.l('Options'))
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
                                                                     .prop('title', $.l('Remove (help)'))
               , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>').prop('title', $.l('Remove (help)'))
@@ -359,12 +373,29 @@ function main ($, CONSTANTS) {
                                                                        .prop('title', $.l('Changed language note'))
 
               , $previewImage  = $('<img id="previewImage"/>').prop('draggable', false)
-              , $colorPicker   = $('<input type="color"/>')
+              , $colorField    = $('<fieldset>')
+              , $colorLegend   = $('<legend/>').text($.l('Colors'))
+              , $colorSelect   = $('<select id="colorSelect" />').prop('title', $.l('Changed colors note'))
+              , colorOptions   = []
+              , $colorPicker   = $('<input type="color" value="66ff00" id="colorPicker"/>').prop('title', $.l('Changed colors note'))
+              , $colorDefault  = $('<input type="button" id="ColorDefaultBtn"/>').prop('value', $.l('default'))
+                                                                                 .prop('title', $.l('Changed colors note'))
+              , $optionsNote   = $('<div id="optionsNote">').text($.l('take effect next time'))
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage      = baseImage + localStorage.getItem('magnifyingGlassPlus')
               ;
+
+            /* Populate the colors list */
+            $colorSelect.prop('size', Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
+                var $option = $('<option/>').addClass('colorOption');
+                var $thisOption = $option.clone()
+                                         .prop('value', colorItem)
+                                         .data('default', CONSTANTS.COLORS[colorItem])
+                                         .text($.l(colorItem));
+                colorOptions.push($thisOption);
+            }).length);
 
             /* Populate the languages list */
             var languages = []
@@ -380,6 +411,7 @@ function main ($, CONSTANTS) {
             });
             var $ARRlangs = languages.map(function (language) {
                                               return $option.clone()
+                                                            .prop('selected', (language[0] === CONSTANTS.LANGUAGE))
                                                             .prop('value', language[0])
                                                             .text(language[1]);
                                           });
@@ -391,15 +423,21 @@ function main ($, CONSTANTS) {
                                                                , $imageShrink.append(minusImage)
                                                                ])
                                     , $optionsControl.append(optionsImage)
-                                    , $imageContainer.append($optionsMenu.appendAll([ $removeControl
+                                    , $imageContainer.append($optionsMenu.appendAll([ $optionsLegend
+                                                                                    , $removeControl
                                                                                     , $removeLabel
                                                                                     , $('<br/>')
                                                                                     , $parseControl
                                                                                     , $parseLabel
                                                                                     , $('<br/>')
                                                                                     , $langLabel.append($langList.appendAll($ARRlangs))
+                                                                                    , $colorField.appendAll([ $colorLegend
+                                                                                                            , $colorSelect.appendAll(colorOptions)
+                                                                                                            , $colorPicker
+                                                                                                            , $colorDefault
+                                                                                                            ])
                                                                                     , $('<br/>')
-                                                                                    , $colorPicker
+                                                                                    , $optionsNote
                                                                                     ]))
                                     , $('<hr/>').css('border-top', CONSTANTS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
@@ -413,25 +451,55 @@ function main ($, CONSTANTS) {
                                     ]);
 
             $optionsControl.click(function optionsControl_click_handler () {
-                                       $optionsMenu.toggle();
+                                       $optionsMenu.slideToggle();
                                   });
         }();
 
-        /* START: Remove-image handlers */
-        $('#imageContainer').on('mouseenter', '.localImage', function localImage_hover_in_handler (e) {
-                                $('#caaOptionRemove').prop('checked') && tintImageRed(e.target);
-                            })
-                            .on('mouseleave', '.localImage', function localImage_hover_out_handler (e) {
-                                var $e = $(e.target);
-                                $e.parents('.tintContainer:first').length && $e.removeClass('tintImage')
-                                                                               .prop('title', $e.data('oldtitle'))
-                                                                               .unwrap();
-                            })
-                            .on('click', '.tintImage', function remove_image_click_handler (e) {
-                                $(e.target).parent()
-                                           .remove();
-                            });
-        /* END: Remove-image handlers */
+        $.log('Creating color picker');
+        var myPicker = new jscolor.color(document.getElementById('colorPicker'), {});
+        myPicker.hash = true;
+        myPicker.pickerFace = 5;
+        myPicker.pickerInsetColor = 'black';
+
+        !function add_color_select_handler () {
+            $.log('Adding handler for color picker.');
+            $('#colorSelect').on('change', function (e) {
+                var color = CONSTANTS.COLORS[$(this).find(':selected').val()];
+                myPicker.fromString(color);
+            });
+//TODO: Catch the new color change event, then store the new color to localStorage.
+
+            });
+            var $firstOption = $('#colorSelect').find('option:first');
+            $firstOption.prop('selected', true);
+            myPicker.fromString(CONSTANTS.COLORS[$firstOption.val()]);
+        }();
+
+        !function add_default_color_handler () {
+            $.log('Adding handler for default color button.');
+            $('#ColorDefaultBtn').on('click', function default_color_button_click_handler (e) {
+                                                  var color = $('#colorSelect').find(':selected')
+                                                                               .data('default');
+                                                  myPicker.fromString(color);
+                                              });
+        }();
+
+        !function add_remove_image_handlers () {
+            $.log('Adding handlers for remove image mode.');
+            $('#imageContainer').on('mouseenter', '.localImage', function localImage_hover_in_handler (e) {
+                                    $('#caaOptionRemove').prop('checked') && tintImageRed(e.target);
+                                })
+                                .on('mouseleave', '.localImage', function localImage_hover_out_handler (e) {
+                                    var $e = $(e.target);
+                                    $e.parents('.tintContainer:first').length && $e.removeClass('tintImage')
+                                                                                   .prop('title', $e.data('oldtitle'))
+                                                                                   .unwrap();
+                                })
+                                .on('click', '.tintImage', function remove_image_click_handler (e) {
+                                    $(e.target).parent()
+                                               .remove();
+                                });
+        }();
 
 // TODO: Use the language setting
 // TODO: Save/load language setting
@@ -443,6 +511,26 @@ function main ($, CONSTANTS) {
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
+            $.addRule('#optionsMenu * select', '{ font-size: 105%; }');
+            $.addRule('#caaOptionLanguages', '{ padding: 6px; margin: 10px 10px -27px 6px; }');
+            $.addRule('fieldset', JSON.stringify({ 'border'        : '1px solid lightGrey;'
+                                                 , 'border-radius' : '8px;'
+                                                 , 'margin'        : '30px -4px -4px -4px;'
+                                                 , 'padding'       : '6px;'
+                                                 }));
+            $.addRule('legend', '{ font-size: 108%!important; color: black!important; }');
+            $.addRule('#colorSelect', '{ padding: 5px; float: left; width: 209px; }');
+            $.addRule("input[type='color'], #ColorDefaultBtn", JSON.stringify({ 'border'        : '1px outset lightGrey;'
+                                                                              , 'border-radius' : '6px;'
+                                                                              , 'cursor'        : 'pointer;'
+                                                                              , 'float'         : 'right;'
+                                                                              , 'margin-right'  : '0;'
+                                                                              , 'outline'       : 'none;'
+                                                                              , 'text-align'    : 'center;'
+                                                                              , 'width'         : '74px;'
+                                                                              }));
+            $.addRule('#optionsNote', '{ font-size: 85%; font-style: oblique; }');
+            $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; margin-top: 6px; }');
             $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(CONSTANTS.COLORS.REMOVE, '0.8').replace(/,/g,'^') + ';'
                                                        , 'border-radius' : '5px;'
                                                        , 'opacity'       : '0.8;'
@@ -459,8 +547,8 @@ function main ($, CONSTANTS) {
             $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
                                                      , 'border-radius' : '8px;'
                                                      , 'line-height'   : '2;'
-                                                     , 'margin'        : '12px;'
-                                                     , 'padding'       : '12px;'
+                                                     , 'margin'        : '3px;'
+                                                     , 'padding'       : '8px;'
                                                      }));
             $.addRule('#optionsMenu > label, #optionsMenu > label > select', '{ margin-left: 5px; }');
             $.addRule('#optionsMenu > label > select', '{ padding: 3px; }');
@@ -1301,9 +1389,8 @@ function thirdParty($, CONSTANTS) {
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
             requires[3] = 'jsjpegmeta';
-            requires[4] = 'jsColor';
-        }
-        if (i === 0) { /* Scripts are not cached in localStorage, go get them and cache them. */
+            requires[4] = 'jscolor';
+        } else { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
             script.src = requires[0];
             script.addEventListener('load', function loader_move_to_next_script () {
@@ -1311,13 +1398,14 @@ function thirdParty($, CONSTANTS) {
                 script_loader(1);
             }, true);
             head.appendChild(script);
-        } else { /* Scripts are cached in localStorage; load them. */
-            for (var j = 1, k = requires.length; j < k; j++) {
-                makeScript();
-                script.textContent = localStorage.getItem(requires[j]);
-                head.appendChild(script);
-            }
-            continueLoading();
+            return;
         }
+        /* Scripts are cached in localStorage; load them. */
+        for (var j = 1, k = requires.length; j < k; j++) {
+            makeScript();
+            script.textContent = localStorage.getItem(requires[j]);
+            head.appendChild(script);
+        }
+        continueLoading();
     })(i || 0);
 }();
