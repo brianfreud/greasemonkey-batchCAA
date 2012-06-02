@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0920
+// @version     0.01.0945
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,9 +52,11 @@ var CONSTANTS = { DEBUGMODE     : true
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
+                                  , CAABOX     : '#F2F2FC'
                                   , CAABUTTONS : '#4B0082'
                                   , INCOMPLETE : '#FFFF7A'
                                   , COMPLETE   : '#C1FFC1'
+                                  , REMOVE     : '#B40000'
                                   }
                 , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
                                   , 'Back'
@@ -104,6 +106,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Parse web pages'         : 'Parse web pages'
                                        , 'Preview Image'           : 'Preview'
                                        , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
+                                       , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Shrink image'            : 'Zoom out'
                                        },
@@ -270,11 +273,38 @@ function main ($, CONSTANTS) {
 
     /* Checks that an editbox has both an image and a cover type.  Returns the associate color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
+        $.log('Testing edit status to determine background color for dropbox.')
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
             return CONSTANTS.COLORS.COMPLETE;
        } else {
             return CONSTANTS.COLORS.INCOMPLETE;
        }
+    };
+
+    // Converts a hex color string into an rgba color string
+    var hexToRGBA = function hexToRGBA (hex, opacity) {
+        $.log('Converting ' + hex + ' to RGBA.')
+        hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
+        var R = parseInt(hex.substring(0, 2), 16)
+          , G = parseInt(hex.substring(2, 4), 16)
+          , B = parseInt(hex.substring(4, 6), 16)
+          ;
+        return 'rgba(' + [R, G, B, opacity].join(',') + ')';
+    };
+
+    var tintImageRed = function tint_image_Red (image) {
+        $.log('Tinting image');
+        var $image = $(image);
+        $image.wrap('<figure>')
+              .data('oldtitle', $image.prop('title'))
+              .prop('title', $.l('Remove image'))
+              .addClass('tintImage');
+        $image.parent()
+              .addClass('tintContainer')
+              .css({ height : ($image.height() + 6) + 'px'
+                   , width  : ($image.width() + 6) + 'px'
+                   });
+        return $image;
     };
 
     var init = function init () {
@@ -319,7 +349,7 @@ function main ($, CONSTANTS) {
               , $optionsMenu   = $('<div id="optionsMenu"/>').hide()
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
                                                                     .prop('title', $.l('Remove (help)'))
-              , $removeControl = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Remove (help)'))
+              , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>').prop('title', $.l('Remove (help)'))
               , $parseLabel    = $('<label for="caaOptionRemove"/>').text($.l('Parse web pages'))
                                                                     .prop('title', $.l('Parse (help)'))
               , $parseControl  = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Parse (help)'))
@@ -384,6 +414,22 @@ function main ($, CONSTANTS) {
                                   });
         }();
 
+        /* START: Remove-image handlers */
+        $('#imageContainer').on('mouseenter', '.localImage', function localImage_hover_in_handler (e) {
+                                $('#caaOptionRemove').prop('checked') && tintImageRed(e.target);
+                            })
+                            .on('mouseleave', '.localImage', function localImage_hover_out_handler (e) {
+                                var $e = $(e.target);
+                                $e.parents('.tintContainer:first').length && $e.removeClass('tintImage')
+                                                                               .prop('title', $e.data('oldtitle'))
+                                                                               .unwrap();
+                            })
+                            .on('click', '.tintImage', function remove_image_click_handler (e) {
+                                $(e.target).parent()
+                                           .remove();
+                            });
+        /* END: Remove-image handlers */
+
 // TODO: Use the language setting
 // TODO: Save/load language setting
 // TODO: Add remove image functionality
@@ -395,6 +441,17 @@ function main ($, CONSTANTS) {
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
+            $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(CONSTANTS.COLORS.REMOVE, '0.8').replace(/,/g,'^') + ';'
+                                                       , 'border-radius' : '5px;'
+                                                       , 'opacity'       : '0.8;'
+                                                       /* The rest of these rules are a css reset. */
+                                                       , 'margin'         : '0;'
+                                                       , 'padding'        : '0;'
+                                                       , 'outline'        : '0;'
+                                                       , 'vertical-align' : 'baseline;'
+                                                       , 'display'        : 'inline-block;'
+                                                       }));
+            $.addRule('.tintImage', '{ opacity: 0.4; }');
             $.addRule('#imageHeader', '{ float: left; width: 30%; }');
             $.addRule('#optionsHeader', '{ display: inline-block; float: right; margin-right: -24px; margin-top: -3px; width: 40%; }');
             $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
@@ -412,7 +469,7 @@ function main ($, CONSTANTS) {
             $.addRule('#optionsHeader', '{ opacity: 0.3;}');
             $.addRule('.imageSizeControl:hover, #optionsHeader:hover', '{ opacity: 1;}');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
-            $.addRule('.newCAAimage', '{ background-color: #F2F2FC; border: 1px #AAA dotted; }');
+            $.addRule('.newCAAimage', '{ background-color: ' + CONSTANTS.COLORS.CAABOX + '; border: 1px #AAA dotted; }');
             $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
             $.addRule('.CAAdropbox', JSON.stringify({ 'border-radius'    : '6px;'
                                                     , 'float'            : 'left;'
@@ -1024,13 +1081,17 @@ function main ($, CONSTANTS) {
 
     /* Preview functionality */
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
-        $.log('Setting new image for preview box.');
-        $('#previewImage').prop('src', $(this).prop('src'));
-        $('#previewResolution').text($(this).data('resolution'));
-        $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
-        $('#previewText').show();
+        if (!$('#caaOptionRemove').prop('checked')) {
+            $.log('Setting new image for preview box.');
+            $('#previewImage').prop('src', $(this).prop('src'));
+            $('#previewResolution').text($(this).data('resolution'));
+            $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
+            $('#previewText').show();
+        }
     });
 
+    /* Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
+       testing for completeness after an image is added is tested within that drop handler. */
     $('body').on('change', '.caaSelect', function select_change_handler (e) {
         var $figure = $(e.target).parents('figure:first');
         $figure.css('background-color', getEditColor($figure));
@@ -1133,7 +1194,7 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        $('<style>' + selector + rule.replace(/[",]/g,'').replace(/~/g,'"') + '</style>').appendTo($('head'));
+        $('<style>' + selector + rule.replace(/[",]/g,'').replace(/~/g,'"').replace(/\^/g,',') + '</style>').appendTo($('head'));
     };
 
     // A very basic version of a gettext function.
