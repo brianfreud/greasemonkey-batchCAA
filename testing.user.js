@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0945
+// @version     0.01.0946
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -47,7 +47,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0920'
+                , VERSION       : '0.1.0946'
                 , IMAGEPROXY    : ''
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
@@ -358,7 +358,8 @@ function main ($, CONSTANTS) {
               , $langList      = $('<select id="caaOptionLanguages"/>').prop('size', 3)
                                                                        .prop('title', $.l('Changed language note'))
 
-              , $previewImage  =  $('<img id="previewImage"/>').prop('draggable', false)
+              , $previewImage  = $('<img id="previewImage"/>').prop('draggable', false)
+              , $colorPicker   = $('<input type="color"/>)
               , baseImage      = localStorage.getItem('magnifyingGlassBase')
               ;
             var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
@@ -397,6 +398,8 @@ function main ($, CONSTANTS) {
                                                                                     , $parseLabel
                                                                                     , $('<br/>')
                                                                                     , $langLabel.append($langList.appendAll($ARRlangs))
+                                                                                    , $('<br/>')
+                                                                                    , $colorPicker
                                                                                     ]))
                                     , $('<hr/>').css('border-top', CONSTANTS.BORDERS)
                                     , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
@@ -432,7 +435,6 @@ function main ($, CONSTANTS) {
 
 // TODO: Use the language setting
 // TODO: Save/load language setting
-// TODO: Add remove image functionality
 // TODO: Add color picker functionality
 
         !function init_add_css () {
@@ -1299,6 +1301,7 @@ function thirdParty($, CONSTANTS) {
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
             requires[3] = 'jsjpegmeta';
+            requires[4] = 'jsColor';
         }
         if (i === 0) { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
