@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1015
+// @version     0.01.1020
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1013'
+                , VERSION       : '0.1.1020'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -68,7 +68,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
-                , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/400), 3) * 107) + 15
+                , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/500), 3) * 107) + 15
                 , SIDEBARHEIGHT : (screen.height - 290)
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
@@ -379,7 +379,7 @@ function main ($, CONSTANTS) {
 
     /* Polyfill to add FileSystem API support to Firefox. */
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
-            script = document.createElement('script');
+            var script = document.createElement('script');
             script.type = 'text/javascript';
             script.textContent = localStorage.getItem('idbFileSystem');
             document.getElementsByTagName('head')[0].appendChild(script);
@@ -617,7 +617,7 @@ function main ($, CONSTANTS) {
                                                                               , 'width'         : '74px;'
                                                                               }));
             $.addRule('#optionsNote', '{ font-size: 85%; font-style: oblique; }');
-            $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; margin-top: 6px; }');
+            $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; }');
             $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(getColor('REMOVE'), '0.8').replace(/,/g,'^') + ';'
                                                        , 'border-radius' : '5px;'
                                                        , 'opacity'       : '0.8;'
@@ -733,7 +733,11 @@ function main ($, CONSTANTS) {
                                                 }));
            $.addRule('#imageContainer, #previewContainer', '{ width: 100%; }');
            $.addRule('#imageContainer', '{ overflow-y: auto; }');
-           var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE) + 'px;';
+           var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE);
+           if ($.browser.mozilla) {
+               size = size - 100;
+           }
+           size += 'px;';
            $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
            size = (CONSTANTS.PREVIEWSIZE + 37);
            $.addRule('#previewContainer', '{ height: ' + size + 'px; max-height: ' + size + 'px; }');
@@ -1235,7 +1239,7 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
                 drop: function drop (e) {
                     $.log('imageContainer: drop.');
                     $(this).removeClass('over');
-
+                    e.preventDefault();
                     e = e.originalEvent || e;
 
                     var uriTest = /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi;
