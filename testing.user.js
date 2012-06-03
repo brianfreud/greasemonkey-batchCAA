@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1011
+// @version     0.01.1015
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -14,9 +14,6 @@
 // @include     http://musicbrainz.org/label/*
 // @include     http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
-// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js
-// @require     https://ajax.googleapis.com/ajax/libs/jqueryui/1.8/jquery-ui.min.js
-// @require     https://github.com/brianfreud/greasemonkey-batchCAA/blob/master/jsjpegmeta.js
 // ==/UserScript==
 
 // Translations handled at https://www.transifex.net/projects/p/CAABatch/
@@ -49,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1011'
+                , VERSION       : '0.1.1013'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -311,7 +308,7 @@ function main ($, CONSTANTS) {
     /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
     var checkScroll = function checkScroll ($caaDiv) {
         $.log('Adjusting negative right margin.');
-        if ('undefined' === typeof($caaDiv.data('width'))) {
+        if ('undefined' === typeof $caaDiv.data('width')) {
             $caaDiv.data('width', $caaDiv.width());
         }
         var $dropboxes = $caaDiv.find('.CAAdropbox');
@@ -379,6 +376,14 @@ function main ($, CONSTANTS) {
                    });
         return $image;
     };
+
+    /* Polyfill to add FileSystem API support to Firefox. */
+    if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
+            script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.textContent = localStorage.getItem('idbFileSystem');
+            document.getElementsByTagName('head')[0].appendChild(script);
+    }
 
     var init = function init () {
         /* This creates a temporary local file system to use to store remote image files. */
@@ -915,11 +920,194 @@ function main ($, CONSTANTS) {
             }
         };
 
-        var convertImage = function convertImage (inputImage, type, source) {
-            $.log(['convertImage: received ', type, ' file from ', source].join(''));
-/*
-Canvas supports jpg, gif, and png.
 
+
+
+
+
+
+
+
+(function() {
+  /*
+  # MIT LICENSE
+  # Copyright (c) 2011 Devon Govett
+  # 
+  # Permission is hereby granted, free of charge, to any person obtaining a copy of this 
+  # software and associated documentation files (the "Software"), to deal in the Software 
+  # without restriction, including without limitation the rights to use, copy, modify, merge, 
+  # publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons 
+  # to whom the Software is furnished to do so, subject to the following conditions:
+  # 
+  # The above copyright notice and this permission notice shall be included in all copies or 
+  # substantial portions of the Software.
+  # 
+  # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
+  # BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
+  # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
+  # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+  # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  */  var BMP;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+  BMP = (function() {
+    BMP.load = function(url, callback) {
+      var xhr;
+      xhr = new XMLHttpRequest;
+      xhr.open("GET", url, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload = __bind(function() {
+        var data;
+        data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
+        return callback(new BMP(data));
+      }, this);
+      return xhr.send(null);
+    };
+    function BMP(data) {
+      var fileSize, headerLength, i, magic, offset;
+      this.data = data;
+      this.pos = 0;
+      magic = ((function() {
+        var _results;
+        _results = [];
+        for (i = 0; i < 2; i++) {
+          _results.push(String.fromCharCode(this.data[this.pos++]));
+        }
+        return _results;
+      }).call(this)).join('');
+      if (magic !== 'BM') {
+        throw 'Invalid BMP file.';
+      }
+      fileSize = this.readUInt32();
+      this.pos += 4;
+      offset = this.readUInt32();
+      headerLength = this.readUInt32();
+      this.width = this.readUInt32();
+      this.height = this.readUInt32();
+      this.colorPlaneCount = this.readUInt16();
+      this.bitsPerPixel = this.readUInt16();
+      this.compressionMethod = this.readUInt32();
+      this.rawSize = this.readUInt32();
+      this.hResolution = this.readUInt32();
+      this.vResolution = this.readUInt32();
+      this.paletteColors = this.readUInt32();
+      this.importantColors = this.readUInt32();
+    }
+    BMP.prototype.readUInt16 = function() {
+      var b1, b2;
+      b1 = this.data[this.pos++];
+      b2 = this.data[this.pos++] << 8;
+      return b1 | b2;
+    };
+    BMP.prototype.readUInt32 = function() {
+      var b1, b2, b3, b4;
+      b1 = this.data[this.pos++];
+      b2 = this.data[this.pos++] << 8;
+      b3 = this.data[this.pos++] << 16;
+      b4 = this.data[this.pos++] << 24;
+      return b1 | b2 | b3 | b4;
+    };
+    BMP.prototype.copyToImageData = function(imageData) {
+      var b, data, g, i, r, w, x, y, _ref;
+      data = imageData.data;
+      w = this.width;
+      for (y = _ref = this.height - 1; _ref <= 0 ? y < 0 : y > 0; _ref <= 0 ? y++ : y--) {
+        for (x = 0; 0 <= w ? x < w : x > w; 0 <= w ? x++ : x--) {
+          i = (x + y * w) * 4;
+          b = this.data[this.pos++];
+          g = this.data[this.pos++];
+          r = this.data[this.pos++];
+          data[i++] = r;
+          data[i++] = g;
+          data[i++] = b;
+          data[i++] = 255;
+        }
+      }
+    };
+    return BMP;
+  })();
+  window.BMP = BMP;
+}).call(this);
+
+
+
+
+
+
+        var convertImage = function convertImage (inputImage, type, source) {
+/* Native support:
+    Chrome
+        Fail:
+            bmp - 16bit 1 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
+            bmp - 16bit 2 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
+            bmp - 32bit 2 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
+            j2k
+            jng
+            jp2
+            jpc
+            pcx
+            tga
+            tif - compressed
+            tif - Deflate
+            tif - LZW
+            tif - no compression
+            tif - Pack Bits
+        Pass:
+            bmp - 16bit 3
+            bmp - 24bit
+            bmp - 32bit 1
+            gif
+            png - interlaced
+            png - non-interlaced
+            webp
+*/
+
+                $.log(['convertImage: received ', type, ' file from "', source, '"'].join(''));
+                var canvas = document.createElement("canvas"),
+                    reader = new FileReader();
+                var ctx = canvas.getContext("2d");
+
+                reader.onload = function (e) {
+                    var img = new Image();
+                    var useCanvasData = function useCanvasData () {
+                        $.log('Appending temporary canvas item to the body.');
+                        CONSTANTS.DEBUGMODE && $('body').append($(canvas)).prop('title', source);
+                        $.log('Converting image to jpg, sending new blob to addImageToDropbox().');
+                        addImageToDropbox(
+                                         $.dataURItoBlob(
+                                                        canvas.toDataURL("image/jpeg"), 'jpeg'
+                                                        ),
+                                         'converted local ' + type, source
+                                         );
+                    };
+
+                    if (type !== 'bmp') {
+                        img.onload = function () {
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            useCanvasData();
+                        };
+
+                        img.src = reader.result;
+                    } else {
+                        var bmp = new BMP(new Uint8Array(reader.result));
+                        canvas.width = bmp.width;
+                        canvas.height = bmp.height;
+
+                        var data = ctx.getImageData(0, 0, bmp.width, bmp.height);
+                        bmp.copyToImageData(data);
+                        ctx.putImageData(data, 0, 0);
+                        useCanvasData();
+                    }
+                };
+                if (type !== 'bmp') {
+                    reader.readAsDataURL(inputImage);
+                } else {
+                    reader.readAsArrayBuffer(inputImage);
+                }
+            };
+
+/*
                  BMP   FPX   GIF   HDP   JNG   JP2   JXR   PBM   PCD   PDF   PGM   PNG   PNM   PPM   PSD   RAW   TIF   TIFF   WDP   WebP
 Webkit (Chrome): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     Yes
 Gecko (Firefox): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     No
@@ -927,22 +1115,24 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
 */
 
 //TODO: insert image conversion here, return the converted image as dataURL for source:remote and File (or Blob?) for source:local
-        };
+
 
         var loadLocalFile = function load_local_file (e) {
             var file
               , name
               , type
               , files = (e.files || e.dataTransfer.files);
-
-            for (var i = 0, len = files.length; i < len; file = files[i], name = file.name, type = supportedImageType(name), i++) {
+            for (var i = 0, len = files.length; i < len; i++) {
+                file = files[i];
+                name = file.name;
+                type = supportedImageType(name);
                 if (!type) {
-                    $.log(['loadLocalFile: for file ', name, ', file ', i, ' of ', len, ', unusable file type detected'].join(''));
+                    $.log(['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len, ', unusable file type detected'].join(''));
                     continue;
                 }
-                $.log(['loadLocalFile: for file ', name, ', file ', i, ' of ', len, ', usable file type ', type, ' detected'].join(''));
+                $.log(['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len, ', usable file type "', type, '" detected'].join(''));
                 if (type !== 'jpg') {
-                    file = convertImage(file, type);
+                    file = convertImage(file, type, name);
                     addImageToDropbox(file, 'converted local ' + type, name);
                 } else {
                     addImageToDropbox(file, 'local');
@@ -951,7 +1141,7 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
         };
 
         var loadRemoteFile = function load_remote_file (uri, imgType) {
-            'undefined' === typeof(imgType) && (imgType = 'jpg');
+            'undefined' === typeof imgType && (imgType = 'jpg');
             var loadStage = ''
               , $xhrComlink = $('#xhrComlink')
               ;
@@ -1155,10 +1345,10 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
             var $dropBox = makeDropbox();
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
-                                $.log('Release row handler triggered.');
+                                $.log('Release row handler triggered.');                         
                                 var $releaseAnchor = $(this),
                                     $releaseRow;
-                                if ('undefined' !== typeof(event) && event.hasOwnProperty('originalEvent')) {
+                                if ('undefined' !== typeof event && event.hasOwnProperty('originalEvent')) {
                                     $.log('Release row handler is running due to a mutation event.');
                                     $releaseRow = $(event.originalEvent.srcElement);
                                     $releaseAnchor = $releaseRow.find('a:first');
@@ -1171,7 +1361,7 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
                                         return;
                                     }
                                 }
-                                if (typeof($releaseAnchor.attr('href')) === 'undefined') {
+                                if (typeof $releaseAnchor.attr('href') === 'undefined') {
                                     $.log('Aborting; not a valid release tr.');
                                     return;
                                 }
@@ -1445,7 +1635,7 @@ function thirdParty($, CONSTANTS) {
 
     // Logs a message to the console if debug mode is on.
     var log = function log (str, over) {
-        'undefined' === typeof(over) && (over = false);
+        'undefined' === typeof over && (over = false);
         CONSTANTS.DEBUGMODE && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
     };
 
@@ -1460,8 +1650,9 @@ function thirdParty($, CONSTANTS) {
         }
 
         // write the bytes of the string to an ArrayBuffer
-        var ab = new ArrayBuffer(byteString.length);
-        var ia = new Uint8Array(ab);
+        var ab = new ArrayBuffer(byteString.length)
+          , ia = new Uint8Array(ab)
+          ;
         for (var i = 0; i < byteString.length; i++) {
             ia[i] = byteString.charCodeAt(i);
         }
@@ -1531,16 +1722,15 @@ function thirdParty($, CONSTANTS) {
             loadLocal(thirdParty);
             loadLocal(main);
         };
-        if (typeof($) !== 'undefined' && $.browser.mozilla) {
-            continueLoading();
-        } else if ( requires.length === 1 &&
-                    localStorage.getItem('caaBatch') !== null &&
-                    localStorage.getItem('caaBatch') === CONSTANTS.VERSION) {
+        if ( requires.length === 1 &&
+             localStorage.getItem('caaBatch') !== null &&
+             localStorage.getItem('caaBatch') === CONSTANTS.VERSION) {
             i++;
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
             requires[3] = 'jsjpegmeta';
             requires[4] = 'jscolor';
+            requires[5] = 'canvasToBlob';
         } else { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
             script.src = requires[0];
