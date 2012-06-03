@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0997
+// @version     0.01.0999
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -47,7 +47,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0997'
+                , VERSION       : '0.1.0999'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -127,6 +127,53 @@ var CONSTANTS = { DEBUGMODE     : true
                                        }
                                   }
                 };
+
+if (CONSTANTS.DEBUGMODE) {
+    CONSTANTS.TEXT.test = { languageName              : 'Testing'
+                          , 'Add cover art'           : '-·· -··- -····'
+                          , 'Add image one release'   : '·-· -- -· -·- ··--- --···'
+                          , 'bytes'                   : '·--· ···-'
+                          , 'Colors'                  : '····· · -·-'
+                          , 'coverType:Back'          : '---·· ·- --· --'
+                          , 'coverType:Booklet'       : '·---- ···--'
+                          , 'coverType:Front'         : '-·- -·-·'
+                          , 'coverType:Medium'        : '--·- -····'
+                          , 'coverType:Obi'           : '··· · ·· ·----'
+                          , 'coverType:Other'         : '---··'
+                          , 'coverType:Spine'         : '---'
+                          , 'coverType:Track'         : '·-·-·- ·--'
+                          , 'default'                 : ' ··--·· -- ··· --·-'
+                          , 'File size'               : '··--- ··· ·-'
+                          , '(Image) Resolution'      : '···· --·- ····- ·· ·-·'
+                          , 'Images'                  : '-·· ····'
+                          , 'Language'                : '····- --· ·-'
+                          , 'Load CAA images for all' : '·--- ·-·· -·- · -··· -----'
+                          , 'Load CAA images'         : '··--·· --- ··- -· ·-·· ---·· ··--·· ·--- -··- -- ··- ·· --- ···- ---·· -- --· -·-· ·---- ·-·-·- -·-· -·· ·· -·-'
+                          , 'loading'                 : '··-· ·--· ---·· ··· -· ·· ·-· ·-·· --·· ----· --·- ----- ····· ·-· -· ·- -·· --··-- ··· ----- ·---- ····· ·· --· ·· ···· ···--'
+                          , 'Load text all releases'  : '-···· ··- ···- ·---- ·-·-·- ·-· - -·--'
+                          , 'Load text one release'   : '·-·-·- -· -·- ·-·· ·--· ····- --- · --- ·· ···-- ·-·-·- --··--'
+                          , 'Magnify image'           : '··-· ··--- ·····'
+                          , 'Options'                 : '·- ·-·'
+                          , 'Parse (help)'            : '--- ·- ·-·· --··-- -· -·- ····- --··-- ··-· ·--- --··· --- - ·---- ·-·-·- ·- --· -·-- --·· ···-- ·-- - ·-·· --··-- -- ··- ·- ··- ····· ----· --··-- -·-· ···- -· ·--'
+                          , 'Parse web pages'         : '- ·-- ··-· -···· --··· --- - ·--· ----· ·--· ·-·-·- -·- -- ·-- -·· ···· ··--- - · ·--'
+                          , 'Preview Image'           : '···- ----- -- ---'
+                          , 'Remove (help)'           : '·-· ·-·· ····- --··-- ·- -- ··· -·· ···- -··- · -·· --·- ····- ··· -· ·-- ·-·· ·---- ----· ··· -··- ·---- ··--·· -· ·· --·'
+                          , 'Remove image'            : '-··· -··- ··· - ···- ·---- ·-·-·'
+                          , 'Remove images'           : '-·-· ·---- --· ···· ·-·· ···- ·- - ··- -···'
+                          , 'Shrink image'            : '-·· ····- ·--·'
+                          , 'Submit edits'            : '-··- ·-· ·· -·- -- -·-· ···· ·- --· ···· -·-- -··- -·-- --'
+                          , 'Changed colors note'     : '---·· ··--·· ·--- -··- -- ··- ·· --- ···- ---·· -- --· -·-· ·---- ·-·-·- -·-· -·· ·· -·- ··-·'
+                          , 'Changed language note'   : '-·- -·-· --·- -···· ··· · ·· ·---- ---·· ·-·-·- ·-- --- ·-·· -·-- --'
+                          , 'take effect next time'   : '--·- ··--- ··· ·- ···· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ····- --· ·- ·--- ---·· ·- --· -- ·---- ···--'
+                          , 'Version'                 : '··--·· -- ···'
+                          , ACTIVE                    : '--· - ----- ·---- ··- ···-'
+                          , CAABOX                    : '--··· --··-- · --- · --· -·-·'
+                          , CAABUTTONS                : '··--- --- - -··- -·-- --··--'
+                          , INCOMPLETE                : '-·· -··- -····'
+                          , COMPLETE                  : '·-· -- -·'
+                          , REMOVE                    : '-·- ··--- --··· ·--· ···-'
+                          };
+}
 
 /* START remote image accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
@@ -375,10 +422,10 @@ function main ($, CONSTANTS) {
               , $parseLabel    = $('<label for="caaOptionRemove"/>').text($.l('Parse web pages'))
                                                                     .prop('title', $.l('Parse (help)'))
               , $parseControl  = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Parse (help)'))
-              , $langLabel     = $('<label id="caaOptionLanguagesLabel" for="caaOptionLanguages"/>').text($.l('Language') + ':')
-                                                                                                    .prop('title', $.l('Changed language note'))
-              , $langList      = $('<select id="caaOptionLanguages"/>').prop('size', 3)
-                                                                       .prop('title', $.l('Changed language note'))
+              , $langLabel     = $('<label id="languageSelectLabel" for="languageSelect"/>').text($.l('Language') + ':')
+                                                                                        .prop('title', $.l('Changed language note'))
+              , $langList      = $('<select id="languageSelect"/>').prop('size', 3)
+                                                                 .prop('title', $.l('Changed language note'))
 
               , $previewImage  = $('<img id="previewImage"/>').prop('draggable', false)
               , $colorField    = $('<fieldset>')
@@ -413,7 +460,7 @@ function main ($, CONSTANTS) {
 
             /* Populate the languages list */
             var languages = []
-              , $option = $('<option/>')
+              , $option   = $('<option/>')
               ;
             Object.keys(CONSTANTS.TEXT).forEach(function(key) {
                 languages.push([key, CONSTANTS.TEXT[key].languageName]);
@@ -423,9 +470,10 @@ function main ($, CONSTANTS) {
                                      : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
                                                    : -1; // a[1] <  b[1] -> -1
             });
+            var userLang  = localStorage.getItem('caaBatch_language') || 'en';
             var $ARRlangs = languages.map(function (language) {
                                               return $option.clone()
-                                                            .prop('selected', (language[0] === CONSTANTS.LANGUAGE))
+                                                            .prop('selected', (language[0] === userLang))
                                                             .prop('value', language[0])
                                                             .text(language[1]);
                                           });
@@ -467,6 +515,14 @@ function main ($, CONSTANTS) {
             $optionsControl.click(function optionsControl_click_handler () {
                                        $optionsMenu.slideToggle();
                                   });
+        }();
+
+        /* Add functionality to the language selector. */
+        !function add_color_select_handler () {
+            $.log('Adding handler for language selector.');
+            $('#languageSelect').on('change', function (e) {
+                localStorage.setItem('caaBatch_language', $(this).find(':selected').val());
+            });
         }();
 
         /* Create the color picker. */
@@ -533,10 +589,10 @@ function main ($, CONSTANTS) {
             $.addRule('*', '{ -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }');
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
-            $.addRule('#caaVersion', '{ float: right; font-size: 75%; margin-top: -15px; letter-spacing: 1px; }');
+            $.addRule('#caaVersion', '{ float: right; font-size: 75%; margin-top: -15px; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
             $.addRule('#optionsMenu * select', '{ font-size: 105%; }');
-            $.addRule('#caaOptionLanguages', '{ padding: 6px; margin: 10px 10px -27px 6px; }');
+            $.addRule('#languageSelect', '{ padding: 6px; margin: 10px 10px -27px 6px; }');
             $.addRule('fieldset', JSON.stringify({ 'border'        : '1px solid lightGrey;'
                                                  , 'border-radius' : '8px;'
                                                  , 'margin'        : '30px -4px 7px -4px;'
@@ -1313,7 +1369,7 @@ function thirdParty($, CONSTANTS) {
 
     // A very basic version of a gettext function.
     var l = function l (str) {
-        return (CONSTANTS.TEXT[CONSTANTS.LANGUAGE][str] || CONSTANTS.TEXT.en[str]);
+        return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str])
     };
 
     // Logs a message to the console if debug mode is on.
