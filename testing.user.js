@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0999
+// @version     0.01.1011
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -49,7 +49,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0999'
+                , VERSION       : '0.1.1011'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -299,9 +299,6 @@ function main ($, CONSTANTS) {
     jQuery.noConflict();
 
     $.log('Script initializing.');
-
-//TODO: Override values in CONTANTS with saved language/color/parse web settings.
-
 
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
@@ -589,10 +586,6 @@ function main ($, CONSTANTS) {
                                 });
         }();
 
-// TODO: Use the language setting
-// TODO: Save/load language setting
-// TODO: Add color picker functionality
-
         !function init_add_css () {
             $.log('Adding css rules');
             $.addRule('*', '{ -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }');
@@ -860,7 +853,7 @@ function main ($, CONSTANTS) {
                 var dataURLreader = new FileReader()
                   , binaryReader  = new FileReader()
                   , title         = (source === 'local') ? 'Local file: ' + (file.name)
-                                                         : source + ' file from ' + uri
+                                                         : source + ' file: ' + uri
                   ;
                 var $img          = $('<img/>').addClass('localImage')
                                                .data('source', source)
@@ -893,38 +886,79 @@ function main ($, CONSTANTS) {
                 binaryReader.readAsBinaryString(file);
             };
 
-        var loadLocalFile = function load_local_file (e) {
-            var files = (e.files || e.dataTransfer.files);
+        var testUriJPG = function (uri) {
+                return (/\.p?j(pg|peg?|f?if)$/i).test(uri);  /* jpg jpeg jpe jfif jif pjpeg */
+            }
+          , testUriBMP = function (uri) { return (/\.bmp$/i).test(uri); }
+          , testUriGIF = function (uri) { return (/\.gif$/i).test(uri); }
+          , testUriJNG = function (uri) { return (/\.jng$/i).test(uri); }
+          , testUriJP2 = function (uri) { return (/\.j(2c|2k|p2|pc|pt)$/i).test(uri); } /* j2c j2k jp2 jpc jpt */
+          , testUriPCX = function (uri) { return (/\.pcx$/i).test(uri); }
+          , testUriPNG = function (uri) { return (/\.png$/i).test(uri); }
+          , testUriTGA = function (uri) { return (/\.tga$/i).test(uri); }
+          , testUriTIF = function (uri) { return (/\.tiff?$/i).test(uri); }
+          , testUriWebP = function (uri) { return (/\.webp$/i).test(uri); }
+          ;
+        var supportedImageType = function supportedImageType (uri) {
+            switch (!0) {
+                case testUriJPG(uri): return 'jpg';
+                case testUriBMP(uri): return 'bmp';
+                case testUriGIF(uri): return 'gif';
+                case testUriJNG(uri): return 'jng';
+                case testUriJP2(uri): return 'jp2';
+                case testUriPCX(uri): return 'pcx';
+                case testUriPNG(uri): return 'png';
+                case testUriTGA(uri): return 'tga';
+                case testUriTIF(uri): return 'tif';
+                case testUriWebP(uri): return 'webp';
+                default: return false;
+            }
+        };
 
-            for (var i = 0; i < files.length; i++) {
-                if (!files[i].type.match(/image\/p?jpeg/)) {
+        var convertImage = function convertImage (inputImage, type, source) {
+            $.log(['convertImage: received ', type, ' file from ', source].join(''));
+/*
+Canvas supports jpg, gif, and png.
+
+                 BMP   FPX   GIF   HDP   JNG   JP2   JXR   PBM   PCD   PDF   PGM   PNG   PNM   PPM   PSD   RAW   TIF   TIFF   WDP   WebP
+Webkit (Chrome): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     Yes
+Gecko (Firefox): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     No
+Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     Yes   
+*/
+
+//TODO: insert image conversion here, return the converted image as dataURL for source:remote and File (or Blob?) for source:local
+        };
+
+        var loadLocalFile = function load_local_file (e) {
+            var file
+              , name
+              , type
+              , files = (e.files || e.dataTransfer.files);
+
+            for (var i = 0, len = files.length; i < len; file = files[i], name = file.name, type = supportedImageType(name), i++) {
+                if (!type) {
+                    $.log(['loadLocalFile: for file ', name, ', file ', i, ' of ', len, ', unusable file type detected'].join(''));
                     continue;
                 }
-                addImageToDropbox(files[i], 'local');
+                $.log(['loadLocalFile: for file ', name, ', file ', i, ' of ', len, ', usable file type ', type, ' detected'].join(''));
+                if (type !== 'jpg') {
+                    file = convertImage(file, type);
+                    addImageToDropbox(file, 'converted local ' + type, name);
+                } else {
+                    addImageToDropbox(file, 'local');
+                }
             }
         };
 
-        var testImageUri = function test_for_valid_image_uri (uri) {
-            /* Testing for: jpg jpeg jpe jfif jif pjpeg */
-            var jpegTest = /\.p?j(pg|peg?|f?if)$/i;
-
-            return jpegTest.test(uri);
-        };
-
-        var loadRemoteFile = function load_remote_file (uri) {
-            if (!testImageUri(uri)) {
-                $.log(uri + ' does not appear to be a jpeg, skipping.');
-                return;
-            }
-            $.log(uri + ' appears to be a jpeg, continuing.');
-
-            var loadStage = '';
+        var loadRemoteFile = function load_remote_file (uri, imgType) {
+            'undefined' === typeof(imgType) && (imgType = 'jpg');
+            var loadStage = ''
+              , $xhrComlink = $('#xhrComlink')
+              ;
             var handleError = function error_handler_for_loadRemoteFile_XHR (e) {
                                   $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.');
                                   $.log(e);
                                 };
-
-            var $xhrComlink = $('#xhrComlink');
 
             $.log('Creating comlink to trigger other context to get the image.');
             $('<pre>' + uri + '</pre>').appendTo($xhrComlink)
@@ -933,12 +967,26 @@ function main ($, CONSTANTS) {
                event, which will then continue the import. */           
                                          .on('dblclick', function create_blob_and_add_thumbnail (e) {
                                                              $.log('dblclick detected on comlink; creating file and thumbnail.');
-                                                             var $comlink = $(this);
-                                                             var imageBase64 = $(this).text();
-                                                             var jpegTest = /pjpeg$/i;
-                                                             var mime = jpegTest.test(uri) ? 'pjpeg' : 'jpeg';
+                                                             var $comlink = $(this)
+                                                               , imageBase64 = $(this).text()
+                                                               , mime
+                                                               , thisImageFilename = 'image' + Date.now() + '.jpg'
+                                                               ;
+
+                                                             switch (imgType) {
+                                                                 case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
+                                                                 case ('bmp'): mime = 'bmp'; break;
+                                                                 case ('gif'): mime = 'gif'; break;
+                                                                 case ('jng'): mime = 'x-jng'; break;
+                                                                 case ('jp2'): mime = 'jp2'; break;
+                                                                 case ('pcx'): mime = 'pcx'; break;
+                                                                 case ('png'): mime = 'png'; break;
+                                                                 case ('tga'): mime = 'tga'; break;
+                                                                 case ('tif'): mime = 'tiff'; break;
+                                                                 case ('webp'): mime = 'webp'; break;
+
+                                                             }
                                                              var imageFile = $.dataURItoBlob(imageBase64, mime);
-                                                             var thisImageFilename = 'image' + Date.now() + '.jpg';
                                                              /* Create a new file in the temp local file system. */
                                                              loadStage = 'getFile';
                                                              localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
@@ -955,14 +1003,19 @@ function main ($, CONSTANTS) {
                                                                          if (fileWriter.position) {
                                                                              $.log('Adding remote image to the drop zone.');
                                                                              thisFile.file(function (file) {
-                                                                                 addImageToDropbox(file, 'Remote', uri);
+                                                                                 if (imgType !== 'jpg') {
+                                                                                     file = convertImage(file, imgType, uri);
+                                                                                     addImageToDropbox(file, 'converted remote ' + imgType, uri);
+                                                                                 } else {
+                                                                                     addImageToDropbox(file, 'Remote', uri);
+                                                                                 }
                                                                              });
                                                                          }
                                                                      };
 
-                                                                     loadStage = 'createWriter: problem within the writer.';
+                                                                     loadStage = 'createWriter: problem within the writer. (But ignore this error.)';
                                                                      fileWriter.onerror = handleError(e);
-                                                                     loadStage = 'createWriter: abort within the writer.';
+                                                                     loadStage = 'createWriter: abort within the writer. (But ignore this error.)';
                                                                      fileWriter.onabort = handleError(e);
 
                                                                      fileWriter.write(imageFile);
@@ -1008,14 +1061,23 @@ function main ($, CONSTANTS) {
                             loadLocalFile(e); 
                             break;
                         case !!dropped.uri.length: // remote image drag/dropped
-                            $.log('imageContainer: drop ==> image uri');
-                            loadRemoteFile(dropped.uri);
-                            break;
+                            $.log('imageContainer: drop ==> uri');
+                            dropped.text = [dropped.uri];
+                            /* falls through */
                         case !!dropped.text.length: // plaintext list of urls drag/dropped
                             $.log('imageContainer: drop ==> list of uris');
-//TODO: Add loading webpages
+                            var type, uri;
                             for (var i = 0, len = dropped.text.length; i < len; i++) {
-                                loadRemoteFile(dropped.text[i]);
+                                uri = dropped.text[i];
+                                type = supportedImageType(uri);
+                                $.log('imageContainer: ' + type + ' detected');
+                                if (type) {
+                                    loadRemoteFile(uri, type);
+                                    break;
+                                } else {
+//TODO: Add loading webpages
+                                $.log(uri + ' does not appear to be a jpeg, skipping.');
+                                }
                             }
                             break;
                         default:
