@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1020
+// @version     0.01.1022
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -883,7 +883,7 @@ function main ($, CONSTANTS) {
                     $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
                     $img.data('depth', jpeg.general.depth.value);
                     $img.data('size', addCommas(file.size || file.fileSize));
-                    $img.data('name', file.name || file.fileName);
+                    $img.data('name', file.name || file.fileName || uri);
                     var logStr = 'Loaded new image: ' + $img.data('name') +
                                  '.  Image has a resolution of ' + $img.data('resolution') + ', '
                                  + $img.data('depth') + '-bit color depth, ' +
@@ -924,125 +924,27 @@ function main ($, CONSTANTS) {
             }
         };
 
-
-
-
-
-
-
-
-
-(function() {
-  /*
-  # MIT LICENSE
-  # Copyright (c) 2011 Devon Govett
-  # 
-  # Permission is hereby granted, free of charge, to any person obtaining a copy of this 
-  # software and associated documentation files (the "Software"), to deal in the Software 
-  # without restriction, including without limitation the rights to use, copy, modify, merge, 
-  # publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons 
-  # to whom the Software is furnished to do so, subject to the following conditions:
-  # 
-  # The above copyright notice and this permission notice shall be included in all copies or 
-  # substantial portions of the Software.
-  # 
-  # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING 
-  # BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-  # NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, 
-  # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-  # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  */  var BMP;
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-  BMP = (function() {
-    BMP.load = function(url, callback) {
-      var xhr;
-      xhr = new XMLHttpRequest;
-      xhr.open("GET", url, true);
-      xhr.responseType = "arraybuffer";
-      xhr.onload = __bind(function() {
-        var data;
-        data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
-        return callback(new BMP(data));
-      }, this);
-      return xhr.send(null);
-    };
-    function BMP(data) {
-      var fileSize, headerLength, i, magic, offset;
-      this.data = data;
-      this.pos = 0;
-      magic = ((function() {
-        var _results;
-        _results = [];
-        for (i = 0; i < 2; i++) {
-          _results.push(String.fromCharCode(this.data[this.pos++]));
-        }
-        return _results;
-      }).call(this)).join('');
-      if (magic !== 'BM') {
-        throw 'Invalid BMP file.';
-      }
-      fileSize = this.readUInt32();
-      this.pos += 4;
-      offset = this.readUInt32();
-      headerLength = this.readUInt32();
-      this.width = this.readUInt32();
-      this.height = this.readUInt32();
-      this.colorPlaneCount = this.readUInt16();
-      this.bitsPerPixel = this.readUInt16();
-      this.compressionMethod = this.readUInt32();
-      this.rawSize = this.readUInt32();
-      this.hResolution = this.readUInt32();
-      this.vResolution = this.readUInt32();
-      this.paletteColors = this.readUInt32();
-      this.importantColors = this.readUInt32();
-    }
-    BMP.prototype.readUInt16 = function() {
-      var b1, b2;
-      b1 = this.data[this.pos++];
-      b2 = this.data[this.pos++] << 8;
-      return b1 | b2;
-    };
-    BMP.prototype.readUInt32 = function() {
-      var b1, b2, b3, b4;
-      b1 = this.data[this.pos++];
-      b2 = this.data[this.pos++] << 8;
-      b3 = this.data[this.pos++] << 16;
-      b4 = this.data[this.pos++] << 24;
-      return b1 | b2 | b3 | b4;
-    };
-    BMP.prototype.copyToImageData = function(imageData) {
-      var b, data, g, i, r, w, x, y, _ref;
-      data = imageData.data;
-      w = this.width;
-      for (y = _ref = this.height - 1; _ref <= 0 ? y < 0 : y > 0; _ref <= 0 ? y++ : y--) {
-        for (x = 0; 0 <= w ? x < w : x > w; 0 <= w ? x++ : x--) {
-          i = (x + y * w) * 4;
-          b = this.data[this.pos++];
-          g = this.data[this.pos++];
-          r = this.data[this.pos++];
-          data[i++] = r;
-          data[i++] = g;
-          data[i++] = b;
-          data[i++] = 255;
-        }
-      }
-    };
-    return BMP;
-  })();
-  window.BMP = BMP;
-}).call(this);
-
-
-
-
-
-
         var convertImage = function convertImage (inputImage, type, source) {
-/* Native support:
-    Chrome
+/* 
+Native support:
+    Chrome:
         Fail:
-            bmp - 16bit 1 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
-            bmp - 16bit 2 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
+            bmp - 16bit 1, bmp - 16bit 2, bmp - 32bit 2
+            j2k
+            jng
+            jp2
+            jpc
+            pcx
+            tga
+            tif - compressed, tif - Deflate, tif - LZW, tif - no compression, tif - Pack Bits
+        Pass:
+            bmp - 16bit 3, bmp - 24bit, bmp - 32bit 1
+            gif
+            png - interlaced, png - non-interlaced
+            webp
+
+    Firefox:
+        Fail:
             bmp - 32bit 2 -> https://github.com/devongovett/bmp.js/issues/1 possible future support
             j2k
             jng
@@ -1050,22 +952,17 @@ function main ($, CONSTANTS) {
             jpc
             pcx
             tga
-            tif - compressed
-            tif - Deflate
-            tif - LZW
-            tif - no compression
-            tif - Pack Bits
-        Pass:
-            bmp - 16bit 3
-            bmp - 24bit
-            bmp - 32bit 1
-            gif
-            png - interlaced
-            png - non-interlaced
+            tif - compressed, tif - Deflate, tif - LZW, tif - no compression, tif - Pack Bits
             webp
+        Pass:
+            bmp - 16bit 1, bmp - 16bit 2, bmp - 16bit 3, bmp - 24bit, bmp - 32bit 1
+            gif
+            png - interlaced, png - non-interlaced
+
+bmp: possible future workaround support: https://github.com/devongovett/bmp.js/issues/1
 */
 
-                $.log(['convertImage: received ', type, ' file from "', source, '"'].join(''));
+                $.log(['convertImage: received ', type, ' file: "', source, '"'].join(''));
                 var canvas = document.createElement("canvas"),
                     reader = new FileReader();
                 var ctx = canvas.getContext("2d");
@@ -1084,7 +981,14 @@ function main ($, CONSTANTS) {
                                          );
                     };
 
-                    if (type !== 'bmp') {
+                    var supportedImageFormats = [];
+                    if ($.browser.chrome) {
+                        supportedImageFormats = ['bmp', 'gif', 'jpg', 'png', 'webp'];
+                    } else if ($.browser.mozilla) {
+                        supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
+                    }
+
+                    if ($.inArray(type, supportedImageFormats)) {
                         img.onload = function () {
                             canvas.width = img.width;
                             canvas.height = img.height;
@@ -1094,38 +998,22 @@ function main ($, CONSTANTS) {
 
                         img.src = reader.result;
                     } else {
-                        var bmp = new BMP(new Uint8Array(reader.result));
-                        canvas.width = bmp.width;
-                        canvas.height = bmp.height;
-
-                        var data = ctx.getImageData(0, 0, bmp.width, bmp.height);
-                        bmp.copyToImageData(data);
-                        ctx.putImageData(data, 0, 0);
-                        useCanvasData();
+// TODO: Convert here
                     }
                 };
-                if (type !== 'bmp') {
+                if (type !== 'b') {
                     reader.readAsDataURL(inputImage);
                 } else {
                     reader.readAsArrayBuffer(inputImage);
                 }
+                return;
             };
-
-/*
-                 BMP   FPX   GIF   HDP   JNG   JP2   JXR   PBM   PCD   PDF   PGM   PNG   PNM   PPM   PSD   RAW   TIF   TIFF   WDP   WebP
-Webkit (Chrome): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     Yes
-Gecko (Firefox): Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     No
-Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?     Yes   ?     ?     ?     ?     ?     ?      ?     Yes   
-*/
-
-//TODO: insert image conversion here, return the converted image as dataURL for source:remote and File (or Blob?) for source:local
-
 
         var loadLocalFile = function load_local_file (e) {
             var file
               , name
               , type
-              , files = (e.files || e.dataTransfer.files);
+              , files = (e.files || e.dataTransfer.files || e.file_list);
             for (var i = 0, len = files.length; i < len; i++) {
                 file = files[i];
                 name = file.name;
@@ -1137,7 +1025,6 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
                 $.log(['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len, ', usable file type "', type, '" detected'].join(''));
                 if (type !== 'jpg') {
                     file = convertImage(file, type, name);
-                    addImageToDropbox(file, 'converted local ' + type, name);
                 } else {
                     addImageToDropbox(file, 'local');
                 }
@@ -1250,7 +1137,7 @@ Presto (Opera):  Yes   ?     Yes   ?     No    No    No    ?     ?     ?     ?  
 
                     $.log(dropped);
                     switch (!0) {
-                        case !!dropped.file_list.length: // local file
+                        case !!dropped.file_list.length: // local file(s)
                             $.log('imageContainer: drop ==> local file'); 
                             loadLocalFile(e); 
                             break;
@@ -1704,6 +1591,8 @@ function thirdParty($, CONSTANTS) {
         property = $(this).prop(property);
         return ('undefined' !== typeof property && property.length);
     };
+
+    $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
 }
 
 !function main_loader(i) {
