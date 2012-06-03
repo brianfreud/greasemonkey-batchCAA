@@ -524,7 +524,7 @@ function main ($, CONSTANTS) {
                                     ]);
 
             $optionsControl.click(function optionsControl_click_handler () {
-                                       $optionsMenu.slideToggle();
+                                       $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
                                   });
         }();
 
