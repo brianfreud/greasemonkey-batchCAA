@@ -19,6 +19,8 @@
 // @require     https://github.com/brianfreud/greasemonkey-batchCAA/blob/master/jsjpegmeta.js
 // ==/UserScript==
 
+// Translations handled at https://www.transifex.net/projects/p/CAABatch/
+
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
 // See https://github.com/jshint/jshint/issues/541
 /*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
@@ -82,14 +84,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Add image one release'   : 'Add a box for another image.'
                                        , 'bytes'                   : 'bytes'
                                        , 'Colors'                  : 'Colors'
-                                       , 'coverType:Back'          : 'Back'
-                                       , 'coverType:Booklet'       : 'Booklet'
-                                       , 'coverType:Front'         : 'Front'
-                                       , 'coverType:Medium'        : 'Medium'
-                                       , 'coverType:Obi'           : 'Obi'
-                                       , 'coverType:Other'         : 'Other'
-                                       , 'coverType:Spine'         : 'Spine'
-                                       , 'coverType:Track'         : 'Track'
                                        , 'default'                 : 'default'
                                        , 'File size'               : 'File size'
                                        , '(Image) Resolution'      : 'Resolution'
@@ -114,6 +108,14 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
                                        , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
                                        , 'Version'                 : 'Version'
+                                       , 'coverType:Back'          : 'Back'
+                                       , 'coverType:Booklet'       : 'Booklet'
+                                       , 'coverType:Front'         : 'Front'
+                                       , 'coverType:Medium'        : 'Medium'
+                                       , 'coverType:Obi'           : 'Obi'
+                                       , 'coverType:Other'         : 'Other'
+                                       , 'coverType:Spine'         : 'Spine'
+                                       , 'coverType:Track'         : 'Track'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -128,20 +130,19 @@ var CONSTANTS = { DEBUGMODE     : true
                                   }
                 };
 
+/* Special case Canadian English, to avoid redundancy with generic English. */
+CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(CONSTANTS.TEXT.en));
+CONSTANTS.TEXT['en-ca'].languageName             = 'English (Canadian)';
+CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
+CONSTANTS.TEXT['en-ca']['Changed colors note']   = 'Changes to the colour settings will take effect the next time that this script is run.';
+CONSTANTS.TEXT['en-ca']['take effect next time'] = 'Changes to the language and colour settings will take effect the next time that this script is run.';
+
 if (CONSTANTS.DEBUGMODE) {
     CONSTANTS.TEXT.test = { languageName              : 'Testing'
                           , 'Add cover art'           : '-·· -··- -····'
                           , 'Add image one release'   : '·-· -- -· -·- ··--- --···'
                           , 'bytes'                   : '·--· ···-'
                           , 'Colors'                  : '····· · -·-'
-                          , 'coverType:Back'          : '---·· ·- --· --'
-                          , 'coverType:Booklet'       : '·---- ···--'
-                          , 'coverType:Front'         : '-·- -·-·'
-                          , 'coverType:Medium'        : '--·- -····'
-                          , 'coverType:Obi'           : '··· · ·· ·----'
-                          , 'coverType:Other'         : '---··'
-                          , 'coverType:Spine'         : '---'
-                          , 'coverType:Track'         : '·-·-·- ·--'
                           , 'default'                 : ' ··--·· -- ··· --·-'
                           , 'File size'               : '··--- ··· ·-'
                           , '(Image) Resolution'      : '···· --·- ····- ·· ·-·'
@@ -166,6 +167,14 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Changed language note'   : '-·- -·-· --·- -···· ··· · ·· ·---- ---·· ·-·-·- ·-- --- ·-·· -·-- --'
                           , 'take effect next time'   : '--·- ··--- ··· ·- ···· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ····- --· ·- ·--- ---·· ·- --· -- ·---- ···--'
                           , 'Version'                 : '··--·· -- ···'
+                          , 'coverType:Back'          : '---·· ·- --· --'
+                          , 'coverType:Booklet'       : '·---- ···--'
+                          , 'coverType:Front'         : '-·- -·-·'
+                          , 'coverType:Medium'        : '--·- -····'
+                          , 'coverType:Obi'           : '··· · ·· ·----'
+                          , 'coverType:Other'         : '---··'
+                          , 'coverType:Spine'         : '---'
+                          , 'coverType:Track'         : '·-·-·- ·--'
                           , ACTIVE                    : '--· - ----- ·---- ··- ···-'
                           , CAABOX                    : '--··· --··-- · --- · --· -·-·'
                           , CAABUTTONS                : '··--- --- - -··- -·-- --··--'
@@ -1369,7 +1378,7 @@ function thirdParty($, CONSTANTS) {
 
     // A very basic version of a gettext function.
     var l = function l (str) {
-        return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str])
+        return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
     };
 
     // Logs a message to the console if debug mode is on.

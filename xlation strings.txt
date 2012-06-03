@@ -1,0 +1,47 @@
+language name
+
+Add cover art
+Add a box for another image.
+bytes
+Colors
+default
+File size
+Resolution
+Images
+Language
+Load images from the Cover Art Archive for all releases
+Load images from the Cover Art Archive for this release
+Loading data from the Cover Art Archive, please wait...
+Loads images for all displayed releases.
+Loads any images already in the Cover Art Archive for this release.
+Zoom in
+Options
+Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.
+Parse web pages
+Preview
+Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.
+Click to remove this image
+Remove images mode
+Zoom out
+Submit edits
+Changes to the color settings will take effect the next time that this script is run.
+Changes to the language setting will take effect the next time that this script is run.
+Changes to the language and color settings will take effect the next time that this script is run.
+Version
+
+Back
+Booklet
+Front
+Medium
+Obi
+Other
+Spine
+Track
+
+Droppable area
+Empty CAA box
+Load CAA buttons
+Incomplete edits
+Edits ready to submit
+Remove image highlight
+
