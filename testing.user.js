@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.0991
+// @version     0.01.0997
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -47,7 +47,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.0991'
+                , VERSION       : '0.1.0997'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -109,9 +109,11 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Shrink image'            : 'Zoom out'
+                                       , 'Submit edits'            : 'Submit edits'
                                        , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
                                        , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
                                        , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
+                                       , 'Version'                 : 'Version'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -284,14 +286,19 @@ function main ($, CONSTANTS) {
         return x1 + x2;
     };
 
-    /* Checks that an editbox has both an image and a cover type.  Returns the associate color for the current editbox' status. */
+    /* Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         $.log('Testing edit status to determine background color for dropbox.');
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
-            return CONSTANTS.COLORS.COMPLETE;
+            return getColor('COMPLETE');
        } else {
-            return CONSTANTS.COLORS.INCOMPLETE;
+            return getColor('INCOMPLETE');
        }
+    };
+
+    // Gets a color value stored in localStorage.
+    var getColor = function getColor (color) {
+        return localStorage.getItem('caaBatch_colors_' + color);
     };
 
     // Converts a hex color string into an rgba color string
@@ -361,6 +368,7 @@ function main ($, CONSTANTS) {
               , optionsImage   = localStorage.getItem('iconSettings')
               , $optionsMenu   = $('<fieldset id="optionsMenu"/>').hide()
               , $optionsLegend = $('<legend/>').text($.l('Options'))
+              , $version       = $('<span id="caaVersion"/>').text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
                                                                     .prop('title', $.l('Remove (help)'))
               , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>').prop('title', $.l('Remove (help)'))
@@ -389,11 +397,17 @@ function main ($, CONSTANTS) {
 
             /* Populate the colors list */
             $colorSelect.prop('size', Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
-                var $option = $('<option/>').addClass('colorOption');
+                var color       = CONSTANTS.COLORS[colorItem]
+                  , $option     = $('<option/>').addClass('colorOption')
+                  ;
                 var $thisOption = $option.clone()
                                          .prop('value', colorItem)
-                                         .data('default', CONSTANTS.COLORS[colorItem])
+                                         .data('default', color)
                                          .text($.l(colorItem));
+                if (localStorage.getItem('caaBatch_colors_' + colorItem) === null) {
+                    $.log('Initializing localStorage for ' + 'caaBatch_colors_' + colorItem + ' to ' + color);
+                    localStorage.setItem('caaBatch_colors_' + colorItem, color);
+                }
                 colorOptions.push($thisOption);
             }).length);
 
@@ -424,6 +438,7 @@ function main ($, CONSTANTS) {
                                                                ])
                                     , $optionsControl.append(optionsImage)
                                     , $imageContainer.append($optionsMenu.appendAll([ $optionsLegend
+                                                                                    , $version
                                                                                     , $removeControl
                                                                                     , $removeLabel
                                                                                     , $('<br/>')
@@ -436,7 +451,6 @@ function main ($, CONSTANTS) {
                                                                                                             , $colorPicker
                                                                                                             , $colorDefault
                                                                                                             ])
-                                                                                    , $('<br/>')
                                                                                     , $optionsNote
                                                                                     ]))
                                     , $('<hr/>').css('border-top', CONSTANTS.BORDERS)
@@ -455,23 +469,31 @@ function main ($, CONSTANTS) {
                                   });
         }();
 
+        /* Create the color picker. */
         $.log('Creating color picker');
         var myPicker = new jscolor.color(document.getElementById('colorPicker'), {});
         myPicker.hash = true;
         myPicker.pickerFace = 5;
         myPicker.pickerInsetColor = 'black';
 
+        /* Add functionality to the color picker. */
         !function add_color_select_handler () {
             $.log('Adding handler for color picker.');
             $('#colorSelect').on('change', function (e) {
-                var color = CONSTANTS.COLORS[$(this).find(':selected').val()];
+                var color = localStorage.getItem('caaBatch_colors_' + $(this).find(':selected').val());
+                $.log('Getting localStorage for ' + 'caaBatch_colors_' + $(this).find(':selected').val() + '.  Result: ' + color);
                 myPicker.fromString(color);
             });
-//TODO: Catch the new color change event, then store the new color to localStorage.
-
+            /* Store new color value in localStorage. */
+            $('#colorPicker').change(function (e) {
+                localStorage.setItem('caaBatch_colors_' + $('#colorSelect').find(':selected').val(), this.value);
+                $.log('Setting localStorage for ' + 'caaBatch_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
+            });
             var $firstOption = $('#colorSelect').find('option:first');
             $firstOption.prop('selected', true);
-            myPicker.fromString(CONSTANTS.COLORS[$firstOption.val()]);
+            myPicker.fromString(
+                               getColor([ $firstOption.val() ])
+                               );
         }();
 
         !function add_default_color_handler () {
@@ -480,6 +502,8 @@ function main ($, CONSTANTS) {
                                                   var color = $('#colorSelect').find(':selected')
                                                                                .data('default');
                                                   myPicker.fromString(color);
+                                                  $.log('Setting localStorage for ' + 'caaBatch_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + color);
+                                                  localStorage.setItem('caaBatch_colors_' + $('#colorSelect').find(':selected').val(), color);
                                               });
         }();
 
@@ -509,16 +533,17 @@ function main ($, CONSTANTS) {
             $.addRule('*', '{ -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }');
             $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
             $.addRule('#xhrComlink', '{ display: none; }');
+            $.addRule('#caaVersion', '{ float: right; font-size: 75%; margin-top: -15px; letter-spacing: 1px; }');
             $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
             $.addRule('#optionsMenu * select', '{ font-size: 105%; }');
             $.addRule('#caaOptionLanguages', '{ padding: 6px; margin: 10px 10px -27px 6px; }');
             $.addRule('fieldset', JSON.stringify({ 'border'        : '1px solid lightGrey;'
                                                  , 'border-radius' : '8px;'
-                                                 , 'margin'        : '30px -4px -4px -4px;'
+                                                 , 'margin'        : '30px -4px 7px -4px;'
                                                  , 'padding'       : '6px;'
                                                  }));
             $.addRule('legend', '{ font-size: 108%!important; color: black!important; }');
-            $.addRule('#colorSelect', '{ padding: 5px; float: left; width: 209px; }');
+            $.addRule('#colorSelect', '{ padding: 5px; float: left; width: 202px; }');
             $.addRule("input[type='color'], #ColorDefaultBtn", JSON.stringify({ 'border'        : '1px outset lightGrey;'
                                                                               , 'border-radius' : '6px;'
                                                                               , 'cursor'        : 'pointer;'
@@ -530,7 +555,7 @@ function main ($, CONSTANTS) {
                                                                               }));
             $.addRule('#optionsNote', '{ font-size: 85%; font-style: oblique; }');
             $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; margin-top: 6px; }');
-            $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(CONSTANTS.COLORS.REMOVE, '0.8').replace(/,/g,'^') + ';'
+            $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(getColor('REMOVE'), '0.8').replace(/,/g,'^') + ';'
                                                        , 'border-radius' : '5px;'
                                                        , 'opacity'       : '0.8;'
                                                        /* The rest of these rules are a css reset. */
@@ -546,7 +571,7 @@ function main ($, CONSTANTS) {
             $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
                                                      , 'border-radius' : '8px;'
                                                      , 'line-height'   : '2;'
-                                                     , 'margin'        : '3px;'
+                                                     , 'margin'        : '10px 3px;'
                                                      , 'padding'       : '8px;'
                                                      }));
             $.addRule('#optionsMenu > label, #optionsMenu > label > select', '{ margin-left: 5px; }');
@@ -558,7 +583,7 @@ function main ($, CONSTANTS) {
             $.addRule('#optionsHeader', '{ opacity: 0.3;}');
             $.addRule('.imageSizeControl:hover, #optionsHeader:hover', '{ opacity: 1;}');
             $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
-            $.addRule('.newCAAimage', '{ background-color: ' + CONSTANTS.COLORS.CAABOX + '; border: 1px #AAA dotted; }');
+            $.addRule('.newCAAimage', '{ background-color: ' + getColor('CAABOX') + '; border: 1px #AAA dotted; }');
             $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
             $.addRule('.CAAdropbox', JSON.stringify({ 'border-radius'    : '6px;'
                                                     , 'float'            : 'left;'
@@ -605,10 +630,10 @@ function main ($, CONSTANTS) {
                                                       , '-o-transform'      : shrink
                                                       , '-moz-transform'    : shrink
                                                       }));
-            $.addRule('.over', '{ background-color: ' + CONSTANTS.COLORS.ACTIVE + '; }');
+            $.addRule('.over', '{ background-color: ' + getColor('ACTIVE') + '; }');
 
            /* Start control buttons */
-            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : CONSTANTS.COLORS.CAABUTTONS + '!important;'
+            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : getColor('CAABUTTONS') + '!important;'
                                                           , 'border'           : '1px outset #FAFAFA!important;'
                                                           , 'border-radius'    : '7px;'
                                                           , 'color'            : '#FFF!important;'
