@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1031
+// @version     0.01.1035
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -24,7 +24,7 @@
 
 /* Installation and requirements:
 
-Firefox: Install as normal.
+Firefox: Requires a minimum of version 11.  Install as normal.  When the script is run the first time, a prompt will come up.  Make sure to click "accept"!
 
 Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
 "Allow access to file URLs" for this script is checked.  Then restart Chrome, with the --allow-file-access-from-files switch.
@@ -46,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1031'
+                , VERSION       : '0.1.1035'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1008,9 +1008,9 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                         };
 
                         img.src = reader.result;
-                    } else {
-                        /* Unsupported, but potentially converted here: j2k, jng, jp2, jpc, pcx, tga, tif */
-                    }
+                    } /* else {
+                        // Unsupported, but potentially converted here: j2k, jng, jp2, jpc, pcx, tga, tif 
+                    } */
                 };
 
                 if (type !== 'b') {
@@ -1337,8 +1337,9 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                                                             $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
                                            , success  : function caaResponseHandler (data, textStatus, jqXHR) {
-                                                            $.log('Received CAA, parsing...');
-                                                            if (jQuery.isEmptyObject(data)) {
+                                                            data = JSON.parse(data);
+                                                            $.log('Received CAA data, parsing...');
+                                                            if ($.isEmptyObject(data)) {
                                                                 $.log('CAA response: no images in CAA for this release.');
                                                             } else {
                                                                 $.each(data.images, function parseCAAResponse (i) {
@@ -1351,7 +1352,6 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                                                                                  .find('br, .closeButton').remove().end()
                                                                                  .find('select').prop('disabled', true).end()
                                                                                  .removeClass('newCAAimage');
-
                                                                     /* This next bit of code does the same thing as the lowsrc attribute.  This would have
                                                                        been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
                                                                        http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
@@ -1372,7 +1372,6 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                                                                           });
                                                                     };
                                                                     /* End lowsrc workaround. */
-
                                                                     $.each(this.types, function assign_image_type (i) {
                                                                         var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
                                                                         $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
