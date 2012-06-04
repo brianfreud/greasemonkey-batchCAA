@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1024
+// @version     0.01.1025
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1024'
+                , VERSION       : '0.1.1025'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -383,7 +383,7 @@ function main ($, CONSTANTS) {
         script.type = 'text/javascript';
         script.textContent = localStorage.getItem(scriptSource);
         document.getElementsByTagName('head')[0].appendChild(script);
-    }
+    };
 
     /* Polyfill to add FileSystem API support to Firefox. */
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
@@ -992,7 +992,7 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                         // WebP-support test
                         var WebP = new Image();
                         WebP.onload = WebP.onerror = function () {
-                            if (WebP.height != 2) { // Only load the polyfill if WebP is not yet supported within this session.
+                            if (WebP.height !== 2) { // Only load the polyfill if WebP is not yet supported within this session.
                                 addScript('webPPolyfill');
                             }
                             supportedImageFormats.push('webp');
