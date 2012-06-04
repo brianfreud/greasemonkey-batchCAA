@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1023
+// @version     0.01.1024
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1023'
+                , VERSION       : '0.1.1024'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -988,15 +988,14 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
 
                     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
 
-                    if (type === 'webp' && $.inArray(type, supportedImageFormats)) {
-                        supportedImageFormats.push('webp');
-                    } else { // WebP-support polyfill, will only run if WebP is not yet supported within this session.
+                    if (type === 'webp' && !$.inArray(type, supportedImageFormats)) {
+                        // WebP-support test
                         var WebP = new Image();
                         WebP.onload = WebP.onerror = function () {
-                            if (WebP.height != 2) {
+                            if (WebP.height != 2) { // Only load the polyfill if WebP is not yet supported within this session.
                                 addScript('webPPolyfill');
-                                supportedImageFormats.push('webp');
                             }
+                            supportedImageFormats.push('webp');
                         };
                         WebP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
                     }
