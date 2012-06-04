@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1022
+// @version     0.01.1023
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,7 +46,7 @@ var request = new opera.XMLHttpRequest();"
 */
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1020'
+                , VERSION       : '0.1.1023'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -377,12 +377,17 @@ function main ($, CONSTANTS) {
         return $image;
     };
 
+    /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
+    var addScript = function addScript (scriptSource) {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.textContent = localStorage.getItem(scriptSource);
+        document.getElementsByTagName('head')[0].appendChild(script);
+    }
+
     /* Polyfill to add FileSystem API support to Firefox. */
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.textContent = localStorage.getItem('idbFileSystem');
-            document.getElementsByTagName('head')[0].appendChild(script);
+            addScript('idbFileSystem');
     }
 
     var init = function init () {
@@ -988,6 +993,19 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                         supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
                     }
 
+                    // WebP-support polyfill
+                    if (type === 'webp' && !$.inArray(type, supportedImageFormats)) {
+                        var WebP = new Image();
+                        WebP.onload = WebP.onerror = function () { // This will only run if webp is not yet supported within this session.
+                            if (WebP.height != 2) {
+                                addScript('webPPolyfill');
+                                supportedImageFormats.push('webp');
+                            }
+                        };
+                        WebP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+                    }
+
+                    // Convert image if its image format is supported via either polyfill or native
                     if ($.inArray(type, supportedImageFormats)) {
                         img.onload = function () {
                             canvas.width = img.width;
@@ -998,9 +1016,26 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
 
                         img.src = reader.result;
                     } else {
+                        // Convert image if its image format is not supported via either polyfill or native
+                        if (type === 'aaa') {
+
+
+                        }
+
+/*
+j2k
+jng
+jp2
+jpc
+pcx
+tga
+tif - compressed, tif - Deflate, tif - LZW, tif - no compression, tif - Pack Bits
+*/
+
 // TODO: Convert here
                     }
                 };
+
                 if (type !== 'b') {
                     reader.readAsDataURL(inputImage);
                 } else {
