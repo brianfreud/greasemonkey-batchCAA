@@ -45,3 +45,4 @@ Incomplete edits
 Edits ready to submit
 Remove image highlight
 
+Submit edits as autoedits

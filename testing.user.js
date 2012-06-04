@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1035
+// @version     0.01.1043
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -30,23 +30,17 @@ Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensi
 "Allow access to file URLs" for this script is checked.  Then restart Chrome, with the --allow-file-access-from-files switch.
 If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
-Opera: Compatible?  Definitely requires minimum of version 12.  Also may NOT work for loading remote images; I need to look into it more...
-http://userscripts.org/topics/2026 :
-"it is possible to have cross-domain GM_xmlhttpRequest in Opera. To do so you need the following: 
-- cross-domain XMLHttpRequest implementation scripts (a-lib-stacktrace.js and a-lib-xmlhttp-cd.js) from here: 
-http://my.opera.com/community/forums/findpost.p... (I suggest to read the entire thread) 
-- wrapper for GM_* functions (aagmfunctions.js) from here: http://www.howtocreate.co.uk/operaStuff/userjs/... (this is the up-to-date 
-location for the script mentioned by znerp) 
-- enable the following options in Opera: opera:config#UserPrefs|UserJavaScript and opera:config#UserPrefs|UserJavaScriptonHTTPS 
-- modify the aagmfunctions.js script to use the cross-domain XMLHttpRequest implementation by changing the following line 
-var request = new XMLHttpRequest(); 
-into 
-var request = new opera.XMLHttpRequest();"
+Opera: Not compatible, sorry.
 
 */
 
+//TODO: Image rotation
+//TODO: Image clipping
+//TODO: "About"
+//TODO: Edit submission
+
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1035'
+                , VERSION       : '0.1.1043'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -101,6 +95,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Shrink image'            : 'Zoom out'
                                        , 'Submit edits'            : 'Submit edits'
+                                       , 'Submit as autoedits'     : 'Submit edits as autoedits'
                                        , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
                                        , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
                                        , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
@@ -121,9 +116,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , COMPLETE                  : 'Edits ready to submit'
                                        , REMOVE                    : 'Remove image highlight'
                                        },
-                                  fr : { languageName              : 'Français'
-                                       , 'Images'                  : 'Les Photos'
-                                       }
                                   }
                 };
 
@@ -433,6 +425,11 @@ function main ($, CONSTANTS) {
               , optionsImage   = localStorage.getItem('iconSettings')
               , $optionsMenu   = $('<fieldset id="optionsMenu"/>').hide()
               , $optionsLegend = $('<legend/>').text($.l('Options'))
+              , $autoeditControl = $('<input type="checkbox" id="caaAutoedit"/>').prop('title', $.l('Submit as autoedits'))
+                                                                                 .prop('checked', true)
+//TODO: Don't hardcode caaAutoedit
+              , $autoeditLabel = $('<label for="caaAutoedit"/>').text($.l('Submit as autoedits'))
+                                                                .prop('title', $.l('Submit as autoedits'))
               , $version       = $('<span id="caaVersion"/>').text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
               , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
                                                                     .prop('title', $.l('Remove (help)'))
@@ -530,6 +527,17 @@ function main ($, CONSTANTS) {
                                                                   ])
                                     ]);
 
+            // Autoeditors
+            var autoeditorList = JSON.parse(localStorage.getItem('autoeditors'))
+              , thisEditor = $('.account > a:first').text()
+              ;
+            if ($.inArray(thisEditor, autoeditorList) != -1) {
+                $autoeditControl.add($autoeditLabel)
+                                .add($('<br/>'))
+                                .insertBefore($parseControl);
+            }
+
+            // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
             $optionsControl.click(function optionsControl_click_handler () {
                                        $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
                                   });
@@ -965,8 +973,6 @@ Native support:
             bmp - 16bit 1, bmp - 16bit 2, bmp - 16bit 3, bmp - 24bit, bmp - 32bit 1
             gif
             png - interlaced, png - non-interlaced
-
-bmp: possible future workaround support: https://github.com/devongovett/bmp.js/issues/1
 */
 
                 $.log(['convertImage: received ', type, ' file: "', source, '"'].join(''));
@@ -991,7 +997,7 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                     if (type === 'webp' && $.inArray(type, supportedImageFormats) === -1) {
                         // WebP-support test
                         img.onload = img.onerror = function () {
-                            if (img.height === 2) { // Only load the polyfill if WebP is not yet supported within this session.
+                            if (img.height === 2) {
                                 supportedImageFormats.push('webp');
                             }
                         };
@@ -1009,15 +1015,12 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
 
                         img.src = reader.result;
                     } /* else {
-                        // Unsupported, but potentially converted here: j2k, jng, jp2, jpc, pcx, tga, tif 
+                        //TODO: More image conversions...
+                        // Unsupported currently, but potentially converted here: j2k, jng, jp2, jpc, pcx, tga, tif, webp (Firefox)
                     } */
                 };
 
-                if (type !== 'b') {
-                    reader.readAsDataURL(inputImage);
-                } else {
-                    reader.readAsArrayBuffer(inputImage);
-                }
+                reader.readAsDataURL(inputImage);
                 return;
             };
 
