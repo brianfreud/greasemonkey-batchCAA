@@ -986,17 +986,13 @@ bmp: possible future workaround support: https://github.com/devongovett/bmp.js/i
                                          );
                     };
 
-                    var supportedImageFormats = [];
-                    if ($.browser.chrome) {
-                        supportedImageFormats = ['bmp', 'gif', 'jpg', 'png', 'webp'];
-                    } else if ($.browser.mozilla) {
-                        supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
-                    }
+                    var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
 
-                    // WebP-support polyfill
-                    if (type === 'webp' && !$.inArray(type, supportedImageFormats)) {
+                    if (type === 'webp' && $.inArray(type, supportedImageFormats)) {
+                        supportedImageFormats.push('webp');
+                    } else { // WebP-support polyfill, will only run if WebP is not yet supported within this session.
                         var WebP = new Image();
-                        WebP.onload = WebP.onerror = function () { // This will only run if webp is not yet supported within this session.
+                        WebP.onload = WebP.onerror = function () {
                             if (WebP.height != 2) {
                                 addScript('webPPolyfill');
                                 supportedImageFormats.push('webp');
