@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1043
+// @version     0.01.1044
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -38,9 +38,13 @@ Opera: Not compatible, sorry.
 //TODO: Image clipping
 //TODO: "About"
 //TODO: Edit submission
+//TODO: Eliminate the 2nd image load for remote images
+//TODO: Clean up the temp file system after edit submissions and when images are removed
+//TODO: Add support for editing existing CAA image data
+//TODO: Add support for removing existing CAA images
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1043'
+                , VERSION       : '0.1.1044'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -427,7 +431,7 @@ function main ($, CONSTANTS) {
               , $optionsLegend = $('<legend/>').text($.l('Options'))
               , $autoeditControl = $('<input type="checkbox" id="caaAutoedit"/>').prop('title', $.l('Submit as autoedits'))
                                                                                  .prop('checked', true)
-//TODO: Don't hardcode caaAutoedit
+//TODO: Don't hardcode caaAutoedit's initial value
               , $autoeditLabel = $('<label for="caaAutoedit"/>').text($.l('Submit as autoedits'))
                                                                 .prop('title', $.l('Submit as autoedits'))
               , $version       = $('<span id="caaVersion"/>').text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
