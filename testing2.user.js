@@ -1,14 +1,16 @@
 // ==UserScript==
 // @name        Testing 2
-// @version     0.01.0002
+// @version     0.01.0003
 // @description 
 // @include     http://*
 // ==/UserScript==
 
-/*global console pathname hash */
+/*global console */
 /*jshint expr:true, forin:true, noarg:true, noempty:true, eqeqeq:true, undef:true, curly:true, browser:true, jquery:true, laxcomma:true */
 
 var outerCAA = { DEBUG : true
+               , ctrl  : false
+               , key   : 120
                };
 
 outerCAA.storeURL = function () {
@@ -21,7 +23,7 @@ outerCAA.storeURL = function () {
     return true;
 };
 
-outerCAA.sendMessage = function (message) {
+outerCAA.sendMessage = function () {
     'use strict';
     var mbIframe = document.getElementById('mbIframe').contentWindow;
     mbIframe.postMessage('MBstoredURL', '*');
@@ -31,11 +33,11 @@ outerCAA.sendMessage = function (message) {
 
 outerCAA.MusicBrainz = function () {
     'use strict';
-    pathname === '/doc/Cover_Art_Archive' && outerCAA.storeURL() && outerCAA.DEBUG && outerCAA.sendMessage();
+    document.location.pathname === '/doc/Cover_Art_Archive' && outerCAA.storeURL() && outerCAA.DEBUG && outerCAA.sendMessage();
     return;
 };
 
-outerCAA.nonMB = function ($, DEBUG) {
+outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
     'use strict';
 
     jQuery.noConflict();
@@ -43,14 +45,13 @@ outerCAA.nonMB = function ($, DEBUG) {
     var innerCAA = {}
       , $mbIframe = ''
       , $highlights
+      , active = false
       , src = 'http://musicbrainz.org/doc/Cover_Art_Archive#'
       ;
 
-    jQuery.extend({
-        enable : function (bool) {
-                     return $(this).prop('disabled', !bool);
-                 }
-    });
+    $.enable = function (bool) {
+                   return $(this).prop('disabled', !bool);
+               };
 
     innerCAA.iframe = { create  : function () {
                                       DEBUG && console.log('Inserting iFrame.');
@@ -89,16 +90,8 @@ outerCAA.nonMB = function ($, DEBUG) {
                                     }
                            };
 
-    innerCAA.keypress = { init     : function () {
-                                         DEBUG && console.log('Initializing the activation keypress event.');
-// TODO
-                                     }
-                        , handle   : function () {
-                                         DEBUG && console.log('activation keypress event detected.');
-// TODO determine whether to turn the image click functionality on or off.
-                                     }
-                        , on       : function () {
-                                         DEBUG && console.log('activation keypress event -> on');
+    innerCAA.keypress = { on       : function () {
+                                         DEBUG && console.log('Activation keypress event -> on');
                                          if (!$mbIframe.length) {
                                              innerCAA.iframe.create();
                                              innerCAA.highlighter.init();
@@ -109,9 +102,22 @@ outerCAA.nonMB = function ($, DEBUG) {
                                          innerCAA.highlighter.on();
                                      }
                         , off      : function () {
-                                          DEBUG && console.log('activation keypress event -> off');
+                                         DEBUG && console.log('Activation keypress event -> off');
                                          innerCAA.imageClick.off();
                                          innerCAA.highlighter.off();
+                                     }
+                        , toggle   : function () {
+                                         DEBUG && console.log('Activation keypress event detected.');
+                                         innerCAA.keypress[(active = !active) ? 'on' : 'off']();
+                                         return;
+                                     }
+                        , init     : function () {
+                                         DEBUG && console.log('Initializing the activation keypress event.');
+                                         $(document).keydown(function (e) {
+                                             if (e.keyCode === key && (ctrl ? e.ctrlKey : true)) {
+                                                 innerCAA.keypress.toggle();
+                                             }
+                                         });
                                      }
                         };
 
@@ -158,7 +164,11 @@ outerCAA.loader = function (i) {
                 outerCAA.loader (x);
             } else {
                 makeScript();
-                script.textContent = '(' + outerCAA.nonMB + ')(jQuery, ' + outerCAA.DEBUG + ');';
+                script.textContent = [ '(' , outerCAA.nonMB , ')(jQuery, ' , 
+                                                                 outerCAA.DEBUG , ',' ,
+                                                                 outerCAA.ctrl , ',' ,
+                                                                 outerCAA.key , ');' 
+                                     ].join('');
                 head.appendChild(script);
             }
         }, !0);
