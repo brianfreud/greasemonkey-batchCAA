@@ -368,7 +368,7 @@ function main ($, CONSTANTS) {
               .prop('title', $.l('Remove image'))
               .addClass('tintImage');
         $image.parent()
-              .addClass('tintContainer')
+              .addClass('tintWrapper')
               .css({ height : ($image.height() + 6) + 'px'
                    , width  : ($image.width() + 6) + 'px'
                    });
@@ -600,7 +600,7 @@ function main ($, CONSTANTS) {
                                 })
                                 .on('mouseleave', '.localImage', function localImage_hover_out_handler (e) {
                                     var $e = $(e.target);
-                                    $e.parents('.tintContainer:first').length && $e.removeClass('tintImage')
+                                    $e.parents('.tintWrapper:first').length && $e.removeClass('tintImage')
                                                                                    .prop('title', $e.data('oldtitle'))
                                                                                    .unwrap();
                                 })
@@ -637,10 +637,10 @@ function main ($, CONSTANTS) {
                                                                               }));
             $.addRule('#optionsNote', '{ font-size: 85%; font-style: oblique; }');
             $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; }');
-            $.addRule('.tintContainer', JSON.stringify({ 'background'    : hexToRGBA(getColor('REMOVE'), '0.8').replace(/,/g,'^') + ';'
+            $.addRule('.tintWrapper', JSON.stringify({ 'background'    : hexToRGBA(getColor('REMOVE'), '0.8').replace(/,/g,'^') + ';'
                                                        , 'border-radius' : '5px;'
                                                        , 'opacity'       : '0.8;'
-                                                       /* The rest of these rules are a css reset. */
+                                                       /* The rest of these rules are a css reset for browser default css. */
                                                        , 'margin'         : '0;'
                                                        , 'padding'        : '0;'
                                                        , 'outline'        : '0;'
@@ -1534,7 +1534,8 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        $('<style>' + selector + rule.replace(/[",]/g,'').replace(/~/g,'"').replace(/\^/g,',') + '</style>').appendTo($('head'));
+        var JSONartifacts = /[",]/g;
+        $('<style>' + selector + rule.replace(JSONartifacts,'').replace(/~/g,'"').replace(/\^/g,',') + '</style>').appendTo($('head'));
     };
 
     // A very basic version of a gettext function.

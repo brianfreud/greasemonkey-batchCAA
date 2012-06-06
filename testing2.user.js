@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 2
-// @version     0.01.0003
+// @version     0.02.0001
 // @description 
 // @include     http://*
 // ==/UserScript==
@@ -38,9 +38,9 @@ outerCAA.MusicBrainz = function () {
 };
 
 outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
-    'use strict';
+    /* NOTE: We do not want strict mode here.  It would cause the script to break if the site's code has modified object prototypes. */
 
-    jQuery.noConflict();
+    $.noConflict();
 
     var innerCAA = {}
       , $mbIframe = ''
@@ -49,62 +49,148 @@ outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
       , src = 'http://musicbrainz.org/doc/Cover_Art_Archive#'
       ;
 
-    $.enable = function (bool) {
-                   return $(this).prop('disabled', !bool);
-               };
+    $.fn.enable = function (bool) {
+                           return $(this).prop('disabled', !bool);
+                       };
 
     innerCAA.iframe = { create  : function () {
                                       DEBUG && console.log('Inserting iFrame.');
                                       $mbIframe = $('<iframe id="mbIframe"/>').hide();
-                                      $('body').append($mbIframe);
                                   }
                       , sendURL : function (url) {
                                       DEBUG && console.log('Passing image URL to the iFrame.');
-// TODO: build in support for user clicking 2nd image before 1st url has had time to finish its thing in the iframe.
-                                      $mbIframe.prop('src', src+url);
+                                      var $newIframe = $mbIframe.clone()
+                                                                .prop('src', src+url);
+                                      $('body').append($newIframe);
                                   }
                       };
 
-
-    innerCAA.sendImageURL = function (url) {
-        $mbIframe.prop('src', url);
-    };
-
     innerCAA.setListenerMBReturn = function () {
-        document.addEventListener('message', function(e){
-                                                 console.log(e.data);
+        document.addEventListener('message', function (e) {
+                                                 DEBUG && console.log('setListenerMBReturn:', e.data);
                                              }, false);
     };
 
-    innerCAA.highlighter = { init : function () {
-                                      DEBUG && console.log('Initializing the highlight css.');
-// TODO                                 $highlights = $('<style/>').text('img:hover { SOMETHING }');
-                                    }
-                           , on   : function () {
-                                      DEBUG && console.log('Enabling the highlight css.');
-                                        $highlights.enable(true);
-                                    }
-                           , off  : function () {
-                                      DEBUG && console.log('Disabling the highlight css.');
-                                        $highlights.enable(false);
-                                    }
-                           };
+    innerCAA.addRule = function (selector, rule) {
+        return $('<style>').text(selector + rule)
+                           .addClass('tinterCAA')
+                           .appendTo($('head'));
+    };
+  
+    innerCAA.tintImage = function (image) {
+        DEBUG && console.log('Tinting image');
+        var $image = $(image);
+        $image.wrap('<figure>')
+              .parent()
+              .addClass('tintWrapper')
+              .prop('title', 'Left click to send this image to CAA Batch Image Manager.');
+        return $image;
+    };
 
-    innerCAA.keypress = { on       : function () {
+    innerCAA.highlighter = {};
+
+    innerCAA.highlighter.init = function () {
+        DEBUG && console.log('Initializing the highlight css.');
+        var top = '.tintWrapper'
+          , img = '.tintWrapper > img'
+          , both = [top,img].join()
+          , addRule = function (ele, rule) {
+                          return innerCAA.addRule(ele, '{' + rule + '}');
+                      }
+          ;
+
+        /* CSS reset */
+        addRule(top, 'margin: 0; padding: 0; outline: 0; vertical-align: baseline; display: inline-block;');
+        addRule(img, 'margin: 0; padding: 0; outline: 0;');
+
+        /* Rounded corners */
+        addRule(top, 'border-radius: 6px; -moz-border-radius: 6px; -webkit-border-radius: 6px;');
+        addRule(img, 'border-radius: 12px; -moz-border-radius: 12px; -webkit-border-radius: 12px;');
+
+        /* Tinted overlay */
+        addRule(top, 'background: rgba(45, 106, 210, .5);');
+        addRule(img, 'margin: 5px;');
+        var backlight = '0 0 22px rgba(0, 0, 200, .5);';
+        addRule(top, [ '-moz-box-shadow:', backlight, '-webkit-box-shadow:', backlight, 'box-shadow:', backlight].join(''));
+
+        /* Desaturation */
+        addRule(top, 'opacity: 0.9;');
+        addRule(img, 'opacity: 0.4;');
+        addRule(img, '-webkit-filter: grayscale(0.6);'); // Chrome
+        $('body').append('<svg xmlns="http://www.w3.org/2000/svg">' +
+                             '<filter id="grayscale">' +
+                                 '<feColorMatrix type="matrix" values="0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0"/>' +
+                             '</filter>' +
+                         '</svg>'
+                        );
+        addRule(img, 'filter: grayscale(#grayscale);'); // Firefox
+
+        $highlights = $('.tinterCAA');
+        $('body').on('mouseleave', 'img', function (e) {
+                                                       DEBUG && console.log('Removing tinter wrap from image.');
+                                                       var $e = $(e.target);
+                                                       $e.parents('.tintWrapper:first').length && $e.removeClass('tintImage').unwrap();
+                                                       }
+                );
+    };
+
+    innerCAA.highlighter.on = function () {
+        DEBUG && console.log('Enabling the highlight css.');
+        $highlights.enable(true);
+        $('body').on('mouseenter', 'img', function (e) {
+                                                       DEBUG && console.log('Wrapping image with tinter.');
+                                                       innerCAA.tintImage(e.target);
+                                                       }
+                );
+    };
+
+    innerCAA.highlighter.off = function () {
+        DEBUG && console.log('Disabling the highlight css.');
+        $highlights.enable(false);
+        $('body').off('mouseenter', 'img');
+    };
+
+    innerCAA.keypress = { indicator: function (msg) {
+                                         $('#CAAIndicator').text(msg)
+                                                           .show()
+                                                           .delay(1200)
+                                                           .fadeOut(500);
+                                         return;
+                                     }
+                        , on       : function () {
                                          DEBUG && console.log('Activation keypress event -> on');
                                          if (!$mbIframe.length) {
+                                             /* Status indicator */
+                                             innerCAA.addRule('#CAAIndicator', [ '{'
+                                                                               , 'color: #000;'
+                                                                               , 'background: white;'
+                                                                               , 'border: 2px solid teal;'
+                                                                               , '-webkit-border-radius: 0px 0px 0px 20px;'
+                                                                               , '-moz-border-radius: 0px 0px 0px 20px;'
+                                                                               , 'border-radius: 0px 0px 0px 20px;'
+                                                                               , 'font-size: 40px;'
+                                                                               , 'font-weight: 700;'
+                                                                               , 'padding: 10px;'
+                                                                               , 'position: absolute;'
+                                                                               , 'right: 0;'
+                                                                               , 'top: 0;'
+                                                                               , '}'].join(''))
+                                                     .removeClass('tinterCAA');
+                                             $('body').append($('<div id="CAAIndicator"/>').hide());
+
                                              innerCAA.iframe.create();
                                              innerCAA.highlighter.init();
-                                             innerCAA.click.init();
                                              DEBUG && innerCAA.setListenerMBReturn();
                                          }
-                                         innerCAA.imageClick.on();
                                          innerCAA.highlighter.on();
+                                         innerCAA.imageClick.on();
+                                         innerCAA.keypress.indicator('ON');
                                      }
                         , off      : function () {
                                          DEBUG && console.log('Activation keypress event -> off');
                                          innerCAA.imageClick.off();
                                          innerCAA.highlighter.off();
+                                         innerCAA.keypress.indicator('OFF');
                                      }
                         , toggle   : function () {
                                          DEBUG && console.log('Activation keypress event detected.');
@@ -121,17 +207,17 @@ outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
                                      }
                         };
 
-    innerCAA.imageClick = { init : function () {
-                                       DEBUG && console.log('Initialize event listener for a click on an img (or anchor linking to an img).');
-// TODO     add event listener for click on images
-                                   }
-                          , on   : function () {
-                                      DEBUG && console.log('Img click event -> on');
-// TODO     innerCAA.iframe.sendURL( image url )
+    innerCAA.imageClick = { on   : function () {
+                                       DEBUG && console.log('Img click event -> on');
+                                       $('body').on('click', '.tintWrapper > img', function (e) {
+                                           e.preventDefault();
+                                           innerCAA.iframe.sendURL($(this).prop('src'));
+                                           return false;
+                                       });
                                    }
                           , off  : function () {
-                                      DEBUG && console.log('Img click event -> off');
-// TODO     stop listening
+                                       DEBUG && console.log('Img click event -> off');
+                                       $('body').off('click', '.tintWrapper > img');
                                    }
                           };
 
