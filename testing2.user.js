@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 2
-// @version     0.02.0001
+// @version     0.02.0003
 // @description 
 // @include     http://*
 // ==/UserScript==
@@ -171,10 +171,11 @@ outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
                                                                                , 'font-size: 40px;'
                                                                                , 'font-weight: 700;'
                                                                                , 'padding: 10px;'
-                                                                               , 'position: absolute;'
+                                                                               , 'position: fixed;'
                                                                                , 'right: 0;'
                                                                                , 'top: 0;'
-                                                                               , '}'].join(''))
+                                                                               , 'z-index: 10000;'
+                                                                               , '}'].join('\n'))
                                                      .removeClass('tinterCAA');
                                              $('body').append($('<div id="CAAIndicator"/>').hide());
 

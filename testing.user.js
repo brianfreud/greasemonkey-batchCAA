@@ -42,6 +42,8 @@ Opera: Not compatible, sorry.
 //TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
+//TODO: Load images which were cached while script was not running
+//TODO: Add button to purge the image cache
 
 var CONSTANTS = { DEBUGMODE     : true
                 , VERSION       : '0.1.1044'
@@ -293,7 +295,9 @@ function main ($, CONSTANTS) {
 
     $.log('Script initializing.');
 
-    var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png'];
+    var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
+      , cachedImages = localStorage.getItem('caaBatch_imageCache')
+      ;
 
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
@@ -1186,6 +1190,33 @@ Native support:
                     
                 }
             });
+        }();
+
+        !function init_storage_event_handling () {
+            $.log('Attaching listener for storage events.');
+            var handleStorage = function handleStorage (e) {
+                /* Testing whether: 1) the key that was changed is the one we care about here, or
+                                    2) the new value of the key is different from when the script first initialized in this tab.
+
+                   #2 is important; without it, if you have multiple tabs open, each with this script running, they would create
+                   a feedback loop, each triggering a new storage event on the other when they remove the new URL from the key.
+                */
+                if (e.key !== 'caaBatch_imageCache' || cachedImages === e.newValue) {
+                    return;
+                }
+                e.preventDefault();
+
+                var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
+                localStorage.setItem('caaBatch_imageCache', e.oldValue);
+
+                var type = supportedImageType(newURL);
+                if (type) {
+                    $.log('Received a new ' + type + ' URL: ' + newURL);
+                    loadRemoteFile(newURL, type);
+                }
+                return false;                
+            };
+            window.addEventListener("storage", handleStorage, false);
         }();
 
         !function init_add_caa_row_controls () {
