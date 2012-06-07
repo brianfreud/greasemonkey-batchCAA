@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1044
+// @version     0.01.1056
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -20,7 +20,7 @@
 
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
 // See https://github.com/jshint/jshint/issues/541
-/*jshint forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
+/*jshint bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
 
 /* Installation and requirements:
 
@@ -46,7 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: Add button to purge the image cache
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1044'
+                , VERSION       : '0.1.1056'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -125,7 +125,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                   }
                 };
 
-/* Special case Canadian English, to avoid redundancy with generic English. */
+/* Special case Canadian English. */
 CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(CONSTANTS.TEXT.en));
 CONSTANTS.TEXT['en-ca'].languageName             = 'English (Canadian)';
 CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
@@ -178,6 +178,313 @@ if (CONSTANTS.DEBUGMODE) {
                           , REMOVE                    : '-·- ··--- --··· ·--· ···-'
                           };
 }
+
+var shrink = ['scale', '(', CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('');
+CONSTANTS.CSS = { '#ColorDefaultBtn':
+                      { 'background-color'      : '#D3D3D3'
+                      },
+                  '#caaVersion':
+                      {  float                  : 'right'
+                      , 'font-size'             : '75%'
+                      , 'margin-top'            : '-15px'
+                      },
+                  '#colorSelect':
+                      {  float                  : 'left'
+                      ,  padding                : '5px'
+                      ,  width                  : '202px'
+                      },
+                  '#imageContainer':
+                      { 'overflow-y'            : 'auto'
+                      },
+                  '#imageHeader':
+                      {  float                  : 'left'
+                      ,  width                  : '30%'
+                      },
+                  '#imageSizeControlsMenu':
+                      {  float                  : 'right'
+                      , 'height'                : '24px'
+                      ,  width                  : '25%'
+                      },
+                  '#languageSelect':
+                      {  margin                 : '10px 10px -27px 6px'
+                      ,  padding                : '6px'
+                      },
+                  '#optionsHeader':
+                      {  display                : 'inline-block'
+                      ,  float                  : 'right'
+                      , 'margin-right'          : '-24px'
+                      , 'margin-top'            : '-3px'
+                      ,  opacity                : '0.3'
+                      ,  width                  : '40%'
+                      },
+                  '#optionsMenu':
+                      {  border                 : '1px solid #D3D3D3'
+                      ,    '-moz-border-radius' : '8px'
+                      , '-webkit-border-radius' : '8px'
+                      ,         'border-radius' : '8px'
+                      , 'line-height'           : 2
+                      ,  margin                 : '10px 3px'
+                      ,  padding                : '8px'
+                      },
+                  '#optionsMenu * select':
+                      { 'font-size'             : '105%'
+                      },
+                  '#optionsMenu > label > select':
+                      {  padding                : '3px'
+                      },
+                  '#optionsMenu > label, #optionsMenu > label > select':
+                      { 'margin-left'           : '5px'
+                      },
+                  '#optionsMenu > summary':
+                      { 'line-height'           : 2
+                      },
+                  '#optionsNote':
+                      { 'font-size'             : '85%'
+                      , 'font-style'            : 'oblique'
+                      },
+                  '#previewText':
+                      { 'line-height'           : '140%'
+                      ,  margin                 : '0 auto'
+                      , 'padding-top'           : '10px'
+                      ,  width                  : '60%'
+                      },
+                  '#previewText > dd':
+                      {  float                  : 'right'
+                      },
+                  '#xhrComlink':
+                      {  display                : 'none'
+                      },
+                  '*':
+                      {    '-moz-box-sizing'    : 'border-box'
+                      , '-webkit-box-sizing'    : 'border-box'
+                      ,         'box-sizing'    : 'border-box'
+                      },
+                  '.beingDragged':
+                      {  opacity                : CONSTANTS.BEINGDRAGGED.OPACITY
+                      ,    '-moz-transform'     : shrink
+                      , '-webkit-transform'     : shrink
+                      ,      '-o-transform'     : shrink
+                      ,          transform      : shrink
+                      },
+                  '.CAAdropbox':
+                      {    '-moz-border-radius' : '6px'
+                      , '-webkit-border-radius' : '6px'
+                      ,         'border-radius' : '6px'
+                      ,  float                  : 'left'
+                      ,  margin                 : '6px'
+                      , 'min-height'            : '126px'
+                      ,  padding                : '3px'
+                      , 'vertical-align'        : 'middle'
+                      ,  width                  : '126px'
+                      },
+                  '.CAAdropbox > div':
+                      {  display                : 'block'
+                      ,  height                 : '120px'
+                      ,  margin                 : '3px auto'
+                      },
+                  '.CAAdropbox > div > img':
+                      { display                 : 'block'
+                      ,  margin                 : '0 auto'
+                      , 'max-height'            : '120px'
+                      , 'max-width'             : '120px'
+                      },
+                  '.CAAdropbox > figcaption':
+                      {  height                 : '14em'
+                      ,  position               : 'relative'
+                      , 'text-align'            : 'center'
+                      },
+                  '.CAAdropbox > figcaption > div':
+                      { 'font-size'             : '80%'
+                      ,  height                 : '2.5em'
+                      },
+                  '.CAAdropbox > figcaption > input':
+                      { 'font-size'             : '12px'
+                      ,  width                  : '90%'
+                      },
+                  '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
+                      {  clear                  : 'both'
+                      },
+                  '.CAAdropbox > figcaption > select':
+                      { 'background-color'      : 'transparent'
+                      ,  clear                  : 'both'
+                      ,  clip                   : 'rect(2px, 49px, 145px, 2px)'
+                      ,  color                  : '#555'
+                      , 'font-size'             : 'inherit'
+                      ,  left                   : '36px'
+                      , 'padding-bottom'        : '20px'
+                      , 'padding-right'         : '20px'
+                      , 'padding-top'           : '8px'
+                      ,  position               : 'absolute'
+                      , 'text-align'            : 'center'
+                      },
+                  '.caaAdd':
+                      { 'background-color'      : 'green!important'
+                      ,  border                 : '0 none #FAFAFA!important'
+                      ,    '-moz-border-radius' : '7px'
+                      , '-webkit-border-radius' : '7px'
+                      ,         'border-radius' : '7px'
+                      ,  color                  : '#FFF!important'
+                      ,  float                  : 'left'
+                      , 'font-size'             : '175%'
+                      , 'font-weight'           : '900!important'
+                      ,  left                   : '2em'
+                      , 'margin-left'           : '-1.2em'
+                      ,  opacity                : '0.3'
+                      , 'padding-bottom'        : 0
+                      , 'padding-top'           : 0
+                      ,  position               : 'absolute'
+                      },
+                  '.caaAdd:active, .caaAll:active, .caaLoad:active':
+                      { 'border-style'          : 'inset!important'
+                      ,  color                  : '#FFF'
+                      ,  opacity                : 1
+                      },
+                  '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
+                      {  color                  : '#D3D3D3'
+                      ,  opacity                : '.9'
+                      },
+                  '.caaDiv':
+                      { 'padding-left'          : '25px'
+                      },
+                  '.caaLoad, .caaAll':
+                      {  border                 : '1px outset #FAFAFA!important'
+                      , 'border-radius'         : '7px'
+                      ,  color                  : '#FFF!important'
+                      , 'font-size'             : '90%'
+                      , 'margin-bottom'         : '16px'
+                      , 'margin-top'            : '1px!important'
+                      ,  opacity                : '.35'
+                      ,  padding                : '3px 8px'
+                      },
+                  '.newCAAimage > div':
+                      { 'background-color'      : '#E0E0FF'
+                      ,  border                 : CONSTANTS.BORDERS
+                      , 'margin-bottom'         : '6px!important'
+                      },
+                  '.tintWrapper':
+                      { 'border-radius'         : '5px'
+                      ,  display                : 'inline-block'
+                      ,  margin                 : 0
+                      ,  opacity                : '0.8'
+                      ,  outline                : 0
+                      ,  padding                : 0
+                      , 'vertical-align'        : 'baseline'
+                      },
+                  '#previewImage':
+                      {  display                : 'block'
+                      ,  margin                 : '0 auto'
+                      ,  padding                : '15px 0 0 0'
+                      },
+                  '#sidebar':
+                      { 'border-left'           : CONSTANTS.BORDERS
+                      , 'padding-left'          : '8px'
+                      ,  position               : 'fixed'
+                      ,  right                  : '20px'
+                      ,  width                  : CONSTANTS.SIDEBARWIDTH + 'px'
+                      },
+                  '.closeButton':
+                      { 'background-color'      : '#FFD0DB'
+                      ,  border                 : '1px solid #EEC9C8'
+                      ,    '-moz-border-radius' : '8px'
+                      , '-webkit-border-radius' : '8px'
+                      ,         'border-radius' : '8px'
+                      ,  cursor                 : 'pointer'
+                      ,  float                  : 'right'
+                      , 'line-height'           : '.8em'
+                      , 'margin-right'          : '-1em'
+                      , 'margin-top'            : '-.95em'
+                      ,  opacity                : '0.9'
+                      ,  padding                : '2px 4px 5px'
+                      },
+                  '.closeButton:hover':
+                      { 'background-color'      : '#FF82AB'
+                      , 'font-weight'           : '900'
+                      ,  opacity                : '1.0'
+                      },
+                  '.existingCAAimage':
+                      { 'background-color'      : '#FFF'
+                      ,  border                 : '0 none'
+                      },
+                  '.existingCAAimage > div > img':
+                      {  border                 : '0 none'
+                      },
+                  '.imageRow':
+                      { 'overflow-x'            : 'auto'
+                      , 'padding-bottom'        : '1em!important'
+                      },
+                  '.imageSizeControl, #optionsHeader':
+                      {  cursor                 : 'pointer'
+                      ,  float                  : 'right'
+                      ,  height                 : '26px'
+                      ,  width                  : '26px'
+                      },
+                  '.imageSizeControl:hover, #optionsHeader:hover':
+                      {  opacity                : 1
+                      },
+                  '.localImage':
+                      {  padding                : '3px'
+                      , 'vertical-align'        : 'top'
+                      },
+                  '.newCAAimage > div > img':
+                      { 'min-height'            : '120px'
+                      },
+                  '.previewDT':
+                      {  clear                  : 'left'
+                      ,  float                  : 'left'
+                      , 'font-weight'           : '700'
+                      },
+                  '.previewDT::after':
+                      {  content                : '"\003A "'
+                      },
+                  '.tintImage, .imageSizeControl':
+                      {  opacity                : '0.4'
+                      },
+                  '.workingCAAimage':
+                      { 'padding-left'          : '1px'
+                      , 'padding-right'         : '1px'
+                      },
+                  '.workingCAAimage > div':
+                      { 'margin-bottom'         : '8px!important'
+                      },
+                  'div.loadingDiv > img':
+                      {  height                 : '30px'
+                      , 'padding-right'         : '10px'
+                      ,  width                  : '30px'
+                      },
+                  'fieldset':
+                      {  border                 : '1px solid #D3D3D3'
+                      ,    '-moz-border-radius' : '8px'
+                      , '-webkit-border-radius' : '8px'
+                      ,         'border-radius' : '8px'
+                      ,  margin                 : '30px -4px 7px'
+                      ,  padding                : '6px'
+                      },
+                  'figure':
+                      {  border                 : CONSTANTS.BORDERS
+                      },
+                  'input[type="color"], #ColorDefaultBtn':
+                      {  border                 : '1px outset #D3D3D3'
+                      ,    '-moz-border-radius' : '6px'
+                      , '-webkit-border-radius' : '6px'
+                      ,         'border-radius' : '6px'
+                      ,  cursor                 : 'pointer'
+                      ,  float                  : 'right'
+                      , 'margin-right'          : '0'
+                      , 'outline'               : 'none'
+                      , 'text-align'            : 'center'
+                      ,  width                  : '74px'
+                      },
+                  'legend':
+                      {  color                  : '#000!important'
+                      , 'font-size'             : '108%!important'
+                      },
+                  'table.tbl * table, #imageContainer, #previewContainer':
+                      {  width                  : '100%'
+                      },
+                  'table.tbl .count':
+                      {  width                  : '6em!important'
+                      }
+};
 
 /* START remote image accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
@@ -297,6 +604,7 @@ function main ($, CONSTANTS) {
 
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
+      , cssRules = []
       ;
 
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
@@ -350,6 +658,7 @@ function main ($, CONSTANTS) {
 
     // Gets a color value stored in localStorage.
     var getColor = function getColor (color) {
+        $.log('Returning color setting: ' + color + ': ' + localStorage.getItem('caaBatch_colors_' + color));
         return localStorage.getItem('caaBatch_colors_' + color);
     };
 
@@ -389,8 +698,21 @@ function main ($, CONSTANTS) {
 
     /* Polyfill to add FileSystem API support to Firefox. */
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
-            addScript('idbFileSystem');
+        addScript('idbFileSystem');
     }
+
+    /* Adds the 2D array of css rules to the current document. */
+    var addRules = function addRules() {
+        var style = cssRules.map(function (style) {
+                                      return [ style[0]
+                                             , ' {\n    '
+                                             , style[1].join(';\n    ')
+                                             , ';\n}\n'
+                                             ].join('');
+                                 });
+        $('<style type="text/css">').text(style.join('\n'))
+                    .appendTo($('head'));
+    };
 
     var init = function init () {
         /* This creates a temporary local file system to use to store remote image files. */
@@ -539,7 +861,7 @@ function main ($, CONSTANTS) {
             var autoeditorList = JSON.parse(localStorage.getItem('autoeditors'))
               , thisEditor = $('.account > a:first').text()
               ;
-            if ($.inArray(thisEditor, autoeditorList) != -1) {
+            if ($.inArray(thisEditor, autoeditorList) !== -1) {
                 $autoeditControl.add($autoeditLabel)
                                 .add($('<br/>'))
                                 .insertBefore($parseControl);
@@ -616,197 +938,51 @@ function main ($, CONSTANTS) {
 
         !function init_add_css () {
             $.log('Adding css rules');
-            $.addRule('*', '{ -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; }');
-            $.addRule('#page', '{ min-height: ' + (screen.height - 200) + 'px; }');
-            $.addRule('#xhrComlink', '{ display: none; }');
-            $.addRule('#caaVersion', '{ float: right; font-size: 75%; margin-top: -15px; }');
-            $.addRule('.localImage', '{ padding: 3px; vertical-align: top; }');
-            $.addRule('#optionsMenu * select', '{ font-size: 105%; }');
-            $.addRule('#languageSelect', '{ padding: 6px; margin: 10px 10px -27px 6px; }');
-            $.addRule('fieldset', JSON.stringify({ 'border'        : '1px solid lightGrey;'
-                                                 , 'border-radius' : '8px;'
-                                                 , 'margin'        : '30px -4px 7px -4px;'
-                                                 , 'padding'       : '6px;'
-                                                 }));
-            $.addRule('legend', '{ font-size: 108%!important; color: black!important; }');
-            $.addRule('#colorSelect', '{ padding: 5px; float: left; width: 202px; }');
-            $.addRule("input[type='color'], #ColorDefaultBtn", JSON.stringify({ 'border'        : '1px outset lightGrey;'
-                                                                              , 'border-radius' : '6px;'
-                                                                              , 'cursor'        : 'pointer;'
-                                                                              , 'float'         : 'right;'
-                                                                              , 'margin-right'  : '0;'
-                                                                              , 'outline'       : 'none;'
-                                                                              , 'text-align'    : 'center;'
-                                                                              , 'width'         : '74px;'
-                                                                              }));
-            $.addRule('#optionsNote', '{ font-size: 85%; font-style: oblique; }');
-            $.addRule('#ColorDefaultBtn', '{ background-color: lightGrey; }');
-            $.addRule('.tintWrapper', JSON.stringify({ 'background'    : hexToRGBA(getColor('REMOVE'), '0.8').replace(/,/g,'^') + ';'
-                                                       , 'border-radius' : '5px;'
-                                                       , 'opacity'       : '0.8;'
-                                                       /* The rest of these rules are a css reset for browser default css. */
-                                                       , 'margin'         : '0;'
-                                                       , 'padding'        : '0;'
-                                                       , 'outline'        : '0;'
-                                                       , 'vertical-align' : 'baseline;'
-                                                       , 'display'        : 'inline-block;'
-                                                       }));
-            $.addRule('.tintImage', '{ opacity: 0.4; }');
-            $.addRule('#imageHeader', '{ float: left; width: 30%; }');
-            $.addRule('#optionsHeader', '{ display: inline-block; float: right; margin-right: -24px; margin-top: -3px; width: 40%; }');
-            $.addRule('#optionsMenu', JSON.stringify({ 'border'        : '1px solid lightGrey;'
-                                                     , 'border-radius' : '8px;'
-                                                     , 'line-height'   : '2;'
-                                                     , 'margin'        : '10px 3px;'
-                                                     , 'padding'       : '8px;'
-                                                     }));
-            $.addRule('#optionsMenu > label, #optionsMenu > label > select', '{ margin-left: 5px; }');
-            $.addRule('#optionsMenu > label > select', '{ padding: 3px; }');
-            $.addRule('#optionsMenu > summary', '{ line-height: 2; }');
-            $.addRule('#imageSizeControlsMenu', '{ float: right; width: 25%; height: 24px; }');
-            $.addRule('.imageSizeControl, #optionsHeader', '{ float: right; height: 26px; width: 26px; cursor: pointer; }');
-            $.addRule('.imageSizeControl', '{ opacity: 0.4;}');
-            $.addRule('#optionsHeader', '{ opacity: 0.3;}');
-            $.addRule('.imageSizeControl:hover, #optionsHeader:hover', '{ opacity: 1;}');
-            $.addRule('.existingCAAimage', '{ background-color: #FFF; border: 0px none; }');
-            $.addRule('.newCAAimage', '{ background-color: ' + getColor('CAABOX') + '; border: 1px #AAA dotted; }');
-            $.addRule('.workingCAAimage', '{ padding-left: 1px; padding-right: 1px; }');
-            $.addRule('.CAAdropbox', JSON.stringify({ 'border-radius'    : '6px;'
-                                                    , 'float'            : 'left;'
-                                                    , 'margin'           : '6px;'
-                                                    , 'min-height'       : '126px;'
-                                                    , 'padding'          : '3px;'
-                                                    , 'vertical-align'   : 'middle;'
-                                                    , 'width'            : '126px;'
-                                                    }));
-            $.addRule('.CAAdropbox > figcaption', '{ text-align: center; position: relative; height: 14em; }');
-            $.addRule('.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div', '{ clear: both; }');
-            $.addRule('.CAAdropbox > figcaption > input', '{ font-size: 12px; width: 90%; }');
-            $.addRule('.CAAdropbox > figcaption > div', '{ font-size: 80%; }');
-            $.addRule('.newCAAimage > div', JSON.stringify({ 'background-color' : '#E0E0FF;'
-                                                           , 'border'           : CONSTANTS.BORDERS + ';'
-                                                           , 'margin-bottom'    : '6px!important;'
-                                                           }));
-            $.addRule('.workingCAAimage > div', '{ margin-bottom: 8px!important; }');
-            $.addRule('.CAAdropbox > figcaption > div', '{ height: 2.5em; }');
-            $.addRule('.CAAdropbox > figcaption > select', JSON.stringify({ 'background-color' : 'transparent;'
-                                                                          , 'clear'            : 'both;'
-                                                                          , 'clip'             : 'rect(2px 49px 145px 2px);'
-                                                                          , 'color'            : '#555;'
-                                                                          , 'font-size'        : 'inherit;'
-                                                                          , 'padding-bottom'   : '20px;'
-                                                                          , 'padding-right'    : '20px;'
-                                                                          , 'padding-top'      : '8px;'
-                                                                          , 'position'         : 'absolute;'
-                                                                          , 'text-align'       : 'center;'
-                                                                          , 'left'             : '36px;'
-                                                                          }));
-            $.addRule('.CAAdropbox > div', '{ display: block; height: 120px; margin: 3px auto; }');
-            $.addRule('.CAAdropbox > div > img', '{ display: block; max-width: 120px; max-height: 120px; margin: 0 auto; }');
-            $.addRule('.existingCAAimage > div > img', '{ border: 0px none; }');
-            $.addRule('.newCAAimage > div > img', '{ min-height: 120px; }');
-            $.addRule('.caaDiv', '{ padding-left: 25px; }');
-            $.addRule('div.loadingDiv > img', '{ height: 30px; width: 30px; padding-right: 10px; }');
-            $.addRule('table.tbl * table', '{ width: 100%; }');
-            $.addRule('.imageRow', '{ overflow-x: auto; padding-bottom: 1em!important; }');
-            var shrink = 'scale(' + CONSTANTS.BEINGDRAGGED.SHRINK + ');';
-            $.addRule('.beingDragged', JSON.stringify({ 'opacity'    : CONSTANTS.BEINGDRAGGED.OPACITY + ';'
-                                                      , 'transform'         : shrink
-                                                      , '-webkit-transform' : shrink
-                                                      , '-o-transform'      : shrink
-                                                      , '-moz-transform'    : shrink
-                                                      }));
-            $.addRule('.over', '{ background-color: ' + getColor('ACTIVE') + '; }');
 
-           /* Start control buttons */
-            $.addRule('.caaLoad, .caaAll', JSON.stringify({ 'background-color' : getColor('CAABUTTONS') + '!important;'
-                                                          , 'border'           : '1px outset #FAFAFA!important;'
-                                                          , 'border-radius'    : '7px;'
-                                                          , 'color'            : '#FFF!important;'
-                                                          , 'font-size'        : '90%;'
-                                                          , 'margin-bottom'    : '16px;'
-                                                          , 'margin-top'       : '1px!important;'
-                                                          , 'opacity'          : '.35;'
-                                                          , 'padding'          : '3px 8px;'
-                                                          }));
-            $.addRule('.caaAdd', JSON.stringify({ 'background-color' : 'green!important;'
-                                                , 'border'           : '0px none #FAFAFA!important;'
-                                                , 'border-radius'    : '7px;'
-                                                , 'color'            : '#FFF!important;'
-                                                , 'float'            : 'left;'
-                                                , 'font-size'        : '175%;'
-                                                , 'font-weight'      : '900!important;'
-                                                , 'left'             : '2em;'
-                                                , 'margin-left'      : '-1.2em;!important;'
-                                                , 'opacity'          : '0.3;'
-                                                , 'padding-bottom'   : '0px;'
-                                                , 'padding-top'      : '0px;'
-                                                , 'position'         : 'absolute;'
-                                                }));
-           $.addRule('.caaAdd:hover, .caaAll:hover, .caaLoad:hover', '{ opacity: .9; color: lightgrey; }');
-           $.addRule('.caaAdd:active, .caaAll:active, .caaLoad:active', '{ opacity: 1; color: #FFF; border-style: inset!important; }');
-           /* End control buttons */
+            var CSS = CONSTANTS.CSS
+              , theseRules
+              , sizes = CONSTANTS.IMAGESIZES
+              ;
 
-           /* Start right side layout */
-           $.addRule('#sidebar', JSON.stringify({ 'border-left'  : CONSTANTS.BORDERS + ';'
-                                                , 'padding-left' : '8px;'
-                                                , 'position'     : 'fixed;'
-                                                , 'right'        : '20px;'
-                                                , 'width'        : CONSTANTS.SIDEBARWIDTH + 'px;'
-                                                }));
-           $.addRule('#imageContainer, #previewContainer', '{ width: 100%; }');
-           $.addRule('#imageContainer', '{ overflow-y: auto; }');
-           var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE);
-           if ($.browser.mozilla) {
-               size = size - 100;
-           }
-           size += 'px;';
-           $.addRule('#imageContainer', '{ height: ' + size + ' max-height: ' + size + ' }');
-           size = (CONSTANTS.PREVIEWSIZE + 37);
-           $.addRule('#previewContainer', '{ height: ' + size + 'px; max-height: ' + size + 'px; }');
-           size = (CONSTANTS.PREVIEWSIZE + 15) + 'px;';
-           $.addRule('#previewImage', JSON.stringify({ 'display' : 'block;'
-                                                     , 'height'  : size
-                                                     , 'margin'  : '0 auto;'
-                                                     , 'padding' : '15px 0 0 0;'
-                                                     , 'max-width'   : size
-                                                     }));
-           $.addRule('#previewText', '{ width: 60%; margin: 0 auto; padding-top: 10px; line-height: 140%; }');
-           $.addRule('.previewDT', '{ clear: left; float: left; font-weight: 700; }');
-           $.addRule('.previewDT::after', '{ content: ~: ~; }');
-           $.addRule('#previewText > dd', '{ float: right; }');
+            $('<style type="text/css">').text(Object.keys(CSS).map(function (key) {
+                theseRules = Object.keys(CSS[key]).map(function (rule) {
+                    return '\n    ' +  rule + ' : ' + CSS[key][rule];
+                }).join(';');
+                return key + ' { ' + theseRules + ';\n}';
+            }).join('\n')).appendTo('head');
 
-           /* End right side layout */
+            cssRules.push(['#page', [ 'min-height:' + (screen.height - 200) + 'px' ]]);
+            cssRules.push(['.caaLoad, .caaAll', [ 'background-color:' + getColor('CAABUTTONS') + '!important' ]]);
+            cssRules.push(['.newCAAimage ', [ 'background-color:' + getColor('CAABOX') ]]);
+            cssRules.push(['.over', [ 'background-color:' + getColor('ACTIVE') ]]);
+            cssRules.push(['.tintWrapper', [ 'background-color:' + hexToRGBA(getColor('REMOVE'), '0.8') ]]);
 
-           $.addRule('.closeButton', JSON.stringify({ 'background-color' : '#FFD0DB;'
-                                                    , 'border'           : '1px solid #EEC9C8;'
-                                                    , 'border-radius'    : '8px;'
-                                                    , 'cursor'           : 'pointer;'
-                                                    , 'float'            : 'right;'
-                                                    , 'line-height'      : '.8em;'
-                                                    , 'margin-right'     : '-1em;'
-                                                    , 'margin-top'       : '-0.95em;'
-                                                    , 'opacity'          : '0.9;'
-                                                    , 'padding'          : '2px 4px 5px 4px;'
-                                                     }));
-           $.addRule('.closeButton:hover', JSON.stringify({ 'background-color' : '#FF82AB;'
-                                                    , 'font-weight'      : '900;'
-                                                    , 'opacity'          : '1.0;'
-                                                     }));
-
-            /* MB's css sets this to 2em, but the column is actually 6em wide.  This needs to be fixed, or else it will break
-               when table-layout: fixed is set. */
-            $.addRule('table.tbl .count', '{ width: 6em!important; }');
+            var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE);
+            if ($.browser.mozilla) {
+                size = size - 100;
+            }
+            size += 'px';
+            cssRules.push(['#imageContainer', [ 'height:' + size
+                                              , 'max-height:' + size
+                                              ]]);
+            size = (CONSTANTS.PREVIEWSIZE + 37) + 'px';
+            cssRules.push(['#previewContainer', [ 'height:' + size
+                                                , 'max-height:' + size
+                                                ]]);
+            size = (CONSTANTS.PREVIEWSIZE + 15) + 'px';
+            cssRules.push(['#previewImage', [ 'height:' + size
+                                            , 'max-height:' + size
+                                            ]]);
+            addRules();
 
             $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
-            $('<style id="tblStyle1">table.tbl { table-layout: fixed; }</style>').appendTo($('head'));
-            $.addRule('table.tbl * table', '{ width: 100%; }');
+            $('<style id="tblStyle1"  type="text/css">table.tbl { table-layout: fixed; }</style>').appendTo($('head'));
 
             $.log('Adding css stylesheets');
-            var sizes = CONSTANTS.IMAGESIZES,
-                makeStyle = function make_style (size) {
-                                $('<style id="style' + size + '">.localImage { width: ' + size + 'px; }</style>').appendTo($('head'));
-                            };
+            var makeStyle = function make_style (size) {
+                $('<style id="style' + size + '" type="text/css">').text('.localImage { width: ' + size + 'px; }')
+                                                                   .appendTo($('head'));
+            };
             makeStyle(sizes[0]);
             makeStyle(sizes[1]);
             makeStyle(sizes[2]);
@@ -1204,7 +1380,13 @@ Native support:
                 if (e.key !== 'caaBatch_imageCache' || cachedImages === e.newValue) {
                     return;
                 }
+
                 e.preventDefault();
+
+                if (e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
+                    cachedImages = localStorage.getItem('caaBatch_imageCache');
+                    return false;
+                }
 
                 var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
                 localStorage.setItem('caaBatch_imageCache', e.oldValue);
@@ -1565,8 +1747,7 @@ function thirdParty($, CONSTANTS) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        var JSONartifacts = /[",]/g;
-        $('<style>' + selector + rule.replace(JSONartifacts,'').replace(/~/g,'"').replace(/\^/g,',') + '</style>').appendTo($('head'));
+        $('<style type="text/css">' + selector + rule + '</style>').appendTo($('head'));
     };
 
     // A very basic version of a gettext function.
@@ -1607,7 +1788,6 @@ function thirdParty($, CONSTANTS) {
         bb.append(ab);
         return bb.getBlob('image/' + mime);
     };
-
 
     jQuery.extend({
         addRule   : function addrule_handler (selector, rule) {
