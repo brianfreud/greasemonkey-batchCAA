@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1056
+// @version     0.01.1062
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,8 +45,13 @@ Opera: Not compatible, sorry.
 //TODO: Load images which were cached while script was not running
 //TODO: Add button to purge the image cache
 
+var height = function (id) {
+    'use strict';
+    return document.getElementById(id).clientHeight;
+};
+
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1056'
+                , VERSION       : '0.1.1062'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -68,8 +73,8 @@ var CONSTANTS = { DEBUGMODE     : true
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
-                , SIDEBARWIDTH  : (Math.max(Math.round(screen.width/500), 3) * 107) + 15
-                , SIDEBARHEIGHT : (screen.height - 290)
+                , SIDEBARWIDTH  : (Math.max(Math.round(window.innerWidth/500), 3) * 107) + 15
+                , SIDEBARHEIGHT : window.innerHeight - height('header') - height('footer') - 50
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
                 , BEINGDRAGGED  : { OPACITY : '0.4'
@@ -179,7 +184,25 @@ if (CONSTANTS.DEBUGMODE) {
                           };
 }
 
+// Gets a color value stored in localStorage.
+var getColor = function getColor (color) {
+    'use strict';
+    return localStorage.getItem('caaBatch_colors_' + color);
+};
+
+// Converts a hex color string into an rgba color string
+var hexToRGBA = function hexToRGBA (hex, opacity) {
+    'use strict';
+    hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
+    var R = parseInt(hex.substring(0, 2), 16)
+      , G = parseInt(hex.substring(2, 4), 16)
+      , B = parseInt(hex.substring(4, 6), 16)
+      ;
+    return 'rgba(' + [R, G, B, opacity].join(',') + ')';
+};
+
 var shrink = ['scale', '(', CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('');
+
 CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'background-color'      : '#D3D3D3'
                       },
@@ -194,7 +217,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '202px'
                       },
                   '#imageContainer':
-                      { 'overflow-y'            : 'auto'
+                      {  height                 : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 125) + 'px'
+                      , 'max-height'            : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 125) + 'px'
+                      , 'overflow-y'            : 'auto'
                       },
                   '#imageHeader':
                       {  float                  : 'left'
@@ -242,6 +267,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'font-size'             : '85%'
                       , 'font-style'            : 'oblique'
                       },
+                  '#page':
+                      { 'min-height'            : (CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
+                      },
                   '#previewText':
                       { 'line-height'           : '140%'
                       ,  margin                 : '0 auto'
@@ -284,6 +312,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.CAAdropbox > div > img':
                       { display                 : 'block'
+                      , 'image-rendering'       : 'optimizeQuality'
                       ,  margin                 : '0 auto'
                       , 'max-height'            : '120px'
                       , 'max-width'             : '120px'
@@ -347,7 +376,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'padding-left'          : '25px'
                       },
                   '.caaLoad, .caaAll':
-                      {  border                 : '1px outset #FAFAFA!important'
+                      { 'background-color'      : getColor('CAABUTTONS') + '!important'
+                      ,  border                 : '1px outset #FAFAFA!important'
                       , 'border-radius'         : '7px'
                       ,  color                  : '#FFF!important'
                       , 'font-size'             : '90%'
@@ -356,13 +386,17 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  opacity                : '.35'
                       ,  padding                : '3px 8px'
                       },
+                  '.newCAAimage':
+                      { 'background-color'      : getColor('CAABOX')
+                      },
                   '.newCAAimage > div':
                       { 'background-color'      : '#E0E0FF'
                       ,  border                 : CONSTANTS.BORDERS
                       , 'margin-bottom'         : '6px!important'
                       },
                   '.tintWrapper':
-                      { 'border-radius'         : '5px'
+                      { 'background-color'      : hexToRGBA(getColor('REMOVE'), '0.8')
+                      , 'border-radius'         : '5px'
                       ,  display                : 'inline-block'
                       ,  margin                 : 0
                       ,  opacity                : '0.8'
@@ -370,9 +404,15 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  padding                : 0
                       , 'vertical-align'        : 'baseline'
                       },
+                  '#previewContainer':
+                      { height                  : (CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                      , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                      },
                   '#previewImage':
                       {  display                : 'block'
+                      ,  height                 : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
                       ,  margin                 : '0 auto'
+                      , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
                       ,  padding                : '15px 0 0 0'
                       },
                   '#sidebar':
@@ -407,6 +447,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.existingCAAimage > div > img':
                       {  border                 : '0 none'
+                      , 'image-rendering'       : 'optimizeQuality'
                       },
                   '.imageRow':
                       { 'overflow-x'            : 'auto'
@@ -427,6 +468,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.newCAAimage > div > img':
                       { 'min-height'            : '120px'
+                      , 'image-rendering'       : 'optimizeQuality'
+                      },
+                  '.over':
+                      { 'background-color'      : getColor('ACTIVE')
                       },
                   '.previewDT':
                       {  clear                  : 'left'
@@ -448,6 +493,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   'div.loadingDiv > img':
                       {  height                 : '30px'
+                      , 'image-rendering'       : 'optimizeQuality'
                       , 'padding-right'         : '10px'
                       ,  width                  : '30px'
                       },
@@ -604,7 +650,6 @@ function main ($, CONSTANTS) {
 
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
-      , cssRules = []
       ;
 
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
@@ -650,27 +695,10 @@ function main ($, CONSTANTS) {
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         $.log('Testing edit status to determine background color for dropbox.');
         if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
-            return getColor('COMPLETE');
+            return $.getColor('COMPLETE');
        } else {
-            return getColor('INCOMPLETE');
+            return $.getColor('INCOMPLETE');
        }
-    };
-
-    // Gets a color value stored in localStorage.
-    var getColor = function getColor (color) {
-        $.log('Returning color setting: ' + color + ': ' + localStorage.getItem('caaBatch_colors_' + color));
-        return localStorage.getItem('caaBatch_colors_' + color);
-    };
-
-    // Converts a hex color string into an rgba color string
-    var hexToRGBA = function hexToRGBA (hex, opacity) {
-        $.log('Converting ' + hex + ' to RGBA.');
-        hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
-        var R = parseInt(hex.substring(0, 2), 16)
-          , G = parseInt(hex.substring(2, 4), 16)
-          , B = parseInt(hex.substring(4, 6), 16)
-          ;
-        return 'rgba(' + [R, G, B, opacity].join(',') + ')';
     };
 
     var tintImageRed = function tint_image_Red (image) {
@@ -700,19 +728,6 @@ function main ($, CONSTANTS) {
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
         addScript('idbFileSystem');
     }
-
-    /* Adds the 2D array of css rules to the current document. */
-    var addRules = function addRules() {
-        var style = cssRules.map(function (style) {
-                                      return [ style[0]
-                                             , ' {\n    '
-                                             , style[1].join(';\n    ')
-                                             , ';\n}\n'
-                                             ].join('');
-                                 });
-        $('<style type="text/css">').text(style.join('\n'))
-                    .appendTo($('head'));
-    };
 
     var init = function init () {
         /* This creates a temporary local file system to use to store remote image files. */
@@ -904,7 +919,7 @@ function main ($, CONSTANTS) {
             var $firstOption = $('#colorSelect').find('option:first');
             $firstOption.prop('selected', true);
             myPicker.fromString(
-                               getColor([ $firstOption.val() ])
+                               $.getColor([ $firstOption.val() ])
                                );
         }();
 
@@ -939,11 +954,16 @@ function main ($, CONSTANTS) {
         !function init_add_css () {
             $.log('Adding css rules');
 
-            var CSS = CONSTANTS.CSS
-              , theseRules
+            var CSS   = CONSTANTS.CSS
               , sizes = CONSTANTS.IMAGESIZES
+              , theseRules
+              , $classes = $()
+              , $style = $('<style type="text/css">')
               ;
 
+//            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
+
+            $.log('Adding css for the CAA batch script.');
             $('<style type="text/css">').text(Object.keys(CSS).map(function (key) {
                 theseRules = Object.keys(CSS[key]).map(function (rule) {
                     return '\n    ' +  rule + ' : ' + CSS[key][rule];
@@ -951,44 +971,21 @@ function main ($, CONSTANTS) {
                 return key + ' { ' + theseRules + ';\n}';
             }).join('\n')).appendTo('head');
 
-            cssRules.push(['#page', [ 'min-height:' + (screen.height - 200) + 'px' ]]);
-            cssRules.push(['.caaLoad, .caaAll', [ 'background-color:' + getColor('CAABUTTONS') + '!important' ]]);
-            cssRules.push(['.newCAAimage ', [ 'background-color:' + getColor('CAABOX') ]]);
-            cssRules.push(['.over', [ 'background-color:' + getColor('ACTIVE') ]]);
-            cssRules.push(['.tintWrapper', [ 'background-color:' + hexToRGBA(getColor('REMOVE'), '0.8') ]]);
-
-            var size = (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE);
-            if ($.browser.mozilla) {
-                size = size - 100;
+            $.log('Adding image preview css classes.');
+            for (var size, i = 4; i; size = sizes[i--]) {
+                $style.clone()
+                      .prop('id', 'style' + size)
+                      .text('.localImage { width: ' + size + 'px; }')
+                      .addTo($classes);
             }
-            size += 'px';
-            cssRules.push(['#imageContainer', [ 'height:' + size
-                                              , 'max-height:' + size
-                                              ]]);
-            size = (CONSTANTS.PREVIEWSIZE + 37) + 'px';
-            cssRules.push(['#previewContainer', [ 'height:' + size
-                                                , 'max-height:' + size
-                                                ]]);
-            size = (CONSTANTS.PREVIEWSIZE + 15) + 'px';
-            cssRules.push(['#previewImage', [ 'height:' + size
-                                            , 'max-height:' + size
-                                            ]]);
-            addRules();
 
-            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
-            $('<style id="tblStyle1"  type="text/css">table.tbl { table-layout: fixed; }</style>').appendTo($('head'));
+            $style.prop('id', 'tblStyle1')
+                  .text('table.tbl { table-layout: fixed; }')
+                  .addTo($classes);
 
-            $.log('Adding css stylesheets');
-            var makeStyle = function make_style (size) {
-                $('<style id="style' + size + '" type="text/css">').text('.localImage { width: ' + size + 'px; }')
-                                                                   .appendTo($('head'));
-            };
-            makeStyle(sizes[0]);
-            makeStyle(sizes[1]);
-            makeStyle(sizes[2]);
-            makeStyle(sizes[3]);
+            $('head').append($classes);
 
-            $.log('Adding css methods');
+            $.log('Adding image preview methods.');
             var useSheets = function use_stylesheets (tiny, small, medium, big) {
                                 $('#style' + sizes[0]).prop('disabled', !tiny);
                                 $('#style' + sizes[1]).prop('disabled', !small);
@@ -996,21 +993,12 @@ function main ($, CONSTANTS) {
                                 $('#style' + sizes[3]).prop('disabled', !big);
                             };
             $.extend({
-                     imagesTiny  : function make_images_small () {
-                                        useSheets(1, 0, 0, 0);
-                                    },
-                     imagesSmall  : function make_images_small () {
-                                        useSheets(0, 1, 0, 0);
-                                    },
-                     imagesMedium : function make_images_medium () {
-                                        useSheets(0, 0, 1, 0);
-                                    },
-                     imagesLarge  : function make_images_big () {
-                                        useSheets(0, 0, 0, 1);
-                                    }
+                     imagesTiny   : function () { useSheets(1, 0, 0, 0); },
+                     imagesSmall  : function () { useSheets(0, 1, 0, 0); },
+                     imagesMedium : function () { useSheets(0, 0, 1, 0); },
+                     imagesLarge  : function () { useSheets(0, 0, 0, 1); }
                      });
 
-            $.log('Setting active style');
             $.imagesSmall();
             sizeStatus = 2;
         }();
@@ -1557,7 +1545,9 @@ Native support:
                                                             $newCAARow.find('div.caaDiv').slideDown('slow');
                                                         }
                                            , success  : function caaResponseHandler (data, textStatus, jqXHR) {
-                                                            data = JSON.parse(data);
+                                                            if ('object' !== typeof(data)) { // Firefox
+                                                                data = JSON.parse(data);
+                                                            }
                                                             $.log('Received CAA data, parsing...');
                                                             if ($.isEmptyObject(data)) {
                                                                 $.log('CAA response: no images in CAA for this release.');
@@ -1740,7 +1730,7 @@ Native support:
     }();
 }
 
-function thirdParty($, CONSTANTS) {
+function thirdParty($, CONSTANTS, getColor) {
     /* Despite the name, each function in thirdParty is by Brian Schweitzer unless otherwise noted. */
 
     /*jshint strict:false */
@@ -1796,6 +1786,9 @@ function thirdParty($, CONSTANTS) {
         dataURItoBlob : function dataURItoBlob_handler (dataURI, mime) {
                             return dataURItoBlob(dataURI, mime);
                   },
+        getColor  : function getColor_handler(colorConstantName) {
+                        return getColor(colorConstantName);
+                  },
         l         : function gettext_handler(str) {
                         return l(str);
                   },
@@ -1818,8 +1811,14 @@ function thirdParty($, CONSTANTS) {
 
     // Tests whether an element has a defined property value.
     $.fn.hasProp = function (property) {
-        property = $(this).prop(property);
+        property = this.prop(property);
         return ('undefined' !== typeof property && property.length);
+    };
+
+    // An inverted .add() function.
+    $.fn.addTo = function addTo ($target) {
+        $target.add(this);
+        return this;
     };
 
     $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
@@ -1836,7 +1835,7 @@ function thirdParty($, CONSTANTS) {
         }
       , loadLocal = function loadLocal (fn) {
             makeScript();
-            script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ');';
+            script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ',' + getColor.toString() + ');';
             head.appendChild(script);
         }
       ;
