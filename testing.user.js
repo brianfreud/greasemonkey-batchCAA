@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1065
+// @version     0.01.1098
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1065'
+                , VERSION       : '0.1.1098'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -603,12 +603,12 @@ function getUri(e) {
   
     // START from Tim Smart at http://pastebin.ca/1425789
     var data_string = function data_string(data) {
-            // Generate a binary data string from character / multibyte data
-            for (var binary_string = '', i = 0, len = data.length; i < len; i++) {
-                binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
-            }
-            return binary_string;
-        };
+        // Generate a binary data string from character / multibyte data
+        for (var binary_string = '', i = 0, len = data.length; i < len; i++) {
+            binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
+        }
+        return binary_string;
+    };
     // END (Tim Smart)
 
     var bin2base64 = function bin2base64 (binary) {
@@ -997,11 +997,11 @@ function main ($, CONSTANTS) {
             }).join('\n')).appendTo('head');
 
             $.log('Adding image preview css classes.');
-            for (var size, i = 4; size = sizes[--i], -1 < i;) {
+            sizes.forEach(function (size) {
                 classes.push($make('style').prop('id', 'style' + size)
                                            .prop('type', 'text/css')
                                            .text('.localImage { width: ' + size + 'px; }'));
-            }
+            });
 
             /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title column.  Without the next line,
                that column gets squished when the table-layout is set to fixed layout. */
@@ -1108,32 +1108,45 @@ function main ($, CONSTANTS) {
                 binaryReader.readAsBinaryString(file);
             };
 
-        var testUriJPG = function (uri) {
-                return (/\.p?j(pg|peg?|f?if)$/i).test(uri);  /* jpg jpeg jpe jfif jif pjpeg */
-            }
-          , testUriBMP = function (uri) { return (/\.bmp$/i).test(uri); }
-          , testUriGIF = function (uri) { return (/\.gif$/i).test(uri); }
-          , testUriJNG = function (uri) { return (/\.jng$/i).test(uri); }
-          , testUriJP2 = function (uri) { return (/\.j(2c|2k|p2|pc|pt)$/i).test(uri); } /* j2c j2k jp2 jpc jpt */
-          , testUriPCX = function (uri) { return (/\.pcx$/i).test(uri); }
-          , testUriPNG = function (uri) { return (/\.png$/i).test(uri); }
-          , testUriTGA = function (uri) { return (/\.tga$/i).test(uri); }
-          , testUriTIF = function (uri) { return (/\.tiff?$/i).test(uri); }
-          , testUriWebP = function (uri) { return (/\.webp$/i).test(uri); }
-          ;
         var supportedImageType = function supportedImageType (uri) {
-            switch (!0) {
-                case testUriJPG(uri): return 'jpg';
-                case testUriBMP(uri): return 'bmp';
-                case testUriGIF(uri): return 'gif';
-                case testUriJNG(uri): return 'jng';
-                case testUriJP2(uri): return 'jp2';
-                case testUriPCX(uri): return 'pcx';
-                case testUriPNG(uri): return 'png';
-                case testUriTGA(uri): return 'tga';
-                case testUriTIF(uri): return 'tif';
-                case testUriWebP(uri): return 'webp';
-                default: return false;
+            var re = /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp)$/i
+              , matches = re.exec(uri)
+              ;
+            if (matches === null) {
+                return false;
+            }
+            var matched = matches[0];
+            $.log('Testing file with extension "' + matched + '" to see if it is a supported extension.');
+            switch (matched) {
+                /* JPEG */
+                case matches[$.inArray(matched, ['.jpg', '.jpeg', '.jpe', '.jfif', '.jif'])]: return 'jpg';
+                /* Progressive JPEG */
+                case matches[$.inArray(matched, ['.pjp', '.pjpeg'])]: return 'jpg';
+                /* Portable Network Graphics */
+                case '.png'  : return 'png';
+                /* GIF */
+                case '.gif'  : return 'gif';
+                /* Bitmap */
+                case '.bmp'  : return 'bmp';
+                /* Google WebP */
+                case '.webp' : return 'webp';
+                /* JPEG Network Graphics */
+                case '.jng'  : return 'jng';
+                /* JPEG2000 */
+                case matches[$.inArray(matched, ['.j2c', '.j2k', '.jp2', '.jpc', '.jpt'])]: return 'jp2';
+                /* ZSoft IBM PC Paintbrush */
+                case '.pcx'  : return 'pcx';
+                /* Lotus Picture */
+                case '.pic'  : return 'pic';
+                /* Macintosh */
+                case '.pict'  : return 'pict';
+                /* MacPaint file format */
+                case '.pnt'  : return 'pnt';
+                /* Targa file format */
+                case '.tga'  : return 'tga';
+                /* Aldus Tagged Image File Format */
+                case matches[$.inArray(matched, ['.tif', '.tiff'])]: return 'tiff';
+                default     : return false;
             }
         };
 
@@ -1148,6 +1161,9 @@ Native support:
             jp2
             jpc
             pcx
+            pic
+            pict
+            pnt
             tga
             tif - compressed, tif - Deflate, tif - LZW, tif - no compression, tif - Pack Bits
         Pass:
@@ -1164,6 +1180,9 @@ Native support:
             jp2
             jpc
             pcx
+            pic
+            pict
+            pnt
             tga
             tif - compressed, tif - Deflate, tif - LZW, tif - no compression, tif - Pack Bits
             webp
@@ -1214,7 +1233,7 @@ Native support:
                         img.src = reader.result;
                     } /* else {
                         //TODO: More image conversions...
-                        // Unsupported currently, but potentially converted here: j2k, jng, jp2, jpc, pcx, tga, tif, webp (Firefox)
+                        // Unsupported currently, but potentially converted here: j2k, jng, jp2, jpc, pcx, pic, pict, pnt, tga, tif, webp (Firefox)
                     } */
                 };
 
@@ -1222,8 +1241,9 @@ Native support:
                 return;
             };
 
-        var loadLocalFile = function load_local_file (e) {
-            var file
+         var loadLocalFile = function load_local_file (e) {
+            var debugMsg = ''
+              , file
               , name
               , type
               , files = (e.files || e.dataTransfer.files || e.file_list);
@@ -1231,11 +1251,14 @@ Native support:
                 file = files[i];
                 name = file.name;
                 type = supportedImageType(name);
+                if (CONSTANTS.DEBUGMODE) {
+                    debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join('');
+                }
                 if (!type) {
-                    $.log(['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len, ', unusable file type detected'].join(''));
+                    $.log(debugMsg + ', unusable file type detected');
                     continue;
                 }
-                $.log(['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len, ', usable file type "', type, '" detected'].join(''));
+                $.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
                 if (type !== 'jpg') {
                     file = convertImage(file, type, name);
                 } else {
@@ -1275,7 +1298,10 @@ Native support:
                                                                  case ('jng'): mime = 'x-jng'; break;
                                                                  case ('jp2'): mime = 'jp2'; break;
                                                                  case ('pcx'): mime = 'pcx'; break;
+                                                                 case ('pic'): mime = 'x-lotus-pic'; break;
+                                                                 case ('pict'): mime = 'pict'; break;
                                                                  case ('png'): mime = 'png'; break;
+                                                                 case ('pnt'): mime = 'pnt'; break;
                                                                  case ('tga'): mime = 'tga'; break;
                                                                  case ('tif'): mime = 'tiff'; break;
                                                                  case ('webp'): mime = 'webp'; break;
@@ -1443,34 +1469,33 @@ Native support:
 
             var makeCAATypeList = function makeCAATypeList () {
                                       $.log('Creating CAA type select.');
-                                      var types  = CONSTANTS.COVERTYPES
-                                        , $newOption
+                                      var types     = CONSTANTS.COVERTYPES
                                         , $typeList = $make('select').prop('multiple', 'multiple')
                                                                      .prop('size', types.length)
                                                                      .addClass('caaSelect')
                                         ;
 
-                                      for (var i = 0, len = types.length; i < len; i++) {
-                                          $newOption = $make('option').prop('value', i+1)
-                                                                      .text($.l('coverType:' + types[i]));
-                                          $typeList.append($newOption);
-                                      }
-                                      return $typeList;
+                                      return $typeList.appendAll(types.map(function (type, i) {
+                                          return $make('option').prop('value', i+1)
+                                                                .text($.l('coverType:' + type));
+                                      }));
                                   };
 
             var makeDropbox = function makeDropbox () {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
                                   var $dropbox = $make('figure').addClass('CAAdropbox newCAAimage')
-                                                                .append($make('header').text('x')
-                                                                                       .addClass('closeButton'))
-                                                                .append($make('img').addClass('dropBoxImage')
-                                                                                    .prop('draggable', false)
-                                                                                    .wrap('<div>').parent())
-                                                                .append($make('figcaption').append($make('input').prop('type', 'text')
-                                                                                                                 .prop('placeholder', 'image comment'))
-                                                                                           .append($make('br'))
-                                                                                           .append($types))
+                                                                .appendAll([ $make('header').text('x')
+                                                                                            .addClass('closeButton')
+                                                                           , $make('img').addClass('dropBoxImage')
+                                                                                         .prop('draggable', false)
+                                                                                         .wrap('<div>')
+                                                                                         .parent()
+                                                                           , $make('figcaption').append($make('input').prop('type', 'text')
+                                                                                                                      .prop('placeholder', 'image comment'))
+                                                                                                .append($make('br'))
+                                                                                                .append($types)
+                                                                           ])
                                                                 .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
                                                                                                  $.log('Removing drop box');
                                                                                                  $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
@@ -1891,11 +1916,11 @@ function thirdParty($, CONSTANTS, getColor) {
             return;
         }
         /* Scripts are cached in localStorage; load them. */
-        for (var j = 1, k = requires.length; j < k; j++) {
+        requires.forEach(function (requiredItem) {
             makeScript();
-            script.textContent = localStorage.getItem(requires[j]);
+            script.textContent = localStorage.getItem(requiredItem);
             head.appendChild(script);
-        }
+        });
         continueLoading();
     })(i || 0);
 }();
