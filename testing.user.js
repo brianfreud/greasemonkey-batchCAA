@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1062
+// @version     0.01.1065
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -12,6 +12,7 @@
 // @include     http://beta.musicbrainz.org/release-group/*
 // @include     http://test.musicbrainz.org/release-group/*
 // @include     http://musicbrainz.org/label/*
+// @exclude     http://musicbrainz.org/label/*/*
 // @include     http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
 // ==/UserScript==
@@ -51,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1062'
+                , VERSION       : '0.1.1065'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -74,7 +75,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
                 , SIDEBARWIDTH  : (Math.max(Math.round(window.innerWidth/500), 3) * 107) + 15
-                , SIDEBARHEIGHT : window.innerHeight - height('header') - height('footer') - 50
+                , SIDEBARHEIGHT : window.innerHeight - height('header') - height('footer') - 25
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
                 , BEINGDRAGGED  : { OPACITY : '0.4'
@@ -126,7 +127,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , INCOMPLETE                : 'Incomplete edits'
                                        , COMPLETE                  : 'Edits ready to submit'
                                        , REMOVE                    : 'Remove image highlight'
-                                       },
+                                       }
                                   }
                 };
 
@@ -207,12 +208,12 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'background-color'      : '#D3D3D3'
                       },
                   '#caaVersion':
-                      {  float                  : 'right'
+                      { 'float'                 : 'right'
                       , 'font-size'             : '75%'
                       , 'margin-top'            : '-15px'
                       },
                   '#colorSelect':
-                      {  float                  : 'left'
+                      { 'float'                 : 'left'
                       ,  padding                : '5px'
                       ,  width                  : '202px'
                       },
@@ -222,11 +223,11 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'overflow-y'            : 'auto'
                       },
                   '#imageHeader':
-                      {  float                  : 'left'
+                      { 'float'                 : 'left'
                       ,  width                  : '30%'
                       },
                   '#imageSizeControlsMenu':
-                      {  float                  : 'right'
+                      { 'float'                 : 'right'
                       , 'height'                : '24px'
                       ,  width                  : '25%'
                       },
@@ -236,7 +237,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '#optionsHeader':
                       {  display                : 'inline-block'
-                      ,  float                  : 'right'
+                      , 'float'                 : 'right'
                       , 'margin-right'          : '-24px'
                       , 'margin-top'            : '-3px'
                       ,  opacity                : '0.3'
@@ -277,7 +278,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '60%'
                       },
                   '#previewText > dd':
-                      {  float                  : 'right'
+                      { 'float'                 : 'right'
                       },
                   '#xhrComlink':
                       {  display                : 'none'
@@ -298,7 +299,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       {    '-moz-border-radius' : '6px'
                       , '-webkit-border-radius' : '6px'
                       ,         'border-radius' : '6px'
-                      ,  float                  : 'left'
+                      , 'float'                 : 'left'
                       ,  margin                 : '6px'
                       , 'min-height'            : '126px'
                       ,  padding                : '3px'
@@ -353,7 +354,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , '-webkit-border-radius' : '7px'
                       ,         'border-radius' : '7px'
                       ,  color                  : '#FFF!important'
-                      ,  float                  : 'left'
+                      , 'float'                 : 'left'
                       , 'font-size'             : '175%'
                       , 'font-weight'           : '900!important'
                       ,  left                   : '2em'
@@ -429,7 +430,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , '-webkit-border-radius' : '8px'
                       ,         'border-radius' : '8px'
                       ,  cursor                 : 'pointer'
-                      ,  float                  : 'right'
+                      , 'float'                 : 'right'
                       , 'line-height'           : '.8em'
                       , 'margin-right'          : '-1em'
                       , 'margin-top'            : '-.95em'
@@ -455,7 +456,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.imageSizeControl, #optionsHeader':
                       {  cursor                 : 'pointer'
-                      ,  float                  : 'right'
+                      , 'float'                 : 'right'
                       ,  height                 : '26px'
                       ,  width                  : '26px'
                       },
@@ -475,7 +476,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.previewDT':
                       {  clear                  : 'left'
-                      ,  float                  : 'left'
+                      , 'float'                 : 'left'
                       , 'font-weight'           : '700'
                       },
                   '.previewDT::after':
@@ -514,7 +515,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , '-webkit-border-radius' : '6px'
                       ,         'border-radius' : '6px'
                       ,  cursor                 : 'pointer'
-                      ,  float                  : 'right'
+                      , 'float'                 : 'right'
                       , 'margin-right'          : '0'
                       , 'outline'               : 'none'
                       , 'text-align'            : 'center'
@@ -603,8 +604,7 @@ function getUri(e) {
     // START from Tim Smart at http://pastebin.ca/1425789
     var data_string = function data_string(data) {
             // Generate a binary data string from character / multibyte data
-            var binary_string = '';
-            for (var i = 0, il = data.length; i < il; i++) {
+            for (var binary_string = '', i = 0, len = data.length; i < len; i++) {
                 binary_string += String.fromCharCode(data[i].charCodeAt(0) & 0xff);
             }
             return binary_string;
@@ -652,8 +652,13 @@ function main ($, CONSTANTS) {
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
       ;
 
+    /* Faster element creation. (3 to 4 times faster vs $('<type/>') )  */
+    var $make = function (type) {
+        return $(document.createElement(type));
+    };
+
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
-    $('body').append($('<img>').prop('src', CONSTANTS.THROBBER).hide());
+    $('body').append($make('img').prop('src', CONSTANTS.THROBBER).hide());
 
     var $imageContainer
       , $previewContainer
@@ -670,21 +675,19 @@ function main ($, CONSTANTS) {
         var $dropbox   = $dropboxes.filter(':first')
           , dbCount    = $dropboxes.length;
         var dbWidth    = $dropbox.outerWidth(true);
-        var divWidth   = ($('.CAAdropbox').length * dbWidth);
+        var divWidth   = $('.CAAdropbox').length * dbWidth;
         $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
         $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
     };
 
     /* Converts a number into a comma-separated number. */
     var addCommas = function addCommas (numberString) {
-        var x
-          , x1
-          , x2
-          , separatorRegexp = /(\d+)(\d{3})/;
+        var x  = ('' + numberString).split('.')
+          , x1 = x[0]
+          , x2 = x.length > 1 ? '.' + x[1] : ''
+          , separatorRegexp = /(\d+)(\d{3})/
+          ;
 
-        x  = ('' + numberString).split('.');
-        x1 = x[0];
-        x2 = x.length > 1 ? '.' + x[1] : '';
         while (separatorRegexp.test(x1)) {
             x1 = x1.replace(separatorRegexp, '$1' + ',' + '$2');
         }
@@ -694,26 +697,20 @@ function main ($, CONSTANTS) {
     /* Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         $.log('Testing edit status to determine background color for dropbox.');
-        if ($ele.find('option:selected').length && $ele.find('img').hasProp('src')) {
-            return $.getColor('COMPLETE');
-       } else {
-            return $.getColor('INCOMPLETE');
-       }
+        var state = ($ele.find('option:selected').length && $ele.find('img').hasProp('src'));
+        return $.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
     };
 
     var tintImageRed = function tint_image_Red (image) {
         $.log('Tinting image');
         var $image = $(image);
-        $image.wrap('<figure>')
-              .data('oldtitle', $image.prop('title'))
-              .prop('title', $.l('Remove image'))
-              .addClass('tintImage');
-        $image.parent()
-              .addClass('tintWrapper')
-              .css({ height : ($image.height() + 6) + 'px'
-                   , width  : ($image.width() + 6) + 'px'
-                   });
-        return $image;
+        return $image.wrap($make('figure').addClass('tintWrapper')
+                                          .css({ height : ($image.height() + 6) + 'px'
+                                               , width  : ($image.width() + 6) + 'px'
+                                               }))
+                     .data('oldtitle', $image.prop('title'))
+                     .prop('title', $.l('Remove image'))
+                     .addClass('tintImage');
     };
 
     /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
@@ -752,65 +749,96 @@ function main ($, CONSTANTS) {
 
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
-            $imageContainer    = $('<div id="imageContainer"/>');
-            $previewContainer  = $('<div id="previewContainer"/>');
-            var $previewInfo   = $('<dl id="previewText"/>').hide()
-              , $dtResolution  = $('<dt>').text($.l('(Image) Resolution'))
-                                          .addClass('previewDT')
-              , $ddResolution  = $('<dd id="previewResolution">')
-              , $dtFilesize    = $('<dt>').text($.l('File size'))
-                                          .addClass('previewDT')
-              , $ddFilesize    = $('<dd id="previewFilesize">')
-              , $sizeContainer = $('<div id="imageSizeControlsMenu">')
-              , $imageShrink   = $('<div id="imageShrink">').addClass('imageSizeControl')
-                                                            .prop('title', $.l('Shrink image'))
-              , $imageMagnify  = $('<div id="imageMagnify">').addClass('imageSizeControl')
-                                                            .prop('title', $.l('Magnify image'))
-              , $optionsControl = $('<div id="optionsHeader"/>').prop('title', $.l('Options'))
-              , optionsImage   = localStorage.getItem('iconSettings')
-              , $optionsMenu   = $('<fieldset id="optionsMenu"/>').hide()
-              , $optionsLegend = $('<legend/>').text($.l('Options'))
-              , $autoeditControl = $('<input type="checkbox" id="caaAutoedit"/>').prop('title', $.l('Submit as autoedits'))
-                                                                                 .prop('checked', true)
-//TODO: Don't hardcode caaAutoedit's initial value
-              , $autoeditLabel = $('<label for="caaAutoedit"/>').text($.l('Submit as autoedits'))
-                                                                .prop('title', $.l('Submit as autoedits'))
-              , $version       = $('<span id="caaVersion"/>').text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
-              , $removeLabel   = $('<label for="caaOptionRemove"/>').text($.l('Remove images'))
-                                                                    .prop('title', $.l('Remove (help)'))
-              , $removeControl = $('<input type="checkbox" id="caaOptionRemove"/>').prop('title', $.l('Remove (help)'))
-              , $parseLabel    = $('<label for="caaOptionRemove"/>').text($.l('Parse web pages'))
-                                                                    .prop('title', $.l('Parse (help)'))
-              , $parseControl  = $('<input type="checkbox" id="caaOptionParse"/>').prop('title', $.l('Parse (help)'))
-              , $langLabel     = $('<label id="languageSelectLabel" for="languageSelect"/>').text($.l('Language') + ':')
-                                                                                        .prop('title', $.l('Changed language note'))
-              , $langList      = $('<select id="languageSelect"/>').prop('size', 3)
-                                                                 .prop('title', $.l('Changed language note'))
 
-              , $previewImage  = $('<img id="previewImage"/>').prop('draggable', false)
-              , $colorField    = $('<fieldset>')
-              , $colorLegend   = $('<legend/>').text($.l('Colors'))
-              , $colorSelect   = $('<select id="colorSelect" />').prop('title', $.l('Changed colors note'))
-              , colorOptions   = []
-              , $colorPicker   = $('<input type="color" value="66ff00" id="colorPicker"/>').prop('title', $.l('Changed colors note'))
-              , $colorDefault  = $('<input type="button" id="ColorDefaultBtn"/>').prop('value', $.l('default'))
-                                                                                 .prop('title', $.l('Changed colors note'))
-              , $optionsNote   = $('<div id="optionsNote">').text($.l('take effect next time'))
-              , baseImage      = localStorage.getItem('magnifyingGlassBase')
-              ;
-            var minusImage     = baseImage + localStorage.getItem('magnifyingGlassMinus')
-              , plusImage      = baseImage + localStorage.getItem('magnifyingGlassPlus')
+            $imageContainer      = $make('div').prop('id', 'imageContainer');
+            $previewContainer    = $make('div').prop('id', 'previewContainer');
+            var colorOptions     = []
+              , optionsImage     = localStorage.getItem('iconSettings')
+              , baseImage        = localStorage.getItem('magnifyingGlassBase')
+              , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
+              , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
+              , $autoeditControl = $make('input'    ).prop('id', 'caaAutoedit')
+                                                    .prop('type', 'checkbox')
+                                                    .prop('title', $.l('Submit as autoedits'))
+                                                    .prop('checked', true)
+//TODO: Don't hardcode caaAutoedit's initial value
+              , $autoeditLabel   = $make('label'   ).prop('for', 'caaAutoedit')
+                                                    .prop('id', 'caaAutoeditLabel')
+                                                    .prop('title', $.l('Submit as autoedits'))
+                                                    .text($.l('Submit as autoedits'))
+              , $colorDefault    = $make('input'   ).prop('id', 'ColorDefaultBtn')
+                                                    .prop('title', $.l('Changed colors note'))
+                                                    .prop('type', 'button')
+                                                    .prop('value', $.l('default'))
+              , $colorField      = $make('fieldset').prop('id', 'colorField')
+              , $colorLegend     = $make('legend'  ).prop('id', 'colorLegend')
+                                                    .text($.l('Colors'))
+              , $colorPicker     = $make('input'   ).prop('id', 'colorPicker')
+                                                    .prop('title', $.l('Changed colors note'))
+                                                    .prop('type', 'color')
+                                                    .prop('value', '66ff00')
+              , $colorSelect     = $make('select'  ).prop('id', 'colorSelect')
+                                                    .prop('title', $.l('Changed colors note'))
+              , $ddFilesize      = $make('dd'      ).prop('id', 'previewFilesize')
+              , $ddResolution    = $make('dd'      ).prop('id', 'previewResolution')
+              , $dtFilesize      = $make('dt'      ).addClass('previewDT')
+                                                    .prop('id', 'dtFilesize')
+                                                    .text($.l('File size'))
+              , $dtResolution    = $make('dt'      ).addClass('previewDT')
+                                                    .prop('id', 'dtResolution')
+                                                    .text($.l('(Image) Resolution'))
+              , $imageMagnify    = $make('div'     ).addClass('imageSizeControl')
+                                                    .prop('id', 'imageMagnify')
+                                                    .prop('title', $.l('Magnify image'))
+              , $imageShrink     = $make('div'     ).addClass('imageSizeControl')
+                                                    .prop('id', 'imageShrink')
+                                                    .prop('title', $.l('Shrink image'))
+              , $langLabel       = $make('label'   ).prop('for', 'languageSelect')
+                                                    .prop('id', 'languageSelectLabel')
+                                                    .prop('title', $.l('Changed language note'))
+                                                    .text($.l('Language') + ':')
+              , $langList        = $make('select'  ).prop('id', 'languageSelect')
+                                                    .prop('size', 3)
+                                                    .prop('title', $.l('Changed language note'))
+              , $optionsControl  = $make('div'     ).prop('id', 'optionsHeader')
+                                                    .prop('title', $.l('Options'))
+              , $optionsLegend   = $make('legend'  ).text($.l('Options'))
+                                                    .prop('id', 'optionsLegend')
+              , $optionsMenu     = $make('fieldset').prop('id', 'optionsMenu')
+                                                    .hide()
+              , $optionsNote     = $make('div'     ).prop('id', 'optionsNote')
+                                                    .text($.l('take effect next time'))
+              , $parseControl    = $make('input'   ).prop('id', 'caaOptionParse')
+                                                    .prop('title', $.l('Parse (help)'))
+                                                    .prop('type', 'checkbox')
+              , $parseLabel      = $make('label'   ).prop('for', 'caaOptionParse')
+                                                    .prop('id', 'caaOptionParseLabel')
+                                                    .prop('title', $.l('Parse (help)'))
+                                                    .text($.l('Parse web pages'))
+              , $previewImage    = $make('img'     ).prop('id', 'previewImage')
+                                                    .prop('draggable', false)
+              , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
+                                                    .hide()
+              , $removeControl   = $make('input'   ).prop('id', 'caaOptionRemove')
+                                                    .prop('title', $.l('Remove (help)'))
+                                                    .prop('type', 'checkbox')
+              , $removeLabel     = $make('label'   ).prop('for', 'caaOptionRemove')
+                                                    .prop('id', 'caaOptionRemoveLabel')
+                                                    .prop('title', $.l('Remove (help)'))
+                                                    .text($.l('Remove images'))
+              , $sizeContainer   = $make('div'     ).prop('id', 'imageSizeControlsMenu')
+              , $version         = $make('span'    ).prop('id', 'caaVersion')
+                                                    .text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
               ;
 
             /* Populate the colors list */
             $colorSelect.prop('size', Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
                 var color       = CONSTANTS.COLORS[colorItem]
-                  , $option     = $('<option/>').addClass('colorOption')
                   ;
-                var $thisOption = $option.clone()
-                                         .prop('value', colorItem)
-                                         .data('default', color)
-                                         .text($.l(colorItem));
+                var $thisOption = $make('option').addClass('colorOption')
+                                                 .prop('value', colorItem)
+                                                 .data('default', color)
+                                                 .text($.l(colorItem));
                 if (localStorage.getItem('caaBatch_colors_' + colorItem) === null) {
                     $.log('Initializing localStorage for ' + 'caaBatch_colors_' + colorItem + ' to ' + color);
                     localStorage.setItem('caaBatch_colors_' + colorItem, color);
@@ -819,9 +847,8 @@ function main ($, CONSTANTS) {
             }).length);
 
             /* Populate the languages list */
-            var languages = []
-              , $option   = $('<option/>')
-              ;
+            var languages = [];
+
             Object.keys(CONSTANTS.TEXT).forEach(function(key) {
                 languages.push([key, CONSTANTS.TEXT[key].languageName]);
             });
@@ -832,15 +859,15 @@ function main ($, CONSTANTS) {
             });
             var userLang  = localStorage.getItem('caaBatch_language') || 'en';
             var $ARRlangs = languages.map(function (language) {
-                                              return $option.clone()
-                                                            .prop('selected', (language[0] === userLang))
-                                                            .prop('value', language[0])
-                                                            .text(language[1]);
+                                              return $make('option').prop('selected', (language[0] === userLang))
+                                                                    .prop('value', language[0])
+                                                                    .text(language[1]);
                                           });
 
             /* Populate the DOM */
             $('#sidebar').empty()
-                         .appendAll([ $('<h1 id="imageHeader"/>').text($.l('Images'))
+                         .appendAll([ $make('h1').prop('id', 'imageHeader')
+                                                 .text($.l('Images'))
                                     , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
                                                                , $imageShrink.append(minusImage)
                                                                ])
@@ -849,10 +876,10 @@ function main ($, CONSTANTS) {
                                                                                     , $version
                                                                                     , $removeControl
                                                                                     , $removeLabel
-                                                                                    , $('<br/>')
+                                                                                    , $make('br')
                                                                                     , $parseControl
                                                                                     , $parseLabel
-                                                                                    , $('<br/>')
+                                                                                    , $make('br')
                                                                                     , $langLabel.append($langList.appendAll($ARRlangs))
                                                                                     , $colorField.appendAll([ $colorLegend
                                                                                                             , $colorSelect.appendAll(colorOptions)
@@ -861,8 +888,9 @@ function main ($, CONSTANTS) {
                                                                                                             ])
                                                                                     , $optionsNote
                                                                                     ]))
-                                    , $('<hr/>').css('border-top', CONSTANTS.BORDERS)
-                                    , $('<h1 id="previewHeader"/>').text($.l('Preview Image'))
+                                    , $make('hr').css('border-top', CONSTANTS.BORDERS)
+                                    , $make('h1').prop('id', 'previewHeader')
+                                                 .text($.l('Preview Image'))
                                     , $previewContainer.appendAll([ $previewImage
                                                                   , $previewInfo.appendAll([ $dtResolution
                                                                                            , $ddResolution
@@ -878,7 +906,7 @@ function main ($, CONSTANTS) {
               ;
             if ($.inArray(thisEditor, autoeditorList) !== -1) {
                 $autoeditControl.add($autoeditLabel)
-                                .add($('<br/>'))
+                                .add($make('br'))
                                 .insertBefore($parseControl);
             }
 
@@ -957,14 +985,11 @@ function main ($, CONSTANTS) {
             var CSS   = CONSTANTS.CSS
               , sizes = CONSTANTS.IMAGESIZES
               , theseRules
-              , $classes = $()
-              , $style = $('<style type="text/css">')
+              , classes = []
               ;
 
-//            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
-
             $.log('Adding css for the CAA batch script.');
-            $('<style type="text/css">').text(Object.keys(CSS).map(function (key) {
+            $make('style').prop('type', 'text/css').text(Object.keys(CSS).map(function (key) {
                 theseRules = Object.keys(CSS[key]).map(function (rule) {
                     return '\n    ' +  rule + ' : ' + CSS[key][rule];
                 }).join(';');
@@ -972,26 +997,27 @@ function main ($, CONSTANTS) {
             }).join('\n')).appendTo('head');
 
             $.log('Adding image preview css classes.');
-            for (var size, i = 4; i; size = sizes[i--]) {
-                $style.clone()
-                      .prop('id', 'style' + size)
-                      .text('.localImage { width: ' + size + 'px; }')
-                      .addTo($classes);
+            for (var size, i = 4; size = sizes[--i], -1 < i;) {
+                classes.push($make('style').prop('id', 'style' + size)
+                                           .prop('type', 'text/css')
+                                           .text('.localImage { width: ' + size + 'px; }'));
             }
 
-            $style.prop('id', 'tblStyle1')
-                  .text('table.tbl { table-layout: fixed; }')
-                  .addTo($classes);
+            /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title column.  Without the next line,
+               that column gets squished when the table-layout is set to fixed layout. */
+            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
 
-            $('head').append($classes);
+            classes.push($make('style').prop('id', 'tblStyle1')
+                                       .text('table.tbl { table-layout: fixed; }'));
+
+            $('head').appendAll(classes);
 
             $.log('Adding image preview methods.');
             var useSheets = function use_stylesheets (tiny, small, medium, big) {
-                                $('#style' + sizes[0]).prop('disabled', !tiny);
-                                $('#style' + sizes[1]).prop('disabled', !small);
-                                $('#style' + sizes[2]).prop('disabled', !medium);
-                                $('#style' + sizes[3]).prop('disabled', !big);
-                            };
+                for (var i = 0; 4 > i; i++) {
+                    $('#style' + sizes[i]).prop('disabled', !arguments[i]);
+                }
+            };
             $.extend({
                      imagesTiny   : function () { useSheets(1, 0, 0, 0); },
                      imagesSmall  : function () { useSheets(0, 1, 0, 0); },
@@ -1051,13 +1077,13 @@ function main ($, CONSTANTS) {
                   , title         = (source === 'local') ? 'Local file: ' + (file.name)
                                                          : source + ' file: ' + uri
                   ;
-                var $img          = $('<img/>').addClass('localImage')
-                                               .data('source', source)
-                                               .data('file', file)
-                                               .prop({ alt       : title
-                                                     , draggable : true
-                                                     , title     : title
-                                                     });
+                var $img          = $make('img').addClass('localImage')
+                                                .data('source', source)
+                                                .data('file', file)
+                                                .prop({ alt       : title
+                                                      , draggable : true
+                                                      , title     : title
+                                                      });
 
                 dataURLreader.onload = function add_attributes_to_dropped_image(event) {
                     $.log('Running addImageToDropbox -> dataURLreader.onload');
@@ -1229,7 +1255,8 @@ Native support:
                                 };
 
             $.log('Creating comlink to trigger other context to get the image.');
-            $('<pre>' + uri + '</pre>').appendTo($xhrComlink)
+            $make('pre').text(uri)            
+                        .appendTo($xhrComlink)
                                          .trigger('click')
             /* At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
                event, which will then continue the import. */           
@@ -1395,18 +1422,18 @@ Native support:
             /* The second selector here allows for the release links added by http://userscripts.org/scripts/show/93894 */
             var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
               , $thisForm       = $('form[action*="merge_queue"]')
-              , $caaBtn         = $('<input type=button>').prop('value', $.l('Load CAA images'))
-                                                          .prop('title', $.l('Load text one release'))
-                                                          .addClass('caaLoad')
-              , $addBtn         = $('<input type=button>').prop('value', '+')
-                                                          .prop('title', $.l('Add image one release'))
-                                                          .addClass('caaAdd')
-                                                          .hide()
-              , $loadingDiv     = $('<div>').text($.l('loading'))
-                                            .prepend($('<img>').prop('src', CONSTANTS.THROBBER)
-                                                               .addClass('throbberImage'))
-                                            .addClass('loadingDiv')
-                                            .hide()
+              , $caaBtn         = $make('input').prop('type', 'button').prop('value', $.l('Load CAA images'))
+                                               .prop('title', $.l('Load text one release'))
+                                               .addClass('caaLoad')
+              , $addBtn         = $make('input').prop('type', 'button').prop('value', '+')
+                                               .prop('title', $.l('Add image one release'))
+                                               .addClass('caaAdd')
+                                               .hide()
+              , $loadingDiv     = $make('div').text($.l('loading'))
+                                             .prepend($make('img').prop('src', CONSTANTS.THROBBER)
+                                                                  .addClass('throbberImage'))
+                                             .addClass('loadingDiv')
+                                             .hide()
               , getMBID         = function get_release_MBID (attrStr) {
                                       return attrStr.split('/')
                                                     .pop()
@@ -1418,13 +1445,14 @@ Native support:
                                       $.log('Creating CAA type select.');
                                       var types  = CONSTANTS.COVERTYPES
                                         , $newOption
-                                        , $typeList = $('<select multiple="multiple">').prop('size', types.length)
-                                                                                       .addClass('caaSelect')
+                                        , $typeList = $make('select').prop('multiple', 'multiple')
+                                                                     .prop('size', types.length)
+                                                                     .addClass('caaSelect')
                                         ;
 
                                       for (var i = 0, len = types.length; i < len; i++) {
-                                          $newOption = $('<option>').prop('value', i+1)
-                                                                    .text($.l('coverType:' + types[i]));
+                                          $newOption = $make('option').prop('value', i+1)
+                                                                      .text($.l('coverType:' + types[i]));
                                           $typeList.append($newOption);
                                       }
                                       return $typeList;
@@ -1433,23 +1461,24 @@ Native support:
             var makeDropbox = function makeDropbox () {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
-                                  var $dropbox = $('<figure>').addClass('CAAdropbox newCAAimage')
-                                                              .append($('<header>').text('x')
-                                                                                   .addClass('closeButton'))
-                                                              .append($('<img>').addClass('dropBoxImage')
-                                                                                .prop('draggable', false)
-                                                                                .wrap('<div>').parent())
-                                                              .append($('<figcaption>').append($('<input type="text"/>').prop('placeholder', 'image comment'))
-                                                                                       .append($('</br>'))
-                                                                                       .append($types))
-                                                              .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
-                                                                                               $.log('Removing drop box');
-                                                                                               $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
-                                                                                                      .appendTo($('#imageContainer'))
-                                                                                                      .addClass('localImage')
-                                                                                                      .removeClass('dropBoxImage');
-                                                                                               $(this).parent().remove();
-                                                                                           });
+                                  var $dropbox = $make('figure').addClass('CAAdropbox newCAAimage')
+                                                                .append($make('header').text('x')
+                                                                                       .addClass('closeButton'))
+                                                                .append($make('img').addClass('dropBoxImage')
+                                                                                    .prop('draggable', false)
+                                                                                    .wrap('<div>').parent())
+                                                                .append($make('figcaption').append($make('input').prop('type', 'text')
+                                                                                                                 .prop('placeholder', 'image comment'))
+                                                                                           .append($make('br'))
+                                                                                           .append($types))
+                                                                .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
+                                                                                                 $.log('Removing drop box');
+                                                                                                 $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
+                                                                                                        .appendTo($('#imageContainer'))
+                                                                                                        .addClass('localImage')
+                                                                                                        .removeClass('dropBoxImage');
+                                                                                                 $(this).parent().remove();
+                                                                                             });
                                   return $dropbox;
                              };
 
@@ -1484,10 +1513,10 @@ Native support:
                                 $releaseRow = $releaseAnchor.parents('tr:first');
                                 var colCount    = $releaseRow.find('td').length
                                   , thisMBID    = getMBID($releaseAnchor.attr('href'))
-                                  , $imageRow   = $('<td/>').prop('colspan', colCount)
-                                                            .addClass('imageRow')
-                                                            .wrap('<tr>')
-                                                            .parent()
+                                  , $imageRow   = $make('td').prop('colspan', colCount)
+                                                             .addClass('imageRow')
+                                                             .wrap('<tr>')
+                                                             .parent()
                                   ;
 
                                 $.log('New release found, attaching a CAA row.');
@@ -1497,10 +1526,10 @@ Native support:
                                                          .data('entity', thisMBID);
                                 var $thisLoadingDiv = $loadingDiv.clone();
                                 var $newCAARow  = $imageRow.clone()
-                                                           .find('td').append($('<div>').addClass('caaDiv')
-                                                                                        .before($thisAddBtn)
-                                                                                        .before($thisLoadingDiv)
-                                                                                        .append($thisCAABtn)).end()
+                                                           .find('td').append($make('div').addClass('caaDiv')
+                                                                                          .before($thisAddBtn)
+                                                                                          .before($thisLoadingDiv)
+                                                                                          .append($thisCAABtn)).end()
                                                            .prop('class', $releaseRow.prop('class'));
                                 $thisForm.data(thisMBID, $newCAARow);
 
@@ -1558,7 +1587,7 @@ Native support:
                                                                         $thisAddBtn.trigger('click');
                                                                     }
                                                                     var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                                                                    $emptyDropBox.find('input').replaceWith($('<div>').text(this.comment)).end()
+                                                                    $emptyDropBox.find('input').replaceWith($make('div').text(this.comment)).end()
                                                                                  .find('br, .closeButton').remove().end()
                                                                                  .find('select').prop('disabled', true).end()
                                                                                  .removeClass('newCAAimage');
@@ -1607,10 +1636,11 @@ Native support:
 
         !function init_add_caa_table_controls () {
             $.log('Adding CAA load all releases button.');
-            var $caaAllBtn = $('<input type=button>').prop('value', $.l('Load CAA images for all'))
-                                                     .prop('title', $.l('Load text all releases'))
-                                                     .addClass('caaAll');
-            $('table.tbl').before($('<br/>'))
+            var $caaAllBtn = $make('input').prop('type', 'button')
+                                          .prop('value', $.l('Load CAA images for all'))
+                                          .prop('title', $.l('Load text all releases'))
+                                          .addClass('caaAll');
+            $('table.tbl').before($make('br'))
                           .before($caaAllBtn);
             $caaAllBtn.on('click', function caaAllBtn_click_handler () {
                 $.log('CAA load all releases\' images button has been clicked.');
@@ -1722,10 +1752,11 @@ Native support:
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
-        var $triggerLink = $('<a>' + $.l('Add cover art') + '</a>').css('cursor', 'pointer')
-                                                                   .wrap('<li>')
-                                                                   .on('click', function start_cover_art_script () { init(); })
-                                                                   .parent();
+        var $triggerLink = $make('a').text($.l('Add cover art'))
+                                     .css('cursor', 'pointer')
+                                     .wrap('<li>')
+                                     .on('click', function start_cover_art_script () { init(); })
+                                     .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
 }
@@ -1737,7 +1768,9 @@ function thirdParty($, CONSTANTS, getColor) {
     jQuery.noConflict();
 
     var addRule = function addRule (selector, rule) {
-        $('<style type="text/css">' + selector + rule + '</style>').appendTo($('head'));
+        $('<style>').prop('type', 'text/css')
+                    .text(selector + rule)
+                    .appendTo($('head'));
     };
 
     // A very basic version of a gettext function.
@@ -1813,12 +1846,6 @@ function thirdParty($, CONSTANTS, getColor) {
     $.fn.hasProp = function (property) {
         property = this.prop(property);
         return ('undefined' !== typeof property && property.length);
-    };
-
-    // An inverted .add() function.
-    $.fn.addTo = function addTo ($target) {
-        $target.add(this);
-        return this;
     };
 
     $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
