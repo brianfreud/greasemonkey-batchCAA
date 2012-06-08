@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1098
+// @version     0.01.1099
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1098'
+                , VERSION       : '0.1.1099'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1070,43 +1070,43 @@ function main ($, CONSTANTS) {
         });
 
         var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
-                $.log('Running addImageToDropbox');
+            $.log('Running addImageToDropbox');
 
-                var dataURLreader = new FileReader()
-                  , binaryReader  = new FileReader()
-                  , title         = (source === 'local') ? 'Local file: ' + (file.name)
-                                                         : source + ' file: ' + uri
-                  ;
-                var $img          = $make('img').addClass('localImage')
-                                                .data('source', source)
-                                                .data('file', file)
-                                                .prop({ alt       : title
-                                                      , draggable : true
-                                                      , title     : title
-                                                      });
+            var dataURLreader = new FileReader()
+              , binaryReader  = new FileReader()
+              , title         = (source === 'local') ? 'Local file: ' + (file.name)
+                                                     : source + ' file: ' + uri
+              ;
+            var $img          = $make('img').addClass('localImage')
+                                            .data('source', source)
+                                            .data('file', file)
+                                            .prop({ alt       : title
+                                                  , draggable : true
+                                                  , title     : title
+                                                  });
 
-                dataURLreader.onload = function add_attributes_to_dropped_image(event) {
-                    $.log('Running addImageToDropbox -> dataURLreader.onload');
-                    $img.prop('src', event.target.result);
-                    $imageContainer.append($img);
-                };
-                binaryReader.onloadend = function get_exif_for_dropped_image(event) {
-                    $.log('Running addImageToDropbox -> binaryReader.onloadend');
-                    var jpeg = new JpegMeta.JpegFile(this.result, file.name);
-                    $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
-                    $img.data('depth', jpeg.general.depth.value);
-                    $img.data('size', addCommas(file.size || file.fileSize));
-                    $img.data('name', file.name || file.fileName || uri);
-                    var logStr = 'Loaded new image: ' + $img.data('name') +
-                                 '.  Image has a resolution of ' + $img.data('resolution') + ', '
-                                 + $img.data('depth') + '-bit color depth, ' +
-                                 'and a filesize of ' + $img.data('size') + ' bytes.';
-                    $.log(logStr);
-                };
-
-                dataURLreader.readAsDataURL(file);
-                binaryReader.readAsBinaryString(file);
+            dataURLreader.onload = function add_attributes_to_dropped_image(event) {
+                $.log('Running addImageToDropbox -> dataURLreader.onload');
+                $img.prop('src', event.target.result);
+                $imageContainer.append($img);
             };
+            binaryReader.onloadend = function get_exif_for_dropped_image(event) {
+                $.log('Running addImageToDropbox -> binaryReader.onloadend');
+                var jpeg = new JpegMeta.JpegFile(this.result, file.name);
+                $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
+                $img.data('depth', jpeg.general.depth.value);
+                $img.data('size', addCommas(file.size || file.fileSize));
+                $img.data('name', file.name || file.fileName || uri);
+                var logStr = 'Loaded new image: ' + $img.data('name') +
+                             '.  Image has a resolution of ' + $img.data('resolution') + ', '
+                             + $img.data('depth') + '-bit color depth, ' +
+                             'and a filesize of ' + $img.data('size') + ' bytes.';
+                $.log(logStr);
+            };
+
+            dataURLreader.readAsDataURL(file);
+            binaryReader.readAsBinaryString(file);
+        };
 
         var supportedImageType = function supportedImageType (uri) {
             var re = /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp)$/i
@@ -1792,67 +1792,49 @@ function thirdParty($, CONSTANTS, getColor) {
     /*jshint strict:false */
     jQuery.noConflict();
 
-    var addRule = function addRule (selector, rule) {
-        $('<style>').prop('type', 'text/css')
-                    .text(selector + rule)
-                    .appendTo($('head'));
-    };
+    jQuery.extend({
+        // Creates and adds a new css rule
+        addRule: function addRule(selector, rule) {
+            $('<style>').prop('type', 'text/css').text(selector + rule).appendTo($('head'))
+        },
+        // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
+        dataURItoBlob: function dataURItoBlob(dataURI, mime) {
+            // convert base64 to raw binary data held in a string
+            var byteString;
+            if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+                byteString = atob(dataURI.split(',')[1]);
+            } else {
+                byteString = atob(dataURI); // The followup at stackoverflow is wrong here; this version is fixed.
+            }
 
-    // A very basic version of a gettext function.
-    var l = function l (str) {
-        return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
-    };
+            // write the bytes of the string to an ArrayBuffer
+            var ab = new ArrayBuffer(byteString.length),
+                ia = new Uint8Array(ab);
+            for (var i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
 
-    // Logs a message to the console if debug mode is on.
-    var log = function log (str, over) {
-        'undefined' === typeof over && (over = false);
-        CONSTANTS.DEBUGMODE && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
-    };
-
-    // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
-    var dataURItoBlob = function dataURItoBlob(dataURI, mime) {
-        // convert base64 to raw binary data held in a string
-        var byteString;
-        if (dataURI.split(',')[0].indexOf('base64') >= 0) {
-            byteString = atob(dataURI.split(',')[1]);
-        } else {
-            byteString = atob(dataURI); // The followup at stackoverflow is wrong here; this version is fixed.
-        }
-
-        // write the bytes of the string to an ArrayBuffer
-        var ab = new ArrayBuffer(byteString.length)
-          , ia = new Uint8Array(ab)
-          ;
-        for (var i = 0; i < byteString.length; i++) {
-            ia[i] = byteString.charCodeAt(i);
-        }
-
-        // write the ArrayBuffer to a blob, and you're done
-        /* The deprecated BlobBuilder format is normally prefixed;
+            // write the ArrayBuffer to a blob, and you're done
+            /* The deprecated BlobBuilder format is normally prefixed;
            we need to find the right one.  (The Blob constructor which
            has replaced BlobBuilder is not yet implemented. */
-        var Builder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
-        var bb = new Builder();
-        bb.append(ab);
-        return bb.getBlob('image/' + mime);
-    };
-
-    jQuery.extend({
-        addRule   : function addrule_handler (selector, rule) {
-                        return addRule(selector, rule);
-                  },
-        dataURItoBlob : function dataURItoBlob_handler (dataURI, mime) {
-                            return dataURItoBlob(dataURI, mime);
-                  },
-        getColor  : function getColor_handler(colorConstantName) {
-                        return getColor(colorConstantName);
-                  },
-        l         : function gettext_handler(str) {
-                        return l(str);
-                  },
-        log       : function log_handler(str) {
-                        return log(str);
-                  } 
+            var Builder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
+            var bb = new Builder();
+            bb.append(ab);
+            return bb.getBlob('image/' + mime);
+        },
+        getColor: function getColor_handler(colorConstantName) {
+            return getColor(colorConstantName);
+        },
+        // A very basic version of a gettext function.
+        l: function l(str) {
+            return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
+        },
+        // Logs a message to the console if debug mode is on.
+        log: function log(str, over) {
+            'undefined' === typeof over && (over = false);
+            CONSTANTS.DEBUGMODE && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
+        }
     });
 
     // By Brian Schweitzer and Naftali Lubin
