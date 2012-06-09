@@ -1,0 +1,739 @@
+Extension	File type description
+0-w	Png file
+10x	Gemini 10x printer bitmap graphics
+177	Image file
+24b	Bitmap graphics (24-bit data) file
+255	SBIG Astronomical Image
+3pr	Hasselblad Camera RAW file format
+695	RISC OS GIF image file
+697	RISC OS PCX bitmap image file
+69c	RISC OS BMP Windows bitmap image file
+73i	TI bitmap file
+82i	TI bitmap file
+83i	TI bitmap file
+854	Bitmap image file
+85i	TI bitmap file
+86i	TI bitmap file
+89i	TI bitmap file
+8xi	TI-83/84 Plus picture file
+92i	TI bitmap file
+9xi	Texas Instruments TI-92 Plus bitmap file
+a2fc	Apple IIe picture image file
+a2hr	Apple II+ image file
+a2lc	Apple II+ image file
+abt	ABC-View Manager thumbnail file
+ach	Speccy ZX Spectrum snapshot file
+acorn	Acorn draw file
+acr	Bitmap graphics
+acr	Dicom medicine image file format
+adc	Scanstudio 16 colours bitmap graphics
+adex	Adex bitmap graphics file
+adx	ALSee thumbnail file
+afi	Truevision Bitmap graphics
+agif	Active GIF Creator project file
+agp	ArtGem project file
+ahf	Bitmap graphics file
+ahrp	Apple II+ image file
+aid	ACDSee Classic thumbnail file
+aio	Bitmap file
+alias	Alias image file
+als	Alias fmage file
+anv	AirNav image file
+apng	Animated portable network graphics file
+apt	APT encoded bitmap file
+apu	Canon RAW file
+apx	Ability Photopaint image file
+arf	FITS auxiliary response file
+ars	Aries (DIPIX) image
+art	First Publisher raster graphic file
+artwork	ArtStudio image file
+arw	Sony Digital Camera RAW image file
+arw	ArtStudio image file
+atk	Andrew Toolkit raster object file
+att	AT&T Group 4 bitmap graphics
+avs	Stardent AVS X bitmap image file
+b&w	Bitmap image (atari - mac)
+b60	RISC OS PNG bitmap image file
+ba0	B.O.U.T. Evolution texture file
+ba2	B.O.U.T. Evolution low res texture file
+bbm	Deluxe Paint bitmap image file
+bdf	X11 Bitmap Distribution Format
+bfl	BFLI image format
+bfli	BFLI image format
+bga	OS/2 graphic array
+bgb	Microsoft Chat Background Graphic
+bif	byLight image format
+big	Michelin autoroute maps image file
+bil	Satellite image file
+bil	ArcView band interleaved by line image format
+bip	ArcView band interleaved by pixel image file
+bit	X11 bitmap image
+blz	Bitmap graphic file
+bm	X Windows system bitmap image
+bm2	Subspace/Continuum bitmap graphic file
+bml	BPM Studio skin bitmap
+bmp	Alpha Microsystem image file
+bmp	Standard Windows Bitmap image (also OS/2)
+bmp24	24 color Bitmap file
+bmpf	Bitmap image
+bmpp	Microsoft Windows bitmap file
+bmp_	Standard Windows Bitmap image file
+bmx	BMXdesign extended bitmap graphic file
+bmz	Compressed bitmap file
+bob	BOB Raytracer bitmap image
+bpp	BatchPhoto project file
+bpt	CorelDRAW bitmap master file
+bpx	Truevision Targa bitmap image
+bsq	ArcView band sequential image file
+btf	TIFF 6.0 image file
+btn	JustButtons animated bitmap image file
+btpc	BTPC encoded bitmap file
+bw	Silicon Graphics image file
+bwc	BeadWizard color palette
+c4	JEDMICS bitmap image file
+c85	RISC OS JPEG bitmap image file
+cal	CALS Raster image file
+cam	Casio QV digital CAMera image file
+cbm	XLib compiled bitmap picture file
+cbm	Fuzzy bitmap image format
+cch	Photomodeler photochip thumbnail file
+ccrf	Calcomp raster bitmap image file
+cd5	Chasys Draw image
+cdc	Autodesk AutoCAD DesignCenter preview cache file
+cdr3	CorelDRAW 3 for Mac vector or bitmap image
+cdr4	CorelDRAW 4 for Mac vector or bitmap image
+cdr5	CorelDRAW 5 for Mac vector or bitmap image
+cdr6	CorelDRAW 6 for Mac vector or bitmap image
+cdrw	CorelDRAW for Mac file
+CDRZIP	DICOM compressed image file
+ce	Digital Vision ComputerEyes IFF bitmap file
+ce1	Computer Eyes Raw image format
+ce2	Computer Eyes Raw image format
+cel	Autodesk Animator, 3D Studio cel bitmap animation
+cel	Lumena CEL bitmap image
+cex	ThumbsPlus file
+cfp	bitmap native format for CoverFactory
+cg4	CALS Group IV bitmap graphics file
+cga	CGA bitmap file
+cib	Compressed RAW image file
+cim	C Text Mode image file
+cimg	CImg image file
+cin	Kodak Cineon image format
+clgx	Collage Maker collage file
+clp	Bitmap image file
+cmp	Leadview bitmap file
+cmu	CMU Window Manager bitmap image
+cmyk	Raw cyan, magenta, yellow and black bytes bitmap image file
+cmyka	Raw cyan, magenta, yellow, black, and alpha samples image
+cng	National Geographic image file
+cpd	Compression PhotoDefiner image file
+cpd	CorelDRAW Corel PrintOffice drawing file
+cph	Corel Print House printing project file
+cr	Iris CT format bitmap image
+cr2	Canon digital camera RAW image format version 2.0
+crf	Calcomp raster file
+crw	Canon digital camera RAW image format
+cs1	Sinar CaptureShop
+cslm	Zeiss CSLM bitmap file
+ct	IRIS CT image file
+ct	SciTex continuous Tone bitmap image (32bit CMYK)
+ct	Contone printer file
+ctf	TIFF compressed file
+cube	Cubicomp/Vertigo image file
+cut	Dr. Halo bitmap file
+cvs	Canvas bitmap or vector image
+cwgr	ClarisWorks drawing file
+cwpt	ClarisWorks Painting drawing file
+cy	Ccs-lib.2 Jpeg-v4 file
+d3s	Nikon image format
+d3x	Nikon image format
+dah	AutoPlay Media Studio splash image file
+dbse	Extensis' Portfolio Image database file
+dbx	DATABEAM bitmap image
+dc2	Kodak DC25 Digital Camera file
+dcm	Dicom medicine image file format
+dcr	Kodak Digital Camera Raw Image Format
+dct	DALiM LiTHO continuous tone bitmap file
+dcx	Zsoft PC Publisher's Paintbrush image (multi-pcx file)
+ddb	Device dependent bitmap graphics file
+dds	Direct Draw surface file
+design	Microsoft Expression Design drawing file
+df	NCSA hierarchical data file
+dgf	Tajima Embroidery Design thumbnail file
+dhp	Dr. Halo II-III bitmap file
+dhr	Apple II 2bit image file
+dhrp	Image Apple IIe / Apple IIc, Double Hi-Res 2 colors compressed
+dib	Device-Independent bitmap graphic
+dic	Medicine image file
+dicm	Medicine image file
+dicom	Medicine image file format
+dil	Dialog LOTUS or HighEdit import-export images
+dip	Windows bitmap format
+djv	DjVu image file
+djvu	DjVu image file
+dng	Adobe digital negative
+dpx	Kodak Cineon image format file
+dpx	Digital Moving Picture Exchange bitmap file
+drg	Digital Raster Graphics
+drv	Traverse PC Desktop drawing file
+drw2	Canvas 3.5 Drawing file
+drw5	Canvas 5 drawing file
+dt2	Microsoft Live Messenger avatar file
+dvl	Dalim Virtual Library file
+dx	Auto-trol raster image
+ecw	Enhanced Compressed Wavelet image format
+ed5	EDMICS bitmap file
+ega	EGA bitmap file
+eidi	Electric Image EIDI file
+emf	Enhanced Windows Metafile picture
+emz	Microsoft Windows compressed enhanced metafile
+eosat	LANDSAT/EOSAT Satellite picture data image format
+erf	Epson camera RAW file
+erm	Bitmap image
+esm	Enhanced Simplex image file
+eve	EmbeddedVectorEditor diagram file
+exf	Exchangeable Image File Format
+exif	Fuji EXIF format Bitmap graphics
+exr	OpenEXR Image Format
+ezp	MegaView image file
+fac	UNIX FaceSaver bitmap image
+face	UNIX FaceSaver bitmap image file
+fal	Bitmap graphics image header information Q0
+fbm	Fuzzy bitmap image file
+ff0	RISC OS TIFF bitmap image file
+ff9	Acorn RISC OS sprite file
+fff	Maggi Hairstyles & Cosmetics image file
+fff	Hasselblad Camera RAW file format
+fido	Kodak Cineon image format
+fif	Fractal Image Format file
+fil	Symbian application logo file
+flo	Florian file
+fp	Vinal Page Vector TIFF image
+fpw	FloorPLAN plus for Windows drawing
+fpx	Kodak FlashPiX bitmap image
+frf	Ginga X-Ray first reduction file
+frm	Corel Painter frame stack file
+ftk	Formtek Raster file
+g00	Clannad picture image file
+g3p	Casio Prizm picture image file
+g8	Cubicomp PictureMaker green channel image data file
+gar	Google avatar file
+gbm	MapServer bitmap store file
+gel	Molecular Dynamics image file
+gfb	GIFBlast compressed GIF image file
+gg	Koala Paint compressed image format
+gif	Graphics interchange file format
+gif87	Gif87 file
+gif89a	Gif 89a image file
+giff	CompuServe bitmap image (Graphics Interchange Format)
+gif_	Graphics Interchange Format - Mac File Type
+gis	Erdas gray-scale bitmap image
+glv	2d Graphic file
+gm	Autologic bitmap image
+gm2	Autologic bitmap image
+gm4	Autologic bitmap image
+gmbck	Game Maker background image file
+go	GraphOn bitmap image
+goo	Kai's Power Goo picture file
+gpd	Graphic PhotoDefiner image file
+graf	Digital F/X image format
+gray	Raw gray samples bitmap image
+grb	HP-48 GROB bitmap image file
+gro	HP-48/49 grob graphic image format
+grob	Graphic Object Bitmap file
+gx1	Show Partner Screen Capture File
+ham	Amiga hold and modify image
+hc	High Resolution Cantone TIFF bitmap
+hdp	HD Photo
+her	Graphic bitmap file
+himg	Toast 3 image file
+hips	Bitmap image
+hmr	GeoTIFF bitmap file
+hpe	Canon JPEG file
+hpi	Hemera Photo Image format
+hrf	Hitachi CADCore raster format file
+hsi	Handmade Software bitmap image
+hsi	HSI JPEG bitmap file
+hta	Hemera thumbs image file
+i17	Pixel PowerCollage image file
+iax	IBM Image Access eXecutive bitmap file
+ic1	Atari Image file
+ic2	Atari Image file
+ic3	Atari Image file
+ic?	2d Graphic file
+icb	Truevision Targa format
+ico	Icon file
+icon	Icon image file
+ico_	Icon file
+icr	NCSA Telnet Interactive color raster graphic file
+id	AOL Instant Messenger buddy icon
+idc	Core Software tech IDC file
+idrw	Claris Impact drawing file
+ief	Bitmap Image Exchange file
+iefs	Bitmap Image Exchange file
+iff	Amiga Interchange File format
+iff	DESR VFF greyscale bitmap image
+iff	Autodesk Maya image format
+ige	Erdas imagine Large Raster Spill file
+iiq	Hasselblad P30+ digital camera TIFF file
+ilbm	Interleaved bitmap file
+ill	2d Graphic
+ill	Agati illustrated image file
+im	Sun raster grey bitmap graphics file
+im1	Sun Raster File
+im24	24bit Sun raster file
+im32	Sun 32bit raster file
+im?	2d Graphic
+image	UNIX bitmap file
+img	Bitmap picture file
+imj	Pegasus Image Corp format bitmap graphics
+imq	NASA planetary image
+ingr	Intergraph Raster File Format
+ink	InkML image file
+int	Silicon Graphics Image File Format
+inta	Silicon Graphics image file
+ioca	IBM Image Object Content Architecture (IOCA) bitmap graphics file
+ipg	Mindjongg Format image format
+ipx	Ipix spherical panorama file
+isf	InfoNet snapshot file
+ism	Image System (Multicolor) image format
+iso	CALS ISO 8613 bitmap graphics file
+itc2	Apple iTunes cover flow data file
+itg	Intergraph format bitmap graphics
+ivb	Truevision Targa format bitmap graphics file
+ivp	Truevision Targa bitmap image
+ivue	Live Picture image file
+iw4	DjVu image format
+iw44	DjVu image format
+j	JPEG/JFIF image file
+j2c	JPEG2000 image format
+j2k	JPEG2000 code stream image
+j6i	Ricoh Digital Camera image file
+jag	Atari Jaguar JPEG compressed image
+jap	JAlbum album file
+jas	Corel PaintShop Photo Pro bitmap graphics file
+jb2	JBIG2 image file
+jbr	Corel PaintShop Photo Pro brushes file
+jfi	JPEG File Interchange Format
+jfif	JPEG Interchange format file
+jfif-tbnl	Picture file
+jif	Jeff's Image Format file
+jif	JPEG Interchange format file
+jls	JPEG-LS image format
+jmh	JPEG File Interchange Format bitmap file
+jng	JPEG Network Graphic file
+jp2	JPEG 2000 image format (ISO 15444-1) file
+jpc	Japan Picture bitmap graphic format
+jpc	JPEG2000 code stream image format
+jpd	Joint PhotoDefiner image file
+jpe	JPEG bitmap image format file
+jpeg	JPEG bitmap image format file
+jpf	JPEG 2000 extended image format (ISO 15444-2) file
+jpg	JPEG bitmap image format file
+jpg	CompactDRAW e-JPG graphic file
+jpg2	JPEG 2000 image format (ISO 15444-1) file
+jpg_t	JPEG image file
+jpm	JPEG 2000 multi-layer image format (ISO 15444-6) file
+jpx	JPEG 2000 extended image format (ISO 15444-2) file
+jsl	Corel PaintShop Photo Pro shapes file
+jtf	JPEG Tagged Interchange Format image
+jtif	JPEG Tagged Interchange file
+jxr	JPEG XR Image
+k25	Kodak DC25 digital camera file
+kdc	Kodak DC120 digital camera RAW image
+kdk	Kodak proprietary decimated TIFF format
+kfx	Kofax Group 4 bitmap graphics
+kgp	Bitmap image file
+kic	Kodak compressed image file
+koa	Koala paint C64 file format
+kodak	Kodak Photo CD file
+kpg	Kai's Power Goo graphic file
+kps	IBM KIPS bitmap image graphics
+kqp	Konica camera file
+lan	Erdas true colour bitmap image
+lbm	Interleaved bitmap file
+ldf	LuraDocument Format image format
+lgo	Microsoft Windows 3.0 logo driver (bitmap)
+lif	Leica image file
+lj	HP LaserJet graphics file
+ljp	Lossless JPEG bitmap image file
+lrg	Macromedia XRes multi-resolution bitmap file
+lw	Line Work TIFF bitmap file
+mac	MacPaint bitmap image
+macp	Apple Macintosh MacPaint bitmap image
+map	Geographical map file
+mask	Cygwin bitmap file
+mat	Vue material file
+mbfavs	Stardent AVS X bitmap image file
+mbfs	Stardent AVS X bitmap image file
+mbfx	AVS X image file
+mbm	EPOC multi-bitmap file
+me2	Pixel image file
+mef	Mamiya ZD MEF image file
+mfm	mTropolis mPire graphic file
+mfw	Mamiya camera RAW file
+mfx	mTropolis picture format
+mgf	MalieGF bitmap
+mgr	MGR bitmap image
+miff	Magick image file format
+mil	Group 4 fax file (raster graphics)
+mip	Corel PaintShop Pro multiple image print file
+mix	Microsoft PhotoDraw image
+mki	MagView Japanese graphics MAKIchan format bitmap file
+mmr	Fuji Xerox fax image file
+mnd	Cerious Mandelbrot image
+mng	Multiple Network Graphics
+mni	Cerious Mandelbrot image
+mos	Mamiya Digital Camera RAW image file
+mp	Monochrome picture TIFF bitmap
+mpc	Magick Persistent Cache image file format
+mpnt	MacPaint image format
+mpo	CIPA Multi-Picture format
+mpt	Multipage TIFF Editor bitmap file format
+mpz	MyPhotoZip file
+mrb	C++ Multiple Resolution Bitmap Graphic
+mrw	Minolta Dimage Raw Image File
+msp	Microsoft Paint bitmap picture
+Mtiff	Multi-page Tiff file format
+mur	Atari image format
+mvc	Sony Digital Mavica photo image file
+mxi	Maxwell Render image file
+ncsa	Hierarchical Data File
+nef	Nikon Digital SLR camera RAW image file
+news	NeWS bitmap image file
+ngg	Nokia Group Graphics image format
+niff	NIFF Navy Image File Format file
+nlm	Nokia Logo file image format
+nol	Nokia Operator Logo image format
+nrf	Neutral raster file bitmap image
+nrw	Nikon Raw image file
+nth	ImageMagick VisualMagick JBIG file
+oa0	B.O.U.T. Evolution texture file
+oa2	B.O.U.T. Evolution low res texture file
+oaz	NetFax Manager OAZ fax image
+odf	HMI Builder operator display file
+ora	MyPaint Open Raster graphic file
+orf	Olympus Digital Camera Raw Image File
+otb	Nokia OTA bitmap file
+oti	OpenDocument image template file
+ozj	Mu Online graphic file
+p	Applause picture file
+p7	XV Visual Schnauzer bitmap format
+pac	Kodak Photo-CD multi-resolution image file
+pad	Scanner Output file
+paint	Apple Macintosh MacPaint bitmap file
+pam	Portable arbitrary map
+pam	Common 2-dimensional bitmap format
+pamp	PowerAMP album art file
+pap	PanoramaStudio project file
+pattern	PhotoLine 5 Default file
+pbf	Portable bitmap format file
+pbm	Portable Bitmap file
+pbm	UNIX Portable bitmap graphic file
+pbm	Xlib bitmap graphics file
+pbmv	Portable bitmap file
+pc1	Atari Degas image
+pc2	Atari Degas image
+pc3	Atari Degas bitmap image
+pcc	ZSoft PC Paintbrush format
+pcd	Kodak Picture CD multiresolution image
+pcp	Image PC Paint (DOS) Bitmap graphics
+pct	NIST ihdr image
+pct	Apple Macintosh QuickDraw/PICT bitmap graphics format
+pct	PC Paint bitmap file
+pcx	Paintbrush bitmap image
+pcx_	Paintbrush bitmap graphics file
+pdb	MonkeyCard image format
+pdd	Corel PaintShop Photo Pro bitmap graphics file
+pdf	ED-Scan graphics file
+pef	Pentax Digital Camera Raw Image Format
+pet	Macintosh PICT image file
+pfi	Panorama Factory bitmap image format
+pfm	Portable bitmap file
+pfn	Portable Bitmap File
+pgm	Portable graymap file format
+pgx	Portable graphics format file
+pi1	Atari Degas bitmap image
+pi2	Portrait Innovations high resolution image file
+pi3	Atari Degas image
+pi4	Atari Degas image file
+pi5	Atari Degas image file
+pi6	Atari Degas image file
+pi?	2d Graphic
+pic	Picture file
+picio	PIXAR picture file
+picnc	Houdini 3D compositing image file
+pict	Bitmap graphics file format
+pict1	Apple QuickDraw picture file
+pict2	Apple Macintosh QuickDraw/PICT bitmap graphics format
+pictclipping	Picture Clipping file
+pictor	PCPaint image file
+pip	Compressed bitmap picture file
+pix	Bitmap image file
+pixar	PIXAR picture file
+pixelpaiNT	PixelPaint Professional image file
+pi[1-6]	Degas Elite image format
+pj	HP PaintJet PCL bitmap image file
+pjp	JPEG image file
+pjpeg	JPEG image
+plasma	Plasma fractal image file
+plt	BioWare Infinity game engine bitmap graphic file
+pm	Presentation Manager bitmap graphics file
+pm	X Window PixelMap bitmap graphics
+pmb	Polar Uplink Tool bitmap file
+pnf	Portable Network Graphics bitmap graphics
+png	Portable Network Graphic file
+png	Adobe Fireworks proprietary PNG file
+png24	Portable Network Graphics
+png32	Portable Network Graphics
+png8	Portable Network Graphics
+pngf	PNG Imagereionente Fippng Mac file type
+pnm	Portable anymap bitmap graphic file
+pnt	Apple MacPaint format graphic file
+pntg	Apple Macintosh MacPaint bitmap graphics
+pop	Samsung Popcon animation file
+pp4	Micrografix Picture Publisher bitmap graphics file
+pp5	Micrografx Picture Publisher 5 bitmap file
+ppm	Portable pixelmap graphic
+pps	Corel PaintShop Photo Pro image file
+pr	Sun icon file
+pre	CMYK bitmap image (Stork format)
+prf	Fastgraph bitmap graphics
+prn	Calcomp Raster graphics file
+prv	E-on Vue preview picture file
+psd	Adobe Photoshop graphics file
+psdx	Adobe Photoshop Touch graphics file
+pse	IBM Printer Page Segment bitmap graphics
+pseg	IBM printer page segment bitmap file
+psp	Corel PaintShop Photo Pro image file
+pspimage	Corel Paint Shop Pro image file
+ptif	Pyramid encoded TIFF bitmap graphics
+ptx	Pentax RAW bitmap graphic file
+puzz	X11 Puzzle bitmap graphics
+puzzle	X11 puzzle bitmap file
+pvm	HP Photosmart Essential Photo Album file
+pwp	Seattle FilmWorks / PhotoWorks image file
+pwrk	Apple IIGS image file
+pxm	Pixel Magician graphic bitmap file
+pzi	Pizazz Plus graphics file
+pzl	Unix Puzzle bitmap graphics
+q0	Japanese Q0 bitmap image
+qad	Corel WordPerfect Office thumbnail file
+qdv	Random Dot QDV bitmap image
+qfxx	Quick Link II fax file
+qmg	Samsung theme picture image file - qmage file format
+qrt	Qrt Ray-Tracer ray-traced bitmap image
+qtk	Apple QuickTake digital camera bitmap image
+qtl	YUV SECAM or PAL image
+qts	Macintosh PICT image file
+raf	Fuji CCD-RAW graphic file
+ras	Sun raster bitmap file
+rast	Sun Raster bitmap image
+raw	RAW image format
+raw	ISIS RAW file format file
+rdb	Wavelet image recording
+rdi	Device independent bitmap file
+rf	Sun bitmap image
+rg	Bitmap image
+rgb	SGI RGB bitmap file
+rgb	Japanese Q0 bitmap image
+rgba	Silicon Graphics Image File Format
+ria	Alpharel Group IV bitmap file
+ric	Lego NXT image file
+rid	GerbMagic raster image file
+rif	Resource Interchange File Format
+rif	Corel Painter raster image file
+riff	Resource Interchange File Format bitmap image
+riff	Corel Painter raster image file
+rix	ColoRIX bitmap image
+rl2	Nokia ST (Star Torrent) mobile phones series picture image
+rl4	Microsoft Windows bitmap image
+rl8	Microsoft Windows bitmap image
+rla	Alias/Wavefront bitmap image
+rlb	Alias/Wavefront bitmap image
+rle	Bitmap graphics - 4bit or 8bit ADEX file
+rle	Run Length Encoded bitmap image file
+rle	Raster bitmap image
+rnl	GTX runlength encoded bitmap graphics
+rpbm	Portable Bitmap image format
+rpgm	Portable greyscale image
+rpnm	Portable Image image format
+rppm	Portable Image image format
+rs	Sun Raster bitmap image format
+rsb	Red Storm bitmap file
+rsr	Poser model preview file
+rtl	HP Raster Transfer Language bitmap image file
+rw2	Panasonic Lumix RAW image file
+rwl	D-Lux 4 RAW image file
+rwz	Rawzor compressed RAW image file
+sbig	Santa Barbara Instruments astronomical image file
+sc2	Msx 2 screen image format
+sc?	ColoRix bitmap image
+scd	Matrix/Imapro/Agfa SCODL film recorder bitmap image
+scg	ColoRIX Bitmap image
+sci	ColoRIX bitmap image
+scp	ColoRIX bitmap image
+scr	Sun Raster bitmap image file
+scr	Microsoft Word for DOS bitmap file
+scrn	Startup Screen file
+sct	Scitex CT bitmap image file
+scu	ColoRIX bitmap image
+scx	ColoRIX bitmap image
+sd2	Dali Raw image
+sdpx	Kodak Cineon image format
+sdw	MrSID header file (ESRI picture file)
+sep	Tagged Image File Format (TIFF) bitmap image
+seq	ATARI STAD image format
+sev	SevenUp picture file
+sfc	Motic Images Plus image file
+sfp	Ventura Publisher Pcl 4 bitmap font (portrait)
+sfw	Seattle Film Works graphics file
+sgx	SymbOS SGX bitmap file
+sh3	Harvard Graphics 3.0 presentation file
+shrp	Apple IIG image file
+sid	LizardTech MrSID image file format
+sim	Aurora image format
+sir	Bitmap image (Solitaire file)
+six	DEC LN03+ Sixel bitmap image file
+sixel	DEC LN03+ Sixel bitmap image file
+skv	XLANG schedule drawing file
+snag	SnagIt capture
+snap	LittleSnaper snap file
+snx	Second Nature screensaver image file
+spc	Atari compressed Spectrum bitmap file
+spe	Princeton Instruments CCD camera bitmap image
+spf	Still Picture Interchange File Format
+spi	Scanned Graphics file format
+spiff	SPIFF Still Picture Interchange File Format
+spot	SPOT satellite image file
+spr	Acorn RISC OS bitmap image sprite file
+sprite	Acorn RISC OS sprite file
+sps	Atari Spectrum 512 smooshed bitmap image
+spu	Atari Spectrum bitmap image file
+sr	Sun raster bitmap graphics file
+sr2	Sony Digital Camera Raw Image File
+srf	Sun raster file
+srf	Sony digital camera RAW image file
+srs	Sun raster file
+srw	Samsung Raw picture image file
+st9	SBIG astronomical image
+ste	Samsung IPOLIS picture file
+stn=	Genuine Fractals STING file format
+sumo	Sumo Paint image file
+sun	Sun raster bitmap image
+suniff	Bitmap image (Sun TAAC Image File Format)
+sup	Subtitle bitmap file
+sva	Sharp Manga Browser comic file
+svh	Black Diamond Consulting Surround Video animated internet picture file
+swgr	ClarisWorks version 3/4 Drawing file
+syn	Bitmap image (Synthetic Universe image file)
+synu	Bitmap image (SDSC Synu image file)
+synu	Synthetic Universe image format
+t2b	CyBook thumbnail image file
+taac	Sun TAAC bitmap image
+tbn	XBMC folder thumnail file
+tc2	TurboCAD 2D drawing file
+tdi	Alias Wavefront image
+tdim	Digital F/X image format
+tdp	Sherif DrawPlus Thumbnail file
+tdt	AVHCD thumbnail image file
+tex	Corel PaintShop Photo Pro texture file
+tga	Truevision TarGA bitmap image
+thm	Thumbnail bitmap image file
+thn	Graphics Workshop for Windows thumbnail
+thnl	Graphics Workshop for Windows thumbnail file
+thumb	JAlbum thumbnail file
+tif	Aldus Tagged Image File Format (TIFF) bitmap image
+tif	BigTIFF image file
+tiff	Aldus Tagged Image File Format (TIFF) bitmap image
+tim	Sony PlayStation bitmap image
+tim	Tagged Image file format
+tm2	Playstation 2 TIM2 Bitmap file
+tn	LG encoded JPG image file
+tn1	Tiny bitmap image file
+tn2	Tiny bitmap image file
+tn3	Tiny bitmap image file
+tny	TiNY bitmap image
+tpic	TrueVision TARGA image file
+trif	TRIF Tiled Raster Interchange Format bitmap file
+u	Subsampled raw YUV bitmap image
+udi	CorelDRAW draw script textures bitmap file
+ufo	Ulead PhotoImpact object file
+ufp	Ulead photo project file
+ug	Drawing file
+uil	X-Motif UIL icon file Bitmap image
+ulg	ULG bitmap file
+umd	UMD Photobook file
+upf	Nokia Phone digital photo file
+upx	Ulead Photo Express saved image file
+urt	Utah Run-Length encoded bitmap image file
+v	Subsampled raw YUV bitmap image
+vbc	Visual Business Cards file
+vbm	V IDE bitmap file
+vbm	Video bitmap file
+vclip	VinylMaster clipart file
+vda	Truevision Targa bitmap image
+vda	Video Display Adapter image format
+vdi	Digital Research GEM VDI bitmap image
+vdr	ComputerEasy Draw
+vff	DESR VFF greyscale bitmap image
+vff	Sun TAAC bitmap image file
+vfl	PrintMaster Gold ClipArt file
+vga	OS/2 bitmap image
+vga	Microsoft Windows bitmap image
+vgr	Ventura Publisher bitmap file
+vi	Jovian Logic VI bitmap image
+vic	Vicar graphics file
+vid	YUV12C M-Motion Frame Buffer file
+vif	Verity 1bit CCITT Group 4 bitmap image
+vif	Khoros Visualization bitmap image
+viff	Khoros Visualization bitmap image
+vik	Viking graphics
+vit	VITec scanner raster format
+vlogo	VinylMaster logo file
+vpe	Photoshop Extended Vanishing point file
+vst	Vista Truevision Targa bitmap image
+vsw	Microsoft Office Visio 2010 web drawing file
+vwf	CADvance Drawing File
+vzn	Windows VZN Image File
+wap	Wireless bitmap (level 0) image format
+wbm	Wireless Bitmap image format
+wbmp	Wireless Bitmap image format
+wdp	Windows Media HD Photo
+webp	Google image file format
+whip	WHIP Bitmap image
+wi	Wavelet image file
+wic	J Wavelet Image Codec image format
+win	Truevision Targa bitmap image file
+wlm	CompW image format file
+wmf2	Embedded Bitmap metafile
+wmp	Microsoft Windows Media HD Photo file
+wnk	Wink screen capture file
+wsq	Wavelet-packet Scalar Quantization bitmap file
+wvl	Wavelet Bitmap Picture
+x	Stardent AVS X bitmap image file
+x-png	Portable (Public) Network Graphic bitmap file
+x10	X Window bitmap dump file
+x11	X Window bitmap image file
+x3f	Sigma Camera RAW picture file
+xbm	X Windows system bitmap image
+xbx	Xbox icon or picture file
+xc	X Server Constant Screen image file
+xcf	GIMP XCF bitmap image file
+xim	X11 Xim Toolkit bitmap file
+xjt	Compressed GIMP image file
+xos	Xaos Tools bitmap image
+xpm	Image file
+xpng	Portable (Public) Network Graphic bitmap file
+xv	Khoros Visualization bitmap image file
+xwd	X Windows window screen dump or bitmap
+y	Subsampled raw YUV bitmap image
+ybm	Face bitmap image
+ycc	2d Graphic file
+yuv	YUV 16Bits image format
+zbm	Zlib compressed bitmap file
+zgm	Zenographics bitmap image file
+zif	Zooming Interface Format
+zxp	ZX-Paintbrush document
+[b]	Amiga paint image file
+~re	Image file
