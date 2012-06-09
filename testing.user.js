@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1102
+// @version     0.01.1111
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -51,7 +51,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1102'
+                , VERSION       : '0.1.1111'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -105,7 +105,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Remove stored images'    : 'Remove stored images'
-                                       , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.
+                                       , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
                                        , 'Shrink image'            : 'Zoom out'
                                        , 'Submit edits'            : 'Submit edits'
                                        , 'Submit as autoedits'     : 'Submit edits as autoedits'
@@ -783,11 +783,9 @@ function main ($, CONSTANTS) {
               , baseImage        = localStorage.getItem('magnifyingGlassBase')
               , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
-              , $autoeditControl = $make('input'    ).prop('id', 'caaAutoedit')
+              , $autoeditControl = $make('input'   ).prop('id', 'caaAutoedit')
                                                     .prop('type', 'checkbox')
                                                     .prop('title', $.l('Submit as autoedits'))
-                                                    .prop('checked', true)
-//TODO: Don't hardcode caaAutoedit's initial value
               , $autoeditLabel   = $make('label'   ).prop('for', 'caaAutoedit')
                                                     .prop('id', 'caaAutoeditLabel')
                                                     .prop('title', $.l('Submit as autoedits'))
@@ -934,19 +932,32 @@ function main ($, CONSTANTS) {
                                     ]);
 
             /* Autoeditor check */
-            var autoeditorList = JSON.parse(localStorage.getItem('autoeditors'))
-              , thisEditor = $('.account > a:first').text()
-              ;
-            if ($.inArray(thisEditor, autoeditorList) !== -1) {
+            var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
+                thisEditor = $('.account > a:first').text();
+            if (-1 !== $.inArray(thisEditor, autoeditorList)) {
+                $.log('The stored autoeditor preference is set to: ' + localStorage.getItem('caaBatch_autoeditPref'));
+                /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
+                   object, even though it *looks* like it is returning a string. */
+                var autoeditPref = (localStorage.getItem('caaBatch_autoeditPref') === "true");
+                $autoeditControl[0].checked = autoeditPref;
                 $autoeditControl.add($autoeditLabel)
                                 .add($make('br'))
                                 .insertBefore($parseControl);
             }
 
             // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
-            $optionsControl.click(function optionsControl_click_handler () {
-                                       $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
-                                  });
+            $optionsControl.click(function optionsControl_click_handler() {
+                $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
+            });
+        }();
+
+        /* Add remember preferences capability to the autoedit checkbox. */
+        !function autoedit_checkbox_handler () {
+            $.log('Adding handler for remembering preferences of the autoedit checkbox.');
+            $('#caaAutoedit').on('click', function (e) {
+                $.log('Autoeditor pref now set to: ' + $(this).is(':checked'));
+                localStorage.setItem('caaBatch_autoeditPref', $(this).is(':checked'));
+            });
         }();
 
         /* Add functionality to the language selector. */
