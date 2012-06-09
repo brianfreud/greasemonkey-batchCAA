@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1099
+// @version     0.01.1102
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,7 +44,6 @@ Opera: Not compatible, sorry.
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Load images which were cached while script was not running
-//TODO: Add button to purge the image cache
 
 var height = function (id) {
     'use strict';
@@ -52,7 +51,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1099'
+                , VERSION       : '0.1.1102'
                 , DEBUGLOG_OVER : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -105,6 +104,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
+                                       , 'Remove stored images'    : 'Remove stored images'
                                        , 'Shrink image'            : 'Zoom out'
                                        , 'Submit edits'            : 'Submit edits'
                                        , 'Submit as autoedits'     : 'Submit edits as autoedits'
@@ -260,6 +260,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '#optionsMenu > label, #optionsMenu > label > select':
                       { 'margin-left'           : '5px'
+                      , 'margin-top'            : '5px'
                       },
                   '#optionsMenu > summary':
                       { 'line-height'           : 2
@@ -509,17 +510,38 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   'figure':
                       {  border                 : CONSTANTS.BORDERS
                       },
-                  'input[type="color"], #ColorDefaultBtn':
+                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn':
                       {  border                 : '1px outset #D3D3D3'
                       ,    '-moz-border-radius' : '6px'
                       , '-webkit-border-radius' : '6px'
                       ,         'border-radius' : '6px'
                       ,  cursor                 : 'pointer'
-                      , 'float'                 : 'right'
+                      , 'font-family'           : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
+                      , 'font-size'             : '100%'
                       , 'margin-right'          : '0'
                       , 'outline'               : 'none'
+                      ,  padding                : '3px'
                       , 'text-align'            : 'center'
-                      ,  width                  : '74px'
+                      },
+                  '#ClearStorageBtn':
+                      { 'background-color'      : 'red'
+                      ,  color                  : '#FFF'
+                      , 'font-weight'           : 700
+                      ,  opacity                : '.7'
+                      ,  width                  : '190px'
+                      },
+                  '#ClearStorageBtn:disabled':
+                      { 'background-color'      : 'grey'
+                      ,  color                  : '#000'
+                      , 'text-decoration'       : 'line-through'
+                      },
+                  'input[type="color"], #ColorDefaultBtn':
+                      { 'float'                 : 'right'
+                      ,  width                  : '79px'
+                      },
+                  'input[type="color"]:active, #ColorDefaultBtn:active, #ClearStorageBtn:active':
+                      {  border                 : '1px inset #D3D3D3'
+                      ,  opacity                : '1'
                       },
                   'legend':
                       {  color                  : '#000!important'
@@ -819,6 +841,11 @@ function main ($, CONSTANTS) {
                                                     .prop('draggable', false)
               , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
                                                     .hide()
+              , $storageBtn      = $make('input'   ).prop('id', 'ClearStorageBtn')
+                                                    .prop('title', $.l('Remove stored images'))
+                                                    .prop('type', 'button')
+                                                    .prop('value', $.l('Remove stored images'))
+                                                    .prop('disabled', localStorage.getItem('caaBatch_imageCache') === null)
               , $removeControl   = $make('input'   ).prop('id', 'caaOptionRemove')
                                                     .prop('title', $.l('Remove (help)'))
                                                     .prop('type', 'checkbox')
@@ -880,6 +907,8 @@ function main ($, CONSTANTS) {
                                                                                     , $parseControl
                                                                                     , $parseLabel
                                                                                     , $make('br')
+                                                                                    , $storageBtn
+                                                                                    , $make('br')
                                                                                     , $langLabel.append($langList.appendAll($ARRlangs))
                                                                                     , $colorField.appendAll([ $colorLegend
                                                                                                             , $colorSelect.appendAll(colorOptions)
@@ -921,6 +950,16 @@ function main ($, CONSTANTS) {
             $.log('Adding handler for language selector.');
             $('#languageSelect').on('change', function (e) {
                 localStorage.setItem('caaBatch_language', $(this).find(':selected').val());
+                $('#languageSelect').prop('disabled', true);
+            });
+        }();
+
+        /* Add functionality to the clear image storage button. */
+        !function add_clear_image_storage_handler () {
+            $.log('Adding handler for the clear image storage button.');
+            $('#ClearStorageBtn').on('click', function (e) {
+                localStorage.removeItem('caaBatch_imageCache');
+                $('#ClearStorageBtn').prop('disabled', true);
             });
         }();
 
@@ -1795,7 +1834,7 @@ function thirdParty($, CONSTANTS, getColor) {
     jQuery.extend({
         // Creates and adds a new css rule
         addRule: function addRule(selector, rule) {
-            $('<style>').prop('type', 'text/css').text(selector + rule).appendTo($('head'))
+            $('<style>').prop('type', 'text/css').text(selector + rule).appendTo($('head'));
         },
         // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
         dataURItoBlob: function dataURItoBlob(dataURI, mime) {
