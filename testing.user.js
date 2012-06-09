@@ -105,6 +105,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Remove stored images'    : 'Remove stored images'
+                                       , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.
                                        , 'Shrink image'            : 'Zoom out'
                                        , 'Submit edits'            : 'Submit edits'
                                        , 'Submit as autoedits'     : 'Submit edits as autoedits'
@@ -182,6 +183,9 @@ if (CONSTANTS.DEBUGMODE) {
                           , INCOMPLETE                : '-·· -··- -····'
                           , COMPLETE                  : '·-· -- -·'
                           , REMOVE                    : '-·- ··--- --··· ·--· ···-'
+                          , 'Submit as autoedits'     : '··--- --··· ·--· ···-'
+                          , 'Remove stored images'    : '-·· -··- -···· ·--· ···-'
+                          , 'Remove stored images nfo': '-···· ·--· ···--·· -··- -···· ·--· ···-'
                           };
 }
 
@@ -842,7 +846,7 @@ function main ($, CONSTANTS) {
               , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
                                                     .hide()
               , $storageBtn      = $make('input'   ).prop('id', 'ClearStorageBtn')
-                                                    .prop('title', $.l('Remove stored images'))
+                                                    .prop('title', $.l('Remove stored images nfo'))
                                                     .prop('type', 'button')
                                                     .prop('value', $.l('Remove stored images'))
                                                     .prop('disabled', localStorage.getItem('caaBatch_imageCache') === null)
@@ -929,7 +933,7 @@ function main ($, CONSTANTS) {
                                                                   ])
                                     ]);
 
-            // Autoeditors
+            /* Autoeditor check */
             var autoeditorList = JSON.parse(localStorage.getItem('autoeditors'))
               , thisEditor = $('.account > a:first').text()
               ;
@@ -960,6 +964,7 @@ function main ($, CONSTANTS) {
             $('#ClearStorageBtn').on('click', function (e) {
                 localStorage.removeItem('caaBatch_imageCache');
                 $('#ClearStorageBtn').prop('disabled', true);
+                cachedImages = [];
             });
         }();
 
@@ -1530,10 +1535,11 @@ Native support:
                                                                                          .prop('draggable', false)
                                                                                          .wrap('<div>')
                                                                                          .parent()
-                                                                           , $make('figcaption').append($make('input').prop('type', 'text')
-                                                                                                                      .prop('placeholder', 'image comment'))
-                                                                                                .append($make('br'))
-                                                                                                .append($types)
+                                                                           , $make('figcaption').appendAll([ $make('input').prop('type', 'text')
+                                                                                                                           .prop('placeholder', 'image comment')
+                                                                                                           , $make('br')
+                                                                                                           , $types
+                                                                                                           ])
                                                                            ])
                                                                 .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
                                                                                                  $.log('Removing drop box');

@@ -39,6 +39,7 @@ outerCAA.MusicBrainz = function () {
 
 outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
     /* NOTE: We do not want strict mode here.  It would cause the script to break if the site's code has modified object prototypes. */
+    /*jshint strict:false */
 
     $.noConflict();
 
