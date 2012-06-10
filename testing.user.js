@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1128
+// @version     0.01.1136
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,6 +44,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Load images which were cached while script was not running
+//TODO: Add functionality to #CAAeditorDarknessControl
 
 var height = function (id) {
     'use strict';
@@ -51,13 +52,14 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1128'
+                , VERSION       : '0.1.1136'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
                                   , CAABOX     : '#F2F2FC'
                                   , CAABUTTONS : '#4B0082'
                                   , EDITOR     : '#F9F9F9'
+                                  , EDITORMENU : '#D5D5FF'
                                   , INCOMPLETE : '#FFFF7A'
                                   , COMPLETE   : '#C1FFC1'
                                   , REMOVE     : '#B40000'
@@ -86,10 +88,13 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Add cover art'           : 'Add cover art'
                                        , 'Add image one release'   : 'Add a box for another image.'
                                        , 'bytes'                   : 'bytes'
+                                       , 'Click to edit this image': 'Click to edit this image'
                                        , 'Colors'                  : 'Colors'
                                        , 'default'                 : 'default'
+                                       , 'degrees'                 : 'degrees'
                                        , 'File size'               : 'File size'
                                        , 'How dark the bkgrnd'     : 'Image editor darkness level'
+                                       , 'How many degrees'        : 'How many degrees to rotate the image'
                                        , '(Image) Resolution'      : 'Resolution'
                                        , 'Images'                  : 'Images'
                                        , 'Language'                : 'Language'
@@ -108,6 +113,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove images'           : 'Remove images mode'
                                        , 'Remove stored images'    : 'Remove stored images'
                                        , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
+                                       , 'Rotate'                  : 'Rotate'
                                        , 'Shrink image'            : 'Zoom out'
                                        , 'Submit edits'            : 'Submit edits'
                                        , 'Submit as autoedits'     : 'Submit edits as autoedits'
@@ -128,6 +134,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , CAABOX                    : 'Empty CAA box'
                                        , CAABUTTONS                : 'Load CAA buttons'
                                        , EDITOR                    : 'Image editor background'
+                                       , EDITORMENU                : 'Image editor menu'
                                        , INCOMPLETE                : 'Incomplete edits'
                                        , COMPLETE                  : 'Edits ready to submit'
                                        , REMOVE                    : 'Remove image highlight'
@@ -191,6 +198,10 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Remove stored images nfo': '-···· ·--· ···--·· -··- -···· ·--· ···-'
                           , 'How dark the bkgrnd'     : '··-- -- - -··- -·-- --·-··'
                           , EDITOR                    : '--- - -··- -·-- --··'
+                          , EDITORMENU                : '· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ·'
+                          , 'Click to edit this image': '-·· ·--- -··- -- ··- ·· -'
+                          , 'degrees'                 : '···- ·· ·-· -··'
+                          , 'Rotate'                  : '···· ····· ·'
                           };
 }
 
@@ -238,6 +249,20 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#CAAeditorDarknessControl':
                       { 'margin-left'           : '5px'
                       ,  width                  : '3.5em'
+                      },
+                  '#CAAeditorCanvas':
+                      { 'background-color'      : '#FFF'
+                      },
+                  '#CAAeditorMenu':
+                      { 'background-color'      : getColor('EDITORMENU')
+                      , 'border-radius'         : '20px'
+                      ,  border                 : '1px dotted navy'
+                      ,  height                 : '60%'
+                      ,  padding                : '16px'
+                      ,  position               : 'absolute'
+                      ,  right                  : '40px'
+                      ,  top                    : '20%'
+                      ,  width                  : '160px'
                       },
                   '#editor000Container':
                       {  display                : 'inline-block'
@@ -900,6 +925,7 @@ function main ($, CONSTANTS) {
                                                     .prop('step', 1)
                                                     .prop('min', 0)
                                                     .prop('max', 100)
+                                                    .prop('title', $.l('How dark the bkgrnd'))
                                                     .prop('value', 75)  // TODO: Don't hardcode this
               , $editor000Label  = $make('label'   ).prop('for', 'CAAeditorDarknessControl')
                                                     .prop('id', 'CAAeditorDarknessLabel')
@@ -935,6 +961,7 @@ function main ($, CONSTANTS) {
                                                     .text($.l('Parse web pages'))
               , $previewImage    = $make('img'     ).prop('id', 'previewImage')
                                                     .prop('draggable', false)
+                                                    .prop('title', $.l('Click to edit this image'))
               , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
                                                     .hide()
               , $storageBtn      = $make('input'   ).prop('id', 'ClearStorageBtn')
@@ -955,7 +982,7 @@ function main ($, CONSTANTS) {
               ;
 
             /* Populate the colors list */
-            Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
+            Object.keys(CONSTANTS.COLORS).sort().map(function (colorItem) {
                 var color       = CONSTANTS.COLORS[colorItem]
                   ;
                 var $thisOption = $make('option').addClass('colorOption')
@@ -967,7 +994,7 @@ function main ($, CONSTANTS) {
                     localStorage.setItem('caaBatch_colors_' + colorItem, color);
                 }
                 colorOptions.push($thisOption);
-            })
+            });
 
             /* Populate the languages list */
             var languages = [];
@@ -1667,7 +1694,7 @@ Native support:
                                                                                                            , $make('br')
                                                                                                            , $types
                                                                                                            ])
-                                                                           ])
+                                                                           ]);
                                   return $dropbox;
                              };
 
@@ -1934,17 +1961,96 @@ Native support:
                                       .hide()
                                       .appendAll([ $makeCloseButton
                                                  , $make('div').prop('id', 'CAAeditorDiv')
+                                                               .appendAll([ $make('canvas').prop('id', 'CAAeditorCanvas')
+                                                                          , $make('div').prop('id', 'CAAeditorMenu')
+                                                                                        .appendAll([ $make('label').prop('id', 'CAAeditorRotateLabel1')
+                                                                                                                   .prop('title', $.l('How many degrees'))
+                                                                                                                   .text($.l('Rotate') + ':')
+                                                                                                   , $make('br')
+                                                                                                   , $make('input').prop('id', 'CAAeditorRotateControl')
+                                                                                                                   .prop('type', 'number')
+                                                                                                                   .prop('step', 1)
+                                                                                                                   .prop('min', -360)
+                                                                                                                   .prop('max', 360)
+                                                                                                                   .prop('value', 0)
+                                                                                                                   .prop('title', $.l('How many degrees'))
+                                                                                                   , $make('label').prop('id', 'CAAeditorRotateLabel2')
+                                                                                                                   .prop('title', $.l('How many degrees'))
+                                                                                                                   .text(' ' + $.l('degrees'))
+                                                                                                   ])
+                                                                          ])
                                                  ]))
                  .prepend($make('div').prop('id', 'CAAoverlay')
                                       .hide());
-            $('#CAAoverlay').show();
-            $('#CAAimageEditor').css('display', 'none')
-                                .animate({ height  : 'toggle'
-                                         , opacity : 'toggle'
-                                         }, 'slow');
 
+        var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
+          , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
+          , canvasWidth    = Math.round(canvasHeight * imageRatio)
+          , degreesRotated = 0
+          ;
 
-//TODO FINISH
+        var clearCanvas = function () {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        var rotate = function (degrees) {
+            clearCanvas();
+            ctx.translate(canvas.width/2, canvas.height/2);
+            ctx.rotate(-degreesRotated * Math.PI / 180);
+            ctx.rotate(degrees * Math.PI / 180);
+            degreesRotated = degrees;
+            ctx.translate(-canvas.width/2, -canvas.height/2);
+            ctx.drawImage(backupCanvas, 0, 0);
+        }
+
+        /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
+           then figure out the height based on the editor window's width instead of the other way around. */
+        var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
+
+        if (editorWindowWidth < (canvasWidth - 230)) {
+            canvasWidth  = Math.round(editorWindowWidth - 230);
+            canvasHeight = Math.round(canvasWidth / imageRatio);
+        }
+
+        /* Load the image into the canvas. */
+        var canvas = document.getElementById("CAAeditorCanvas")
+          , ctx = canvas.getContext("2d")
+          , img = new Image()
+        /* create a backup canvas for storing the unmodified image. */
+          , backupCanvas = document.createElement("canvas")
+          , backupCtx = backupCanvas.getContext("2d")
+          ;
+
+        img.onload = function () {
+            /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
+            canvas.width = img.width;
+            canvas.height = img.height;
+
+            /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
+            canvas.style.height = canvasHeight + 'px';
+            canvas.style.width = canvasWidth + 'px';
+
+            ctx.drawImage(img, 0, 0);
+
+            backupCanvas.width = canvas.width;
+            backupCanvas.height = canvas.height;
+            backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+        };
+
+        img.src = $('#previewImage').prop('src');
+
+        $('#CAAeditorRotateControl').on('change', function () {
+            rotate($(this).val());
+        });
+
+        $('#CAAoverlay').show();
+        $('#CAAimageEditor').css('display', 'none')
+                            .animate({ height  : 'toggle'
+                                     , opacity : 'toggle'
+                                     }, 'slow');
 
 
 
@@ -2056,6 +2162,7 @@ function thirdParty($, CONSTANTS, getColor) {
     $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
 
     $.addScript('jQueryAnimateEnhanced');
+    $.addScript('jQueryGetHiddenDimensions');
 }
 
 !function main_loader(i) {
