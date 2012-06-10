@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1136
+// @version     0.01.1137
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1136'
+                , VERSION       : '0.1.1137'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -252,6 +252,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '#CAAeditorCanvas':
                       { 'background-color'      : '#FFF'
+                      },
+                  '#CAAeditorRotateControl':
+                      { 'margin-right'          : '2px'
+                      ,  width                  : '4em'
                       },
                   '#CAAeditorMenu':
                       { 'background-color'      : getColor('EDITORMENU')
@@ -734,7 +738,7 @@ function getUri(e) {
             return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
         };
     // END (phpjs.org)
-  
+
     // START from Tim Smart at http://pastebin.ca/1425789
     var data_string = function data_string(data) {
         // Generate a binary data string from character / multibyte data
@@ -961,7 +965,6 @@ function main ($, CONSTANTS) {
                                                     .text($.l('Parse web pages'))
               , $previewImage    = $make('img'     ).prop('id', 'previewImage')
                                                     .prop('draggable', false)
-                                                    .prop('title', $.l('Click to edit this image'))
               , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
                                                     .hide()
               , $storageBtn      = $make('input'   ).prop('id', 'ClearStorageBtn')
@@ -1349,7 +1352,7 @@ function main ($, CONSTANTS) {
         };
 
         var convertImage = function convertImage (inputImage, type, source) {
-/* 
+/*
 Native support:
     Chrome:
         Fail:
@@ -1477,11 +1480,11 @@ Native support:
                                 };
 
             $.log('Creating comlink to trigger other context to get the image.');
-            $make('pre').text(uri)            
+            $make('pre').text(uri)
                         .appendTo($xhrComlink)
                                          .trigger('click')
             /* At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
-               event, which will then continue the import. */           
+               event, which will then continue the import. */
                                          .on('dblclick', function create_blob_and_add_thumbnail (e) {
                                                              $.log('dblclick detected on comlink; creating file and thumbnail.');
                                                              var $comlink = $(this)
@@ -1577,8 +1580,8 @@ Native support:
                     $.log(dropped);
                     switch (!0) {
                         case !!dropped.file_list.length: // local file(s)
-                            $.log('imageContainer: drop ==> local file'); 
-                            loadLocalFile(e); 
+                            $.log('imageContainer: drop ==> local file');
+                            loadLocalFile(e);
                             break;
                         case !!dropped.uri.length: // remote image drag/dropped
                             $.log('imageContainer: drop ==> uri');
@@ -1603,7 +1606,7 @@ Native support:
                         default:
                             $.log('Whatever was just dropped is not something which can provide a jpeg.');
                     }
-                    
+
                 }
             });
         }();
@@ -1636,7 +1639,7 @@ Native support:
                     $.log('Received a new ' + type + ' URL: ' + newURL);
                     loadRemoteFile(newURL, type);
                 }
-                return false;                
+                return false;
             };
             window.addEventListener("storage", handleStorage, false);
         }();
@@ -1701,7 +1704,7 @@ Native support:
             var $dropBox = makeDropbox();
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
-                                $.log('Release row handler triggered.');                         
+                                $.log('Release row handler triggered.');
                                 var $releaseAnchor = $(this),
                                     $releaseRow;
                                 if ('undefined' !== typeof event && event.hasOwnProperty('originalEvent')) {
@@ -1872,7 +1875,8 @@ Native support:
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         if (!$('#caaOptionRemove').prop('checked')) {
             $.log('Setting new image for preview box.');
-            $('#previewImage').prop('src', $(this).prop('src'));
+            $('#previewImage').prop('src', $(this).prop('src'))
+                              .prop('title', $.l('Click to edit this image'));
             $('#previewResolution').text($(this).data('resolution'));
             $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
             $('#previewText').show();
@@ -1957,103 +1961,103 @@ Native support:
     !function create_image_editor_handler () {
         $.log('Adding handler for image editor.');
         $('body').on('click', '#previewImage', function (e) {
-        $('body').prepend($make('div').prop('id', 'CAAimageEditor')
-                                      .hide()
-                                      .appendAll([ $makeCloseButton
-                                                 , $make('div').prop('id', 'CAAeditorDiv')
-                                                               .appendAll([ $make('canvas').prop('id', 'CAAeditorCanvas')
-                                                                          , $make('div').prop('id', 'CAAeditorMenu')
-                                                                                        .appendAll([ $make('label').prop('id', 'CAAeditorRotateLabel1')
-                                                                                                                   .prop('title', $.l('How many degrees'))
-                                                                                                                   .text($.l('Rotate') + ':')
-                                                                                                   , $make('br')
-                                                                                                   , $make('input').prop('id', 'CAAeditorRotateControl')
-                                                                                                                   .prop('type', 'number')
-                                                                                                                   .prop('step', 1)
-                                                                                                                   .prop('min', -360)
-                                                                                                                   .prop('max', 360)
-                                                                                                                   .prop('value', 0)
-                                                                                                                   .prop('title', $.l('How many degrees'))
-                                                                                                   , $make('label').prop('id', 'CAAeditorRotateLabel2')
-                                                                                                                   .prop('title', $.l('How many degrees'))
-                                                                                                                   .text(' ' + $.l('degrees'))
-                                                                                                   ])
-                                                                          ])
-                                                 ]))
-                 .prepend($make('div').prop('id', 'CAAoverlay')
-                                      .hide());
+            if ($('#previewImage').prop('src').length === 0) {
+                return;
+            }
+            $('body').prepend($make('div').prop('id', 'CAAimageEditor')
+                                          .hide()
+                                          .appendAll([ $makeCloseButton
+                                                     , $make('div').prop('id', 'CAAeditorDiv')
+                                                                   .appendAll([ $make('canvas').prop('id', 'CAAeditorCanvas')
+                                                                              , $make('div').prop('id', 'CAAeditorMenu')
+                                                                                            .appendAll([ $make('label').prop('id', 'CAAeditorRotateLabel1')
+                                                                                                                       .prop('title', $.l('How many degrees'))
+                                                                                                                       .text($.l('Rotate') + ':')
+                                                                                                       , $make('br')
+                                                                                                       , $make('input').prop('id', 'CAAeditorRotateControl')
+                                                                                                                       .prop('type', 'number')
+                                                                                                                       .prop('step', 1)
+                                                                                                                       .prop('min', -360)
+                                                                                                                       .prop('max', 360)
+                                                                                                                       .prop('value', 0)
+                                                                                                                       .prop('title', $.l('How many degrees'))
+                                                                                                       , $make('label').prop('id', 'CAAeditorRotateLabel2')
+                                                                                                                       .prop('title', $.l('How many degrees'))
+                                                                                                                       .text(' ' + $.l('degrees'))
+                                                                                                       ])
+                                                                              ])
+                                                     ]))
+                     .prepend($make('div').prop('id', 'CAAoverlay')
+                                          .hide());
 
-        var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
-          , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
-          , canvasWidth    = Math.round(canvasHeight * imageRatio)
-          , degreesRotated = 0
-          ;
+            var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
+              , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
+              , canvasWidth    = Math.round(canvasHeight * imageRatio)
+              , degreesRotated = 0
+              ;
 
-        var clearCanvas = function () {
-            ctx.save();
-            ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.restore();
-        }
+            var clearCanvas = function () {
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
 
-        var rotate = function (degrees) {
-            clearCanvas();
-            ctx.translate(canvas.width/2, canvas.height/2);
-            ctx.rotate(-degreesRotated * Math.PI / 180);
-            ctx.rotate(degrees * Math.PI / 180);
-            degreesRotated = degrees;
-            ctx.translate(-canvas.width/2, -canvas.height/2);
-            ctx.drawImage(backupCanvas, 0, 0);
-        }
+            var rotate = function (degrees) {
+                clearCanvas();
+                ctx.translate(canvas.width/2, canvas.height/2);
+                ctx.rotate(-degreesRotated * Math.PI / 180);
+                ctx.rotate(degrees * Math.PI / 180);
+                degreesRotated = degrees;
+                ctx.translate(-canvas.width/2, -canvas.height/2);
+                ctx.drawImage(backupCanvas, 0, 0);
+            }
 
-        /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
-           then figure out the height based on the editor window's width instead of the other way around. */
-        var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
+            /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
+               then figure out the height based on the editor window's width instead of the other way around. */
+            var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
 
-        if (editorWindowWidth < (canvasWidth - 230)) {
-            canvasWidth  = Math.round(editorWindowWidth - 230);
-            canvasHeight = Math.round(canvasWidth / imageRatio);
-        }
+            if (editorWindowWidth < (canvasWidth - 230)) {
+                canvasWidth  = Math.round(editorWindowWidth - 230);
+                canvasHeight = Math.round(canvasWidth / imageRatio);
+            }
 
-        /* Load the image into the canvas. */
-        var canvas = document.getElementById("CAAeditorCanvas")
-          , ctx = canvas.getContext("2d")
-          , img = new Image()
-        /* create a backup canvas for storing the unmodified image. */
-          , backupCanvas = document.createElement("canvas")
-          , backupCtx = backupCanvas.getContext("2d")
-          ;
+            /* Load the image into the canvas. */
+            var canvas = document.getElementById("CAAeditorCanvas")
+              , ctx = canvas.getContext("2d")
+              , img = new Image()
+            /* create a backup canvas for storing the unmodified image. */
+              , backupCanvas = document.createElement("canvas")
+              , backupCtx = backupCanvas.getContext("2d")
+              ;
 
-        img.onload = function () {
-            /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
-            canvas.width = img.width;
-            canvas.height = img.height;
+            img.onload = function () {
+                /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
+                canvas.width = img.width;
+                canvas.height = img.height;
 
-            /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
-            canvas.style.height = canvasHeight + 'px';
-            canvas.style.width = canvasWidth + 'px';
+                /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
+                canvas.style.height = canvasHeight + 'px';
+                canvas.style.width = canvasWidth + 'px';
 
-            ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0);
 
-            backupCanvas.width = canvas.width;
-            backupCanvas.height = canvas.height;
-            backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
-        };
+                backupCanvas.width = canvas.width;
+                backupCanvas.height = canvas.height;
+                backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+            };
 
-        img.src = $('#previewImage').prop('src');
+            img.src = $('#previewImage').prop('src');
 
-        $('#CAAeditorRotateControl').on('change', function () {
-            rotate($(this).val());
-        });
+            $('#CAAeditorRotateControl').on('change', function () {
+                rotate($(this).val());
+            });
 
-        $('#CAAoverlay').show();
-        $('#CAAimageEditor').css('display', 'none')
-                            .animate({ height  : 'toggle'
-                                     , opacity : 'toggle'
-                                     }, 'slow');
-
-
-
+            $('#CAAoverlay').show();
+            $('#CAAimageEditor').css('display', 'none')
+                                .animate({ height  : 'toggle'
+                                         , opacity : 'toggle'
+                                         }, 'slow');
         });
     }();
 
