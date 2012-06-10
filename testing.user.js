@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1159
+// @version     0.01.1167
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1159'
+                , VERSION       : '0.1.1167'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -63,6 +63,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , INCOMPLETE : '#FFFF7A'
                                   , COMPLETE   : '#C1FFC1'
                                   , REMOVE     : '#B40000'
+                                  , MASK       : '#000'
                                   }
                 , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
                                   , 'Back'
@@ -109,6 +110,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
                                        , 'Load text all releases'  : 'Loads images for all displayed releases.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
+                                       , 'Crop mask color'         : 'Mask color'
                                        , 'Magnify image'           : 'Zoom in'
                                        , 'Options'                 : 'Options'
                                        , 'Parse (help)'            : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
@@ -144,6 +146,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , INCOMPLETE                : 'Incomplete edits'
                                        , COMPLETE                  : 'Edits ready to submit'
                                        , REMOVE                    : 'Remove image highlight'
+                                       , MASK                      : 'Default crop mask color'
                                        }
                                   }
                 };
@@ -214,6 +217,8 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Bottom'                  : '--·-'
                           , 'Left'                    : '····- ·· ·-· -·'
                           , 'Right'                   : '···· ····· · -·-'
+                          , 'Crop mask color'         : '··· -·-· ···'
+                          , MASK                      : '·-· -- -·'
                           };
 }
 
@@ -249,7 +254,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'font-size'             : '75%'
                       , 'margin-top'            : '-15px'
                       },
-                  '#colorPicker':
+                  '#colorPicker, #CAAeditiorMaskColorControl':
                       {  border                 : '1px outset #D3D3D3'
                       ,  padding                : '10px' // This makes the default box around the color disappear on Chrome
                       },
@@ -283,9 +288,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#CAAeditorCanvasDiv':
                       {  position               : 'relative'
                       },
-                  '#CAAmaskLeft, #CAAmaskRight, #CAAmaskTop, #CAAmaskBottom':
-                      { 'background-color'      : 'darkRed'
-                      ,  position               : 'absolute'
+                  '.CAAmask':
+                      {  position               : 'absolute'
                       ,  height                 : '0'
                       ,  width                  : '0'
                       },
@@ -322,9 +326,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '.cropControl':
                       {  height                 : '24px'
-                      ,  margin                 : '0 4px 2px 0'
+                      ,  margin                 : '0 4px 2px 0!important'
                       , 'vertical-align'        : 'middle'
-                      ,  width                  : '45px'
+                      , width                   : '45px'
                       },
                   '.flipControl':
                       { 'border-radius'         : '21px'
@@ -655,8 +659,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'float'                 : 'left'
                       , 'font-weight'           : '700'
                       },
-                  '.previewDT::after, .cropControl::after':
-                      {  content                : '"\003A "'
+                  '.previewDT::after':
+                      {  content                : '": "'
                       },
                   '.tintImage, .imageSizeControl':
                       {  filter                 : 'alpha(opacity=40)'
@@ -722,7 +726,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'float'                 : 'right'
                       ,  width                  : '79px'
                       },
-                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active':
+                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active':
                       {  border                 : '1px inset #D3D3D3'
                       ,  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
@@ -2035,6 +2039,11 @@ Native support:
                 return;
             }
 
+            var $makeMask = function (where) {
+                return $make('div').prop('id', 'CAAmask' + where)
+                                   .addClass('CAAmask');
+            };
+
             var $makeNumCtrl = function (where) {
                 return $make('label').prop('id', 'CAAeditorCropLabel' + where)
                                      .prop('title', $.l(where))
@@ -2063,10 +2072,10 @@ Native support:
                                           .appendAll([ $makeCloseButton
                                                      , $make('div').prop('id', 'CAAeditorDiv')
                                                                    .appendAll([ $make('div').prop('id', 'CAAeditorCanvasDiv')
-                                                                                             .appendAll([ $make('div').prop('id', 'CAAmaskLeft')
-                                                                                                        , $make('div').prop('id', 'CAAmaskRight')
-                                                                                                        , $make('div').prop('id', 'CAAmaskTop')
-                                                                                                        , $make('div').prop('id', 'CAAmaskBottom')
+                                                                                             .appendAll([ $makeMask('Left')
+                                                                                                        , $makeMask('Right')
+                                                                                                        , $makeMask('Top')
+                                                                                                        , $makeMask('Bottom')
                                                                                                         , $make('canvas').prop('id', 'CAAeditorCanvas')
                                                                                                         ])
                                                                               , $make('div').prop('id', 'CAAeditorMenu')
@@ -2096,6 +2105,14 @@ Native support:
                                                                                                                                      , $makeNumCtrl('Bottom')
                                                                                                                                      , $makeNumCtrl('Left')
                                                                                                                                      , $makeNumCtrl('Right')
+                                                                                                                                     , $make('label').prop('id', 'CAAeditiorMaskColorLabel')
+                                                                                                                                                     .prop('title', $.l('Crop mask color'))
+                                                                                                                                                     .text($.l('Crop mask color'))
+                                                                                                                                                     .addClass('cropLabel')
+                                                                                                                                                     .prepend($make('input').prop('id', 'CAAeditiorMaskColorControl')
+                                                                                                                                                                            .prop('type', 'color')
+                                                                                                                                                                            .prop('value', $.getColor('MASK'))
+                                                                                                                                                                            .addClass('cropControl'))
                                                                                                                                      ])
                                                                                                         ])
                                                                               ])
@@ -2218,6 +2235,23 @@ Native support:
 
             $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
             $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', canvasWidth);
+
+            /* Create the css rule for the crop mask. */
+            $make('style').prop('id', 'CAAeditiorMaskColorStyle')
+                          .text('.CAAmask { background-color: ' + $.getColor('MASK') + '; }')
+                          .appendTo('head');
+
+            /* Create the color picker. */
+            $.log('Creating color picker for image editor');
+            var myPicker = new jscolor.color(document.getElementById('CAAeditiorMaskColorControl'), {});
+            myPicker.hash = true;
+            myPicker.pickerFace = 5;
+            myPicker.pickerInsetColor = 'black';
+
+            /* Add functionality to the color picker to change the css rule for the crop mask. */
+            $('#CAAeditiorMaskColorControl').on('change', function () {
+                $('#CAAeditiorMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
+            });
 
             $('#CAAoverlay').show();
             $('#CAAimageEditor').css('display', 'none')
