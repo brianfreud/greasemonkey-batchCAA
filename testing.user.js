@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1172
+// @version     0.01.1173
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,6 +45,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for removing existing CAA images
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: input number polyfill?
+//TODO: http://musicbrainz.org/release-group/04f53329-d0d0-3b0d-856a-1e2cbcde0e69 - 
 
 var height = function (id) {
     'use strict';
@@ -52,7 +53,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1172'
+                , VERSION       : '0.1.1173'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1277,9 +1278,9 @@ function main ($, CONSTANTS) {
                                            .text('.localImage { width: ' + size + 'px; }'));
             });
 
-            /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title column.  Without the next line,
-               that column gets squished when the table-layout is set to fixed layout. */
-            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
+            /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title or checkbox columns.  Without the next line,
+               those columns get squished when the table-layout is set to fixed layout. */
+            $('thead').find('* th:first, * th:eq(2)').each(function () { $(this).css('width', $(this).width() + 10 + 'px'); });
 
             classes.push($make('style').prop('id', 'tblStyle1')
                                        .text('table.tbl { table-layout: fixed; }'));
