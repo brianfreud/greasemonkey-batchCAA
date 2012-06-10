@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1137
+// @version     0.01.1159
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1137'
+                , VERSION       : '0.1.1159'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -87,17 +87,23 @@ var CONSTANTS = { DEBUGMODE     : true
                                   en : { languageName              : 'English'
                                        , 'Add cover art'           : 'Add cover art'
                                        , 'Add image one release'   : 'Add a box for another image.'
+                                       , 'Bottom'                  : 'Bottom'
                                        , 'bytes'                   : 'bytes'
+                                       , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
+                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
                                        , 'Click to edit this image': 'Click to edit this image'
                                        , 'Colors'                  : 'Colors'
+                                       , 'Crop image'              : 'Crop'
                                        , 'default'                 : 'default'
                                        , 'degrees'                 : 'degrees'
                                        , 'File size'               : 'File size'
+                                       , 'Flip image'              : 'Flip'
                                        , 'How dark the bkgrnd'     : 'Image editor darkness level'
                                        , 'How many degrees'        : 'How many degrees to rotate the image'
                                        , '(Image) Resolution'      : 'Resolution'
                                        , 'Images'                  : 'Images'
                                        , 'Language'                : 'Language'
+                                       , 'Left'                    : 'Left'
                                        , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
                                        , 'Load CAA images'         : 'Load images from the Cover Art Archive for this release'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
@@ -111,15 +117,15 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
                                        , 'Remove image'            : 'Click to remove this image'
                                        , 'Remove images'           : 'Remove images mode'
-                                       , 'Remove stored images'    : 'Remove stored images'
                                        , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
-                                       , 'Rotate'                  : 'Rotate'
+                                       , 'Remove stored images'    : 'Remove stored images'
+                                       , 'Right'                   : 'Right'
+                                       , 'Rotate image'            : 'Rotate'
                                        , 'Shrink image'            : 'Zoom out'
-                                       , 'Submit edits'            : 'Submit edits'
                                        , 'Submit as autoedits'     : 'Submit edits as autoedits'
-                                       , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
-                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
+                                       , 'Submit edits'            : 'Submit edits'
                                        , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
+                                       , 'Top'                     : 'Top'
                                        , 'Version'                 : 'Version'
                                        , 'coverType:Back'          : 'Back'
                                        , 'coverType:Booklet'       : 'Booklet'
@@ -201,7 +207,13 @@ if (CONSTANTS.DEBUGMODE) {
                           , EDITORMENU                : '· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ·'
                           , 'Click to edit this image': '-·· ·--- -··- -- ··- ·· -'
                           , 'degrees'                 : '···- ·· ·-· -··'
-                          , 'Rotate'                  : '···· ····· ·'
+                          , 'Rotate image'            : '···· ····· ·'
+                          , 'Flip image'              : '·-· -··-··'
+                          , 'Crop image'              : '-- --··· ·--'
+                          , 'Top'                     : '·- ···· -·-· ····- -'
+                          , 'Bottom'                  : '--·-'
+                          , 'Left'                    : '····- ·· ·-· -·'
+                          , 'Right'                   : '···· ····· · -·-'
                           };
 }
 
@@ -267,6 +279,59 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  right                  : '40px'
                       ,  top                    : '20%'
                       ,  width                  : '160px'
+                      },
+                  '#CAAeditorCanvasDiv':
+                      {  position               : 'relative'
+                      },
+                  '#CAAmaskLeft, #CAAmaskRight, #CAAmaskTop, #CAAmaskBottom':
+                      { 'background-color'      : 'darkRed'
+                      ,  position               : 'absolute'
+                      ,  height                 : '0'
+                      ,  width                  : '0'
+                      },
+                  '#CAAmaskLeft, #CAAmaskRight':
+                      {  height                 : '100%'
+                      },
+                  '#CAAmaskTop, #CAAmaskBottom':
+                      {  width                  : '100%'
+                      },
+                  '#CAAmaskLeft':
+                      { 'z-index'               : 3000
+                      ,  left                   : 0
+                      ,  top                    : 0
+                      },
+                  '#CAAmaskRight':
+                      { 'z-index'               : 3001
+                      ,  right                  : 0
+                      ,  top                    : 0
+                      },
+                  '#CAAmaskTop':
+                      { 'z-index'               : 3002
+                      ,  left                   : 0
+                      ,  top                    : 0
+                      },
+                  '#CAAmaskBottom':
+                      { 'z-index'               : 3003
+                      ,  left                   : 0
+                      ,  bottom                 : 0
+                      },
+                  '.cropLabel':
+                      {  clear                  : 'both'
+                      ,  display                : 'block'
+                      , 'margin-bottom'         : '4px'
+                      },
+                  '.cropControl':
+                      {  height                 : '24px'
+                      ,  margin                 : '0 4px 2px 0'
+                      , 'vertical-align'        : 'middle'
+                      ,  width                  : '45px'
+                      },
+                  '.flipControl':
+                      { 'border-radius'         : '21px'
+                      , 'border-width'          : '1px'
+                      , 'font-size'             : '130%'
+                      , 'font-weight'           : '600'
+                      ,  padding                : '0px 15px'
                       },
                   '#editor000Container':
                       {  display                : 'inline-block'
@@ -590,7 +655,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'float'                 : 'left'
                       , 'font-weight'           : '700'
                       },
-                  '.previewDT::after':
+                  '.previewDT::after, .cropControl::after':
                       {  content                : '"\003A "'
                       },
                   '.tintImage, .imageSizeControl':
@@ -618,6 +683,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,         'border-radius' : '8px'
                       ,  margin                 : '30px -4px 7px'
                       ,  padding                : '6px'
+                      },
+                  '#CAAeditorMenu > fieldset':
+                      {  border                 : 'none'
+                      ,  margin                 : '16px -4px 7px'
                       },
                   'figure':
                       {  border                 : CONSTANTS.BORDERS
@@ -661,7 +730,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   'legend':
                       {  color                  : '#000!important'
-                      , 'font-size'             : '108%!important'
+                      , 'font-size'             : '110%!important'
+                      , 'font-variant'          : 'small-caps'
                       },
                   'table.tbl * table, #imageContainer, #previewContainer':
                       {  width                  : '100%'
@@ -1158,7 +1228,7 @@ function main ($, CONSTANTS) {
                 $('#CAAoverlay').fadeOut('fast');
                 $(this).parent() // -> drop boxes
                        .add('#CAAimageEditor, #CAAoverlay') // -> image editor
-//                       .remove();
+                       .remove();
             });
         }();
 
@@ -1964,27 +2034,70 @@ Native support:
             if ($('#previewImage').prop('src').length === 0) {
                 return;
             }
+
+            var $makeNumCtrl = function (where) {
+                return $make('label').prop('id', 'CAAeditorCropLabel' + where)
+                                     .prop('title', $.l(where))
+                                     .addClass('cropLabel')
+                                     .text($.l(where))
+                                     .prepend($make('input').prop('type', 'number')
+                                                            .prop('step', 1)
+                                                            .prop('min', 0)
+                                                            .prop('value', 0)
+                                                            .prop('id', 'CAAeditorCropControl' + where)
+                                                            .prop('title', $.l('Crop image') + ': ' + $.l(where))
+                                                            .addClass('cropControl'));
+            };
+            var $makeFlipCtrl = function (direction) {
+                var symbol = (direction === 'Vertical') ? '⇵' : '⇆';
+
+                return $make('input').prop('id', 'CAAeditorFlip' + direction)
+                                     .prop('type', 'button')
+                                     .prop('title', $.l('Flip image') + ' ' + symbol)
+                                     .prop('value', symbol)
+                                     .addClass('flipControl');
+            };
+
             $('body').prepend($make('div').prop('id', 'CAAimageEditor')
                                           .hide()
                                           .appendAll([ $makeCloseButton
                                                      , $make('div').prop('id', 'CAAeditorDiv')
-                                                                   .appendAll([ $make('canvas').prop('id', 'CAAeditorCanvas')
+                                                                   .appendAll([ $make('div').prop('id', 'CAAeditorCanvasDiv')
+                                                                                             .appendAll([ $make('div').prop('id', 'CAAmaskLeft')
+                                                                                                        , $make('div').prop('id', 'CAAmaskRight')
+                                                                                                        , $make('div').prop('id', 'CAAmaskTop')
+                                                                                                        , $make('div').prop('id', 'CAAmaskBottom')
+                                                                                                        , $make('canvas').prop('id', 'CAAeditorCanvas')
+                                                                                                        ])
                                                                               , $make('div').prop('id', 'CAAeditorMenu')
-                                                                                            .appendAll([ $make('label').prop('id', 'CAAeditorRotateLabel1')
-                                                                                                                       .prop('title', $.l('How many degrees'))
-                                                                                                                       .text($.l('Rotate') + ':')
-                                                                                                       , $make('br')
-                                                                                                       , $make('input').prop('id', 'CAAeditorRotateControl')
-                                                                                                                       .prop('type', 'number')
-                                                                                                                       .prop('step', 1)
-                                                                                                                       .prop('min', -360)
-                                                                                                                       .prop('max', 360)
-                                                                                                                       .prop('value', 0)
-                                                                                                                       .prop('title', $.l('How many degrees'))
-                                                                                                       , $make('label').prop('id', 'CAAeditorRotateLabel2')
-                                                                                                                       .prop('title', $.l('How many degrees'))
-                                                                                                                       .text(' ' + $.l('degrees'))
-                                                                                                       ])
+                                                                                            .appendAll([ $make('fieldset').prop('id', 'CAAeditorRotateField')
+                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorRotateLegend')
+                                                                                                                                                      .text($.l('Rotate image'))
+                                                                                                                                     , $make('label').prop('id', 'CAAeditorRotateLabel')
+                                                                                                                                                     .prop('title', $.l('How many degrees'))
+                                                                                                                                                     .text(' ' + $.l('degrees'))
+                                                                                                                                                     .prepend($make('input').prop('id', 'CAAeditorRotateControl')
+                                                                                                                                                                            .prop('type', 'number')
+                                                                                                                                                                            .prop('step', 1)
+                                                                                                                                                                            .prop('min', -360)
+                                                                                                                                                                            .prop('max', 360)
+                                                                                                                                                                            .prop('value', 0))
+                                                                                                                                     ])
+                                                                                                       , $make('fieldset').prop('id', 'CAAeditorFlipField')
+                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorFlipLegend')
+                                                                                                                                                 .text($.l('Flip image'))
+                                                                                                                                     , $makeFlipCtrl('Vertical')
+                                                                                                                                     , $makeFlipCtrl('Horizontal')
+                                                                                                                                     ])
+                                                                                                       , $make('fieldset').prop('id', 'cropField')
+                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorCropLegend')
+                                                                                                                                                      .text($.l('Crop image'))
+                                                                                                                                     , $makeNumCtrl('Top')
+                                                                                                                                     , $makeNumCtrl('Bottom')
+                                                                                                                                     , $makeNumCtrl('Left')
+                                                                                                                                     , $makeNumCtrl('Right')
+                                                                                                                                     ])
+                                                                                                        ])
                                                                               ])
                                                      ]))
                      .prepend($make('div').prop('id', 'CAAoverlay')
@@ -1996,23 +2109,6 @@ Native support:
               , degreesRotated = 0
               ;
 
-            var clearCanvas = function () {
-                ctx.save();
-                ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-            }
-
-            var rotate = function (degrees) {
-                clearCanvas();
-                ctx.translate(canvas.width/2, canvas.height/2);
-                ctx.rotate(-degreesRotated * Math.PI / 180);
-                ctx.rotate(degrees * Math.PI / 180);
-                degreesRotated = degrees;
-                ctx.translate(-canvas.width/2, -canvas.height/2);
-                ctx.drawImage(backupCanvas, 0, 0);
-            }
-
             /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
                then figure out the height based on the editor window's width instead of the other way around. */
             var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
@@ -2021,6 +2117,10 @@ Native support:
                 canvasWidth  = Math.round(editorWindowWidth - 230);
                 canvasHeight = Math.round(canvasWidth / imageRatio);
             }
+
+            $('#CAAeditorCanvasDiv').css({ height : canvasHeight + 'px'
+                                         , width  : canvasWidth + 'px'
+                                         });
 
             /* Load the image into the canvas. */
             var canvas = document.getElementById("CAAeditorCanvas")
@@ -2049,9 +2149,75 @@ Native support:
 
             img.src = $('#previewImage').prop('src');
 
+            var prepCanvas = function (callback) {
+                var centerH        = canvas.height/2
+                  , centerW        = canvas.width/2
+                  ;
+                /* Clear the canvas */
+                ctx.save();
+                ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                /* Move the origin point to the center of the canvas */
+                ctx.translate(centerW, centerH);
+
+                /* Run the callback */
+                callback();
+
+                /* Move the origin point back to the top left corner of the canvas */
+                ctx.translate(-centerW, -centerH);
+
+                /* Draw the image into the canvas */
+                ctx.drawImage(backupCanvas, 0, 0);
+            };
+
+            var rotate = function (degrees) {
+                var rotate = function () {
+                    ctx.rotate(-degreesRotated * Math.PI / 180);
+                    ctx.rotate(degrees * Math.PI / 180);
+                    degreesRotated = degrees;
+                };
+                prepCanvas(rotate);
+            };
+
+            var flip = function (h, v) {
+                var flip = function () {
+                    ctx.scale(h ? -1 : 1, v ? -1 : 1);
+                };
+                prepCanvas(flip);
+            };
+
+            $('#CAAeditorFlipVertical').on('click', function () {
+                flip(0,1);
+            });
+
+            $('#CAAeditorFlipHorizontal').on('click', function () {
+                flip(1,0);
+            });
+
             $('#CAAeditorRotateControl').on('change', function () {
                 rotate($(this).val());
             });
+
+            $('#CAAeditorCropControlTop').on('change', function () {
+                $('#CAAmaskTop').css('height', $(this).val());
+            });
+
+            $('#CAAeditorCropControlBottom').on('change', function () {
+                $('#CAAmaskBottom').css('height', $(this).val());
+            });
+
+            $('#CAAeditorCropControlLeft').on('change', function () {
+                $('#CAAmaskLeft').css('width', $(this).val());
+            });
+
+            $('#CAAeditorCropControlRight').on('change', function () {
+                $('#CAAmaskRight').css('width', $(this).val());
+            });
+
+            $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
+            $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', canvasWidth);
 
             $('#CAAoverlay').show();
             $('#CAAimageEditor').css('display', 'none')
@@ -2060,8 +2226,6 @@ Native support:
                                          }, 'slow');
         });
     }();
-
-
 
     /* Adjust the table layout and CAA rows after a screen resize event occurs. */
     window.onresize = function adjust_table_after_window_resize () {
