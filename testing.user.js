@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1124
+// @version     0.01.1126
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,7 +44,6 @@ Opera: Not compatible, sorry.
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Load images which were cached while script was not running
-//TODO: Adjust color picker code to compensate for Chrome (v20) now having a functional color picker widget built in.
 
 var height = function (id) {
     'use strict';
@@ -52,7 +51,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1124'
+                , VERSION       : '0.1.1126'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -216,6 +215,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'float'                 : 'right'
                       , 'font-size'             : '75%'
                       , 'margin-top'            : '-15px'
+                      },
+                  '#colorPicker':
+                      {  border                 : '1px outset #D3D3D3'
+                      ,  padding                : '10px' // This makes the default box around the color disappear on Chrome
                       },
                   '#colorSelect':
                       { 'float'                 : 'left'
@@ -599,11 +602,11 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  color                  : '#000'
                       , 'text-decoration'       : 'line-through'
                       },
-                  'input[type="color"], #ColorDefaultBtn':
+                  '#colorPicker, #ColorDefaultBtn':
                       { 'float'                 : 'right'
                       ,  width                  : '79px'
                       },
-                  'input[type="color"]:active, #ColorDefaultBtn:active, #ClearStorageBtn:active':
+                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active':
                       {  border                 : '1px inset #D3D3D3'
                       ,  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
