@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1171
+// @version     0.01.1172
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1171'
+                , VERSION       : '0.1.1172'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -92,7 +92,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'bytes'                   : 'bytes'
                                        , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
                                        , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
-                                       , 'Click to edit this image': 'Click to edit this image'
+                                       , 'Click to edit this image': 'Left click to edit this image'
                                        , 'Colors'                  : 'Colors'
                                        , 'Crop image'              : 'Crop'
                                        , 'default'                 : 'default'

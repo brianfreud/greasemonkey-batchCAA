@@ -50,3 +50,14 @@ Remove stored images
 This removes any images from other websites that you have stored while this script was not running.
 Image editor darkness level
 Image editor background
+Left click to edit this image
+degrees
+Rotate
+Flip
+Crop
+Top
+Bottom
+Left
+Right
+Mask color
+Default crop mask color
