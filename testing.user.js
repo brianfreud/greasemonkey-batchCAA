@@ -28,23 +28,24 @@
 Firefox: Requires a minimum of version 11.  Install as normal.  When the script is run the first time, a prompt will come up.  Make sure to click "accept"!
 
 Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
-"Allow access to file URLs" for this script is checked.  Then restart Chrome.  If you reinstall or upgrade the script, you may
+"Allow access to file URLs" for this extension is checked.  Then restart Chrome.  If you reinstall or upgrade the script, you may
 need to restart the browser before the script works again.
 
 Opera: Not compatible, sorry.
 
 */
 
-//TODO: Image rotation
-//TODO: Image clipping
 //TODO: "About"
 //TODO: Edit submission
 //TODO: Eliminate the 2nd image load for remote images
 //TODO: Clean up the temp file system after edit submissions and when images are removed
+//TODO: Add support for saving edited images
+//TODO: Add support for cancelling image editor
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Load images which were cached while script was not running
 //TODO: Add functionality to #CAAeditorDarknessControl
+//TODO: input number polyfill?
 
 var height = function (id) {
     'use strict';
@@ -283,7 +284,6 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  position               : 'absolute'
                       ,  right                  : '40px'
                       ,  top                    : '20%'
-                      ,  width                  : '160px'
                       },
                   '#CAAeditorCanvasDiv':
                       {  position               : 'relative'
@@ -1700,9 +1700,12 @@ Native support:
 
                 e.preventDefault();
 
-                if (e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
-                    cachedImages = localStorage.getItem('caaBatch_imageCache');
-                    return false;
+                try {
+                    if (e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
+                        cachedImages = localStorage.getItem('caaBatch_imageCache');
+                        return false;
+                    }
+                } catch (TypeError) {
                 }
 
                 var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
@@ -1942,6 +1945,14 @@ Native support:
                     $(this).trigger('click');
                 });
             });
+        }();
+
+        !function load_stored_images() {
+            var image, type;
+            JSON.parse(localStorage.getItem('caaBatch_imageCache')).forEach(function (url) {
+                image = decodeURIComponent(url);
+                (type = supportedImageType(image)) && loadRemoteFile(image, type);
+            })
         }();
     };
 
