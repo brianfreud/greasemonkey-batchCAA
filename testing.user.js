@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1111
+// @version     0.01.1124
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,6 +44,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Load images which were cached while script was not running
+//TODO: Adjust color picker code to compensate for Chrome (v20) now having a functional color picker widget built in.
 
 var height = function (id) {
     'use strict';
@@ -51,8 +52,8 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1111'
-                , DEBUGLOG_OVER : false
+                , VERSION       : '0.1.1124'
+                , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
                                   , CAABOX     : '#F2F2FC'
@@ -222,8 +223,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '202px'
                       },
                   '#imageContainer':
-                      {  height                 : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 125) + 'px'
-                      , 'max-height'            : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 125) + 'px'
+                      {  height                 : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
+                      , 'max-height'            : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
                       , 'overflow-y'            : 'auto'
                       },
                   '#imageHeader':
@@ -244,6 +245,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'float'                 : 'right'
                       , 'margin-right'          : '-24px'
                       , 'margin-top'            : '-3px'
+                      ,  filter                 : 'alpha(opacity=30)'
+                      , '-moz-opacity'          : '0.3'
                       ,  opacity                : '0.3'
                       ,  width                  : '40%'
                       },
@@ -288,13 +291,50 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#xhrComlink':
                       {  display                : 'none'
                       },
+                  '#CAAoverlay':
+                      {  background             : 'black'
+                      ,  bottom                 : 0
+                      ,  filter                 : 'alpha(opacity=70)'
+                      ,  left                   : 0
+                      , '-moz-opacity'          : '0.7'
+                      ,       opacity           : '0.7'
+                      ,  position               : 'fixed'
+                      ,  top                    : 0
+                      ,  width                  : '100%'
+                      ,  'z-index'              : 1000
+                      },
+                  '#CAAimageEditor':
+                      { 'background-color'      : '#F9F9F9'
+                      ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                      , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                      ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                      ,  border                 : '1px outset grey'
+                      , 'border-radius'         : '20px'
+                      ,  height                 : '86%'
+                      ,  left                   : '50%'
+                      ,  margin                 : '0 auto'
+                      , 'margin-left'           : '-43%'
+                      , 'margin-top'            : '-43%'
+                      ,  padding                : '2%'
+                      ,  position               : 'fixed'
+                      ,  top                    : '50%'
+                      ,  width                  : '86%'
+                      , 'z-index'               : 2000
+                      },
+                  '#CAAeditorDiv':
+                      {  height                 : '96%'
+                      ,  margin                 : '2%'
+                      ,  width                  : '96%'
+                      },
                   '*':
                       {    '-moz-box-sizing'    : 'border-box'
                       , '-webkit-box-sizing'    : 'border-box'
                       ,         'box-sizing'    : 'border-box'
                       },
                   '.beingDragged':
-                      {  opacity                : CONSTANTS.BEINGDRAGGED.OPACITY
+                      {  filter                 : 'alpha(opacity=' + (100 * CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
+                      , '-moz-opacity'          : CONSTANTS.BEINGDRAGGED.OPACITY
+                      ,  opacity                : CONSTANTS.BEINGDRAGGED.OPACITY
                       ,    '-moz-transform'     : shrink
                       , '-webkit-transform'     : shrink
                       ,      '-o-transform'     : shrink
@@ -364,6 +404,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'font-weight'           : '900!important'
                       ,  left                   : '2em'
                       , 'margin-left'           : '-1.2em'
+                      ,  filter                 : 'alpha(opacity=30)'
+                      , '-moz-opacity'          : '0.3'
                       ,  opacity                : '0.3'
                       , 'padding-bottom'        : 0
                       , 'padding-top'           : 0
@@ -372,10 +414,14 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '.caaAdd:active, .caaAll:active, .caaLoad:active':
                       { 'border-style'          : 'inset!important'
                       ,  color                  : '#FFF'
+                      ,  filter                 : 'alpha(opacity=100)'
+                      , '-moz-opacity'          : '1'
                       ,  opacity                : 1
                       },
                   '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
                       {  color                  : '#D3D3D3'
+                      ,  filter                 : 'alpha(opacity=90)'
+                      , '-moz-opacity'          : '0.9'
                       ,  opacity                : '.9'
                       },
                   '.caaDiv':
@@ -389,6 +435,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'font-size'             : '90%'
                       , 'margin-bottom'         : '16px'
                       , 'margin-top'            : '1px!important'
+                      ,  filter                 : 'alpha(opacity=35)'
+                      , '-moz-opacity'          : '0.35'
                       ,  opacity                : '.35'
                       ,  padding                : '3px 8px'
                       },
@@ -405,6 +453,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'border-radius'         : '5px'
                       ,  display                : 'inline-block'
                       ,  margin                 : 0
+                      ,  filter                 : 'alpha(opacity=80)'
+                      , '-moz-opacity'          : '0.8'
                       ,  opacity                : '0.8'
                       ,  outline                : 0
                       ,  padding                : 0
@@ -439,12 +489,16 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'line-height'           : '.8em'
                       , 'margin-right'          : '-1em'
                       , 'margin-top'            : '-.95em'
+                      ,  filter                 : 'alpha(opacity=90)'
+                      , '-moz-opacity'          : '0.9'
                       ,  opacity                : '0.9'
                       ,  padding                : '2px 4px 5px'
                       },
                   '.closeButton:hover':
                       { 'background-color'      : '#FF82AB'
                       , 'font-weight'           : '900'
+                      ,  filter                 : 'alpha(opacity=100)'
+                      , '-moz-opacity'          : '1.0'
                       ,  opacity                : '1.0'
                       },
                   '.existingCAAimage':
@@ -466,7 +520,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '26px'
                       },
                   '.imageSizeControl:hover, #optionsHeader:hover':
-                      {  opacity                : 1
+                      {  filter                 : 'alpha(opacity=100)'
+                      , '-moz-opacity'          : '1'
+                      ,  opacity                : 1
                       },
                   '.localImage':
                       {  padding                : '3px'
@@ -488,7 +544,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       {  content                : '"\003A "'
                       },
                   '.tintImage, .imageSizeControl':
-                      {  opacity                : '0.4'
+                      {  filter                 : 'alpha(opacity=40)'
+                      , '-moz-opacity'          : '0.4'
+                      ,  opacity                : '0.4'
                       },
                   '.workingCAAimage':
                       { 'padding-left'          : '1px'
@@ -531,6 +589,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'background-color'      : 'red'
                       ,  color                  : '#FFF'
                       , 'font-weight'           : 700
+                      ,  filter                 : 'alpha(opacity=70)'
+                      , '-moz-opacity'          : '0.7'
                       ,  opacity                : '.7'
                       ,  width                  : '190px'
                       },
@@ -545,6 +605,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   'input[type="color"]:active, #ColorDefaultBtn:active, #ClearStorageBtn:active':
                       {  border                 : '1px inset #D3D3D3'
+                      ,  filter                 : 'alpha(opacity=100)'
+                      , '-moz-opacity'          : '1'
                       ,  opacity                : '1'
                       },
                   'legend':
@@ -683,6 +745,12 @@ function main ($, CONSTANTS) {
         return $(document.createElement(type));
     };
 
+    /* Creates a generic close button.  */
+    var $makeCloseButton = function () {
+        return $make('header').text('x')
+                              .addClass('closeButton');
+    };
+
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($make('img').prop('src', CONSTANTS.THROBBER).hide());
 
@@ -693,7 +761,7 @@ function main ($, CONSTANTS) {
 
     /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
     var checkScroll = function checkScroll ($caaDiv) {
-        $.log('Adjusting negative right margin.');
+        $.log('Adjusting negative right margin.', 1);
         if ('undefined' === typeof $caaDiv.data('width')) {
             $caaDiv.data('width', $caaDiv.width());
         }
@@ -702,7 +770,7 @@ function main ($, CONSTANTS) {
           , dbCount    = $dropboxes.length;
         var dbWidth    = $dropbox.outerWidth(true);
         var divWidth   = $('.CAAdropbox').length * dbWidth;
-        $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth));
+        $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth), 1);
         $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
     };
 
@@ -739,17 +807,10 @@ function main ($, CONSTANTS) {
                      .addClass('tintImage');
     };
 
-    /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
-    var addScript = function addScript (scriptSource) {
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.textContent = localStorage.getItem(scriptSource);
-        document.getElementsByTagName('head')[0].appendChild(script);
-    };
 
     /* Polyfill to add FileSystem API support to Firefox. */
     if ('undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem)) {
-        addScript('idbFileSystem');
+        $.addScript('idbFileSystem');
     }
 
     var init = function init () {
@@ -1006,6 +1067,7 @@ function main ($, CONSTANTS) {
                                );
         }();
 
+        /* Add functionality to the default color button. */
         !function add_default_color_handler () {
             $.log('Adding handler for default color button.');
             $('#ColorDefaultBtn').on('click', function default_color_button_click_handler (e) {
@@ -1017,6 +1079,26 @@ function main ($, CONSTANTS) {
                                               });
         }();
 
+        /* Add functionality to close buttons. */
+        !function add_close_button_handler () {
+            $.log('Adding handlers for close buttons.');
+            $('body').on('click', '.closeButton', function close_button_click_handler (e) {
+                $.log('Removing drop box/image editor');
+                $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
+                                .appendTo($('#imageContainer'))
+                                .addClass('localImage')
+                                .removeClass('dropBoxImage');
+                $('#CAAimageEditor').animate({ height  : 'toggle'
+                                             , opacity : 'toggle'
+                                             }, 'slow');
+                $('#CAAoverlay').fadeOut('fast');
+                $(this).parent() // -> drop boxes
+                       .add('#CAAimageEditor, #CAAoverlay') // -> image editor
+//                       .remove();
+            });
+        }();
+
+        /* Add functionality for remove image mode. */
         !function add_remove_image_handlers () {
             $.log('Adding handlers for remove image mode.');
             $('#imageContainer').on('mouseenter', '.localImage', function localImage_hover_in_handler (e) {
@@ -1327,9 +1409,10 @@ Native support:
             var loadStage = ''
               , $xhrComlink = $('#xhrComlink')
               ;
-            var handleError = function error_handler_for_loadRemoteFile_XHR (e) {
-                                  $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.');
-                                  $.log(e);
+            var handleError = function error_handler_for_loadRemoteFile_XHR (e, flagged) {
+                                  'undefined' === typeof flagged && (flagged = false);
+                                  $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.', flagged);
+                                  $.log(e, flagged);
                                 };
 
             $.log('Creating comlink to trigger other context to get the image.');
@@ -1390,9 +1473,9 @@ Native support:
                                                                      };
 
                                                                      loadStage = 'createWriter: problem within the writer. (But ignore this error.)';
-                                                                     fileWriter.onerror = handleError(e);
+                                                                     fileWriter.onerror = handleError(e, 1);
                                                                      loadStage = 'createWriter: abort within the writer. (But ignore this error.)';
-                                                                     fileWriter.onabort = handleError(e);
+                                                                     fileWriter.onabort = handleError(e, 1);
 
                                                                      fileWriter.write(imageFile);
                                                                      $.log('Remote file has been retrieved and writen.');
@@ -1540,8 +1623,7 @@ Native support:
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
                                   var $dropbox = $make('figure').addClass('CAAdropbox newCAAimage')
-                                                                .appendAll([ $make('header').text('x')
-                                                                                            .addClass('closeButton')
+                                                                .appendAll([ $makeCloseButton()
                                                                            , $make('img').addClass('dropBoxImage')
                                                                                          .prop('draggable', false)
                                                                                          .wrap('<div>')
@@ -1552,14 +1634,6 @@ Native support:
                                                                                                            , $types
                                                                                                            ])
                                                                            ])
-                                                                .on('click', '.closeButton', function close_button_for_db_click_handler (e) {
-                                                                                                 $.log('Removing drop box');
-                                                                                                 $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
-                                                                                                        .appendTo($('#imageContainer'))
-                                                                                                        .addClass('localImage')
-                                                                                                        .removeClass('dropBoxImage');
-                                                                                                 $(this).parent().remove();
-                                                                                             });
                                   return $dropbox;
                              };
 
@@ -1600,7 +1674,7 @@ Native support:
                                                              .parent()
                                   ;
 
-                                $.log('New release found, attaching a CAA row.');
+                                $.log('New release found, attaching a CAA row.', 1);
                                 var $thisAddBtn = $addBtn.clone()
                                                          .data('entity', thisMBID);
                                 var $thisCAABtn = $caaBtn.clone()
@@ -1615,9 +1689,9 @@ Native support:
                                 $thisForm.data(thisMBID, $newCAARow);
 
                                 // This next is done via event to allow for script-initiated row transforms (e.g. TableSorter)
-                                $.log('Attaching DOMNodeInserted event handler.');
+                                $.log('Attaching DOMNodeInserted event handler.', 1);
                                 $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
-                                    $.log('DOMNodeInserted event handler triggered.');
+                                    $.log('DOMNodeInserted event handler triggered.', 1);
                                     $releaseRow.after($newCAARow);
                                 }).trigger('DOMNodeInserted');
 
@@ -1818,6 +1892,33 @@ Native support:
     }, '.newCAAimage');
     /* END: functionality to allow dragging from the Images box to a specific caa image box. */
 
+    /* Create image editor. */
+    !function create_image_editor_handler () {
+        $.log('Adding handler for image editor.');
+        $('body').on('click', '#previewImage', function (e) {
+        $('body').prepend($make('div').prop('id', 'CAAimageEditor')
+                                      .hide()
+                                      .appendAll([ $makeCloseButton
+                                                 , $make('div').prop('id', 'CAAeditorDiv')
+                                                 ]))
+                 .prepend($make('div').prop('id', 'CAAoverlay')
+                                      .hide());
+            $('#CAAoverlay').show();
+            $('#CAAimageEditor').css('display', 'none')
+                                .animate({ height  : 'toggle'
+                                         , opacity : 'toggle'
+                                         }, 'slow');
+
+
+//TODO FINISH
+
+
+
+        });
+    }();
+
+
+
     /* Adjust the table layout and CAA rows after a screen resize event occurs. */
     window.onresize = function adjust_table_after_window_resize () {
         $.log('Screen resize detected, adjusting layout.');
@@ -1849,6 +1950,13 @@ function thirdParty($, CONSTANTS, getColor) {
     jQuery.noConflict();
 
     jQuery.extend({
+        /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
+        addScript: function addScript (scriptSource) {
+            var script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.textContent = localStorage.getItem(scriptSource);
+            document.getElementsByTagName('head')[0].appendChild(script);
+        },
         // Creates and adds a new css rule
         addRule: function addRule(selector, rule) {
             $('<style>').prop('type', 'text/css').text(selector + rule).appendTo($('head'));
@@ -1887,9 +1995,9 @@ function thirdParty($, CONSTANTS, getColor) {
             return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
         },
         // Logs a message to the console if debug mode is on.
-        log: function log(str, over) {
-            'undefined' === typeof over && (over = false);
-            CONSTANTS.DEBUGMODE && (CONSTANTS.DEBUGLOG_OVER ? !over : true) && console.log(str);
+        log: function log(str, verbose) {
+            'undefined' === typeof verbose && (verbose = false);
+            (!verbose || CONSTANTS.DEBUG_VERBOSE) && CONSTANTS.DEBUGMODE && console.log(str);
         }
     });
 
@@ -1912,6 +2020,8 @@ function thirdParty($, CONSTANTS, getColor) {
     };
 
     $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
+
+    $.addScript('jQueryAnimateEnhanced');
 }
 
 !function main_loader(i) {
