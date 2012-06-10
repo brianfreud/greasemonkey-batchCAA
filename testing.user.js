@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1167
+// @version     0.01.1171
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -43,7 +43,6 @@ Opera: Not compatible, sorry.
 //TODO: Add support for cancelling image editor
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
-//TODO: Load images which were cached while script was not running
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: input number polyfill?
 
@@ -53,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1167'
+                , VERSION       : '0.1.1171'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1172,7 +1171,7 @@ function main ($, CONSTANTS) {
         !function add_clear_image_storage_handler () {
             $.log('Adding handler for the clear image storage button.');
             $('#ClearStorageBtn').on('click', function (e) {
-                localStorage.removeItem('caaBatch_imageCache');
+                localStorage.setItem('caaBatch_imageCache', '[]');
                 $('#ClearStorageBtn').prop('disabled', true);
                 cachedImages = [];
             });
@@ -1688,6 +1687,8 @@ Native support:
         !function init_storage_event_handling () {
             $.log('Attaching listener for storage events.');
             var handleStorage = function handleStorage (e) {
+                $.log('Storage event detected');
+
                 /* Testing whether: 1) the key that was changed is the one we care about here, or
                                     2) the new value of the key is different from when the script first initialized in this tab.
 
@@ -1698,18 +1699,17 @@ Native support:
                     return;
                 }
 
+                $.log('Storage event modified the image cache.');
+
                 e.preventDefault();
 
-                try {
-                    if (e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
-                        cachedImages = localStorage.getItem('caaBatch_imageCache');
-                        return false;
-                    }
-                } catch (TypeError) {
+                if ('undefined' !== e.oldValue && e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
+                    cachedImages = localStorage.getItem('caaBatch_imageCache');
+                    return false;
                 }
 
                 var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
-                localStorage.setItem('caaBatch_imageCache', e.oldValue);
+                localStorage.setItem('caaBatch_imageCache', e.oldValue || '');
 
                 var type = supportedImageType(newURL);
                 if (type) {
@@ -1948,12 +1948,15 @@ Native support:
         }();
 
         !function load_stored_images() {
-            var image, type;
-            JSON.parse(localStorage.getItem('caaBatch_imageCache')).forEach(function (url) {
-                image = decodeURIComponent(url);
-                (type = supportedImageType(image)) && loadRemoteFile(image, type);
-            })
-        }();
+                var image
+                  , type
+                  , imageArray = JSON.parse(localStorage.getItem('caaBatch_imageCache'))
+                  ;
+                null !== imageArray && imageArray.length && imageArray.forEach(function (url) {
+                    image = decodeURIComponent(url);
+                    (type = supportedImageType(image)) && loadRemoteFile(image, type);
+                });
+            }();
     };
 
     /* Preview functionality */
