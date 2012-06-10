@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1126
+// @version     0.01.1128
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -28,8 +28,8 @@
 Firefox: Requires a minimum of version 11.  Install as normal.  When the script is run the first time, a prompt will come up.  Make sure to click "accept"!
 
 Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
-"Allow access to file URLs" for this script is checked.  Then restart Chrome, with the --allow-file-access-from-files switch.
-If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
+"Allow access to file URLs" for this script is checked.  Then restart Chrome.  If you reinstall or upgrade the script, you may
+need to restart the browser before the script works again.
 
 Opera: Not compatible, sorry.
 
@@ -51,12 +51,13 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1126'
+                , VERSION       : '0.1.1128'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
                                   , CAABOX     : '#F2F2FC'
                                   , CAABUTTONS : '#4B0082'
+                                  , EDITOR     : '#F9F9F9'
                                   , INCOMPLETE : '#FFFF7A'
                                   , COMPLETE   : '#C1FFC1'
                                   , REMOVE     : '#B40000'
@@ -88,6 +89,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Colors'                  : 'Colors'
                                        , 'default'                 : 'default'
                                        , 'File size'               : 'File size'
+                                       , 'How dark the bkgrnd'     : 'Image editor darkness level'
                                        , '(Image) Resolution'      : 'Resolution'
                                        , 'Images'                  : 'Images'
                                        , 'Language'                : 'Language'
@@ -125,6 +127,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
                                        , CAABUTTONS                : 'Load CAA buttons'
+                                       , EDITOR                    : 'Image editor background'
                                        , INCOMPLETE                : 'Incomplete edits'
                                        , COMPLETE                  : 'Edits ready to submit'
                                        , REMOVE                    : 'Remove image highlight'
@@ -186,6 +189,8 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Submit as autoedits'     : '··--- --··· ·--· ···-'
                           , 'Remove stored images'    : '-·· -··- -···· ·--· ···-'
                           , 'Remove stored images nfo': '-···· ·--· ···--·· -··- -···· ·--· ···-'
+                          , 'How dark the bkgrnd'     : '··-- -- - -··- -·-- --·-··'
+                          , EDITOR                    : '--- - -··- -·-- --··'
                           };
 }
 
@@ -208,6 +213,11 @@ var hexToRGBA = function hexToRGBA (hex, opacity) {
 
 var shrink = ['scale', '(', CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('');
 
+/* Initialize the image editor's background opacity store, if needed. */
+if (localStorage.getItem('CAAeditor000') === null) {
+    localStorage.setItem('CAAeditor000', 75);
+}
+
 CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'background-color'      : '#D3D3D3'
                       },
@@ -225,6 +235,13 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  padding                : '5px'
                       ,  width                  : '202px'
                       },
+                  '#CAAeditorDarknessControl':
+                      { 'margin-left'           : '5px'
+                      ,  width                  : '3.5em'
+                      },
+                  '#editor000Container':
+                      {  display                : 'inline-block'
+                      },
                   '#imageContainer':
                       {  height                 : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
                       , 'max-height'            : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
@@ -240,7 +257,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '25%'
                       },
                   '#languageSelect':
-                      {  margin                 : '10px 10px -27px 6px'
+                      {  height                 : '5em'
+                      ,  margin                 : '10px 10px -27px 6px'
                       ,  padding                : '6px'
                       },
                   '#optionsHeader':
@@ -297,17 +315,17 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#CAAoverlay':
                       {  background             : 'black'
                       ,  bottom                 : 0
-                      ,  filter                 : 'alpha(opacity=70)'
+                      ,  filter                 : 'alpha(opacity=' + localStorage.getItem('CAAeditor000') + ')'
                       ,  left                   : 0
-                      , '-moz-opacity'          : '0.7'
-                      ,       opacity           : '0.7'
+                      , '-moz-opacity'          : localStorage.getItem('CAAeditor000') / 100
+                      ,       opacity           : localStorage.getItem('CAAeditor000') / 100
                       ,  position               : 'fixed'
                       ,  top                    : 0
                       ,  width                  : '100%'
                       ,  'z-index'              : 1000
                       },
                   '#CAAimageEditor':
-                      { 'background-color'      : '#F9F9F9'
+                      { 'background-color'      : getColor('EDITOR')
                       ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
                       , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
                       ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
@@ -867,6 +885,7 @@ function main ($, CONSTANTS) {
                                                     .prop('value', '66ff00')
               , $colorSelect     = $make('select'  ).prop('id', 'colorSelect')
                                                     .prop('title', $.l('Changed colors note'))
+                                                    .prop('size', 5)
               , $ddFilesize      = $make('dd'      ).prop('id', 'previewFilesize')
               , $ddResolution    = $make('dd'      ).prop('id', 'previewResolution')
               , $dtFilesize      = $make('dt'      ).addClass('previewDT')
@@ -875,6 +894,17 @@ function main ($, CONSTANTS) {
               , $dtResolution    = $make('dt'      ).addClass('previewDT')
                                                     .prop('id', 'dtResolution')
                                                     .text($.l('(Image) Resolution'))
+              , $editor000Contnr = $make('div'     ).prop('id', 'editor000Container')
+              , $editor000Ctrl   = $make('input'   ).prop('id', 'CAAeditorDarknessControl')
+                                                    .prop('type', 'number')
+                                                    .prop('step', 1)
+                                                    .prop('min', 0)
+                                                    .prop('max', 100)
+                                                    .prop('value', 75)  // TODO: Don't hardcode this
+              , $editor000Label  = $make('label'   ).prop('for', 'CAAeditorDarknessControl')
+                                                    .prop('id', 'CAAeditorDarknessLabel')
+                                                    .prop('title', $.l('How dark the bkgrnd'))
+                                                    .text($.l('How dark the bkgrnd'))
               , $imageMagnify    = $make('div'     ).addClass('imageSizeControl')
                                                     .prop('id', 'imageMagnify')
                                                     .prop('title', $.l('Magnify image'))
@@ -925,7 +955,7 @@ function main ($, CONSTANTS) {
               ;
 
             /* Populate the colors list */
-            $colorSelect.prop('size', Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
+            Object.keys(CONSTANTS.COLORS).map(function (colorItem) {
                 var color       = CONSTANTS.COLORS[colorItem]
                   ;
                 var $thisOption = $make('option').addClass('colorOption')
@@ -937,7 +967,7 @@ function main ($, CONSTANTS) {
                     localStorage.setItem('caaBatch_colors_' + colorItem, color);
                 }
                 colorOptions.push($thisOption);
-            }).length);
+            })
 
             /* Populate the languages list */
             var languages = [];
@@ -980,6 +1010,7 @@ function main ($, CONSTANTS) {
                                                                                                             , $colorSelect.appendAll(colorOptions)
                                                                                                             , $colorPicker
                                                                                                             , $colorDefault
+                                                                                                            , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
                                                                                                             ])
                                                                                     , $optionsNote
                                                                                     ]))

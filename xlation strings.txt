@@ -48,3 +48,5 @@ Remove image highlight
 Submit edits as autoedits
 Remove stored images
 This removes any images from other websites that you have stored while this script was not running.
+Image editor darkness level
+Image editor background
