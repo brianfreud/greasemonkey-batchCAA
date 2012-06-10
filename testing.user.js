@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1173
+// @version     0.01.1176
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -53,7 +53,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1173'
+                , VERSION       : '0.1.1176'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1802,7 +1802,14 @@ Native support:
                                     $.log('Aborting; not a valid release tr.');
                                     return;
                                 }
-                                if ($releaseAnchor.parents('tr:first').find('td').length === 3) {
+                                var tableLocation;
+                                if (!document.location.pathname.match(/\/artist\/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}$/)) {
+                                    /* Release, Label, and single RG pages. */
+                                    tableLocation = 'table:first';
+                                } else { /* Artist RG listing pages */
+                                    tableLocation = 'table:eq(1)';
+                                }
+                                if (!$releaseAnchor.parents(tableLocation).hasClass('tbl')) {
                                     $.log('Aborting; tr describes a track, not a release.');
                                     return;
                                 }
