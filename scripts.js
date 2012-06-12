@@ -203,3 +203,37 @@ over arrays with safer looping (ie: Array.foreach) , and to delint it per jshint
 */
 
 localStorage.setItem('jQueryGetHiddenDimensions', '(function(g){g.fn.getHiddenDimensions=function(c){var d={position:\"absolute\",visibility:\"hidden\",display:\"block\"},a={width:0,height:0,innerWidth:0,innerHeight:0,outerWidth:0,outerHeight:0},e=this.parents().andSelf().not(\":visible\"),c=null==c?!1:c,f=[];e.each(function(){var a={},b;for(b in d)a[b]=this.style[b],this.style[b]=d[b];f.push(a)});a.width=this.width();a.outerWidth=this.outerWidth(c);a.innerWidth=this.innerWidth();a.height=this.height();a.innerHeight=this.innerHeight();a.outerHeight=this.outerHeight(c);e.each(function(a){var a=f[a],b;for(b in d)this.style[b]=a[b]});return a}})(jQuery);');
+
+/*
+Number polyfill
+https://github.com/jonstipe/number-polyfill
+Copyright (c) 2011 Jonathan Stipe
+
+Slightly modified: removed the initial Modernizr check
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+!function polyfill_input_type_number () {
+    var testEle = document.createElement('input');
+    testEle.setAttribute('type','number');
+    if (testEle.type !== 'number') {
+        localStorage.setItem('inputNumberPolyfill', '$(function(){var i=function(b){var a=$(b).attr(\"step\"),a=\x2F^-?\\d+(?:\\.\\d+)?$\x2F.test(a)?parseFloat(a):void 0,c=$(b).attr(\"min\"),c=\x2F^-?\\d+(?:\\.\\d+)?$\x2F.test(c)?parseFloat(c):void 0,d=$(b).attr(\"max\"),d=\x2F^-?\\d+(?:\\.\\d+)?$\x2F.test(d)?parseFloat(d):void 0,b=parseFloat($(b).val());isNaN(b)\&\&(b=c||0);return{min:c,max:d,step:a,val:b}},f=function(b){if(void 0!==b){for(var a=0,c=b;c!=Math.round(c);)a+=1,c=b*Math.pow(10,a);return a}return 0},j=function(b,a,c,d){var e=f(d);if(void 0===d)return b;if(0==e){e=(b-(a||0))%d;if(0==e)return b;e=b-e;d=e+d;return d\x3Ec||b-e\x3Cd-b?e:d}e=Math.pow(10,e);d*=e;a=(b-(a||0))*e%d;if(0==a)return b;b*=e;a=b-a;d=a+d;return d\x2Fe\x3Ec||b-a\x3Cd-b?a\x2Fe:d\x2Fe},g=function(b){var a=i(b),c=Math.pow(10,Math.max(f(a.val),f(a.step))),c=(Math.round(a.val*c)+Math.round((a.step||1)*c))\x2Fc;void 0!==a.max\&\&c\x3Ea.max\&\&(c=a.max);c=j(c,a.min,a.max,a.step);$(b).val(c).change()},h=function(b){var a=i(b),c=Math.pow(10,Math.max(f(a.val),f(a.step))),c=(Math.round(a.val*c)-Math.round((a.step||1)*c))\x2Fc;void 0!==a.min\&\&c\x3Ca.min\&\&(c=a.min);c=j(c,a.min,a.max,a.step);$(b).val(c).change()};$(\'input[type=\"number\"]\').each(function(){var b=this,a=$(b).outerHeight()\x2F2+\"px\",c=document.createElement(\"div\");$(c).addClass(\"number-spin-btn\");$(c).addClass(\"number-spin-btn-up\");$(c).css(\"height\",a);var d=document.createElement(\"div\");$(d).addClass(\"number-spin-btn\");$(d).addClass(\"number-spin-btn-down\");$(d).css(\"height\",a);a=document.createElement(\"div\");a.appendChild(c);a.appendChild(d);$(a).addClass(\"number-spin-btn-container\");$(a).insertAfter(b);$(b).bind({DOMMouseScroll:function(a){0\x3Ea.originalEvent.detail?g(this):h(this);a.preventDefault()},mousewheel:function(a){0\x3Ca.wheelDelta?g(this):h(this);a.preventDefault()},keypress:function(a){38==a.keyCode?g(this):40==a.keyCode?h(this):-1==[8,9,35,36,37,39].indexOf(a.keyCode)\&\&-1==[45,46,48,49,50,51,52,53,54,55,56,57].indexOf(a.which)\&\&a.preventDefault()},change:function(a){if(void 0!==a.originalEvent){a=i(this);var b=a.val,c=a.min,d=a.max;newVal=void 0!==d\&\&b\x3Ed?d:void 0!==c\&\&b\x3Cc?c:b;newVal=j(newVal,a.min,a.max,a.step,a.stepDecimal);$(this).val(newVal)}}});$(c).bind({mousedown:function(){g(b);var a=function(b,c){c(b);b.timeoutID=window.setTimeout(a,10,b,c)},d=function(){window.clearTimeout(b.timeoutID);$(document).unbind(\"mouseup\",d);$(c).unbind(\"mouseleave\",d)};$(document).bind(\"mouseup\",d);$(c).bind(\"mouseleave\",d);b.timeoutID=window.setTimeout(a,700,b,g)}});$(d).bind({mousedown:function(){h(b);var a=function(b,c){c(b);b.timeoutID=window.setTimeout(a,10,b,c)},c=function(){window.clearTimeout(b.timeoutID);$(document).unbind(\"mouseup\",c);$(d).unbind(\"mouseleave\",c)};$(document).bind(\"mouseup\",c);$(d).bind(\"mouseleave\",c);b.timeoutID=window.setTimeout(a,700,b,h)}});$(this).css(\"text-align\",\"right\")})});');
+    }
+}();

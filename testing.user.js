@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1176
+// @version     0.01.1180
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,7 +45,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for removing existing CAA images
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: input number polyfill?
-//TODO: http://musicbrainz.org/release-group/04f53329-d0d0-3b0d-856a-1e2cbcde0e69 - 
+//TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 
 var height = function (id) {
     'use strict';
@@ -53,7 +53,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1176'
+                , VERSION       : '0.1.1180'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -257,7 +257,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '#colorPicker, #CAAeditiorMaskColorControl':
                       {  border                 : '1px outset #D3D3D3'
-                      ,  padding                : '10px' // This makes the default box around the color disappear on Chrome
+                      ,  padding                : '15px' // This makes the default box around the color disappear on Chrome
                       },
                   '#colorSelect':
                       { 'float'                 : 'left'
@@ -433,10 +433,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  left                   : '50%'
                       ,  margin                 : '0 auto'
                       , 'margin-left'           : '-43%'
-                      , 'margin-top'            : '-43%'
+                      , 'margin-top'            : '5%'
                       ,  padding                : '2%'
                       ,  position               : 'fixed'
-                      ,  top                    : '50%'
                       ,  width                  : '86%'
                       , 'z-index'               : 2000
                       },
@@ -742,6 +741,72 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   'table.tbl .count':
                       {  width                  : '6em!important'
+                      },
+                  /* css for the number polyfill */
+                  'div.number-spin-btn-container':
+                      {  display                : 'inline-block'
+                      ,  margin                 : '0'
+                      ,  padding                : '0'
+                      ,  position               : 'relative'
+                      , 'vertical-align'        : 'bottom'
+                      },
+                  'div.number-spin-btn':
+                      { 'background-color'      : '#CCCCCC'
+                      ,  border                 : '2px outset #CCCCCC'
+                      ,  width                  : '1.2em'
+                      },
+                  'div.number-spin-btn-up':
+                      {  'border-bottom-width'  : '1px'
+                      ,  '-webkit-border-radius': '3px 3px 0px 0px'
+                      ,          'border-radius': '3px 3px 0px 0px'
+                      },
+                  'div.number-spin-btn-up:before':
+                      {  content                : '""'
+                      , 'border-color'          : 'transparent transparent black transparent'
+                      , 'border-style'          : 'solid'
+                      , 'border-width'          : '0 0.3em 0.3em 0.3em'
+                      ,  height                 : '0'
+                      ,  left                   : '50%'
+                      ,  margin                 : '-0.15em 0 0 -0.3em'
+                      ,  padding                : '0'
+                      ,  position               : 'absolute'
+                      ,  top                    : '25%'
+                      ,  width                  : '0'
+                      },
+                  'div.number-spin-btn-down':
+                      { '-webkit-border-radius' : '0px 0px 3px 3px'
+                      ,         'border-radius' : '0px 0px 3px 3px'
+                      , 'border-top-width'      : '1px'
+                      },
+                  'div.number-spin-btn-down:before':
+                      {  content                : '""'
+                      ,  width                  : '0'
+                      ,  height                 : '0'
+                      , 'border-width'          : '0.3em 0.3em 0 0.3em'
+                      , 'border-style'          : 'solid'
+                      , 'border-color'          : 'black transparent transparent transparent'
+                      ,  position               : 'absolute'
+                      ,  top                    : '75%'
+                      ,  left                   : '50%'
+                      ,  margin                 : '-0.15em 0 0 -0.3em'
+                      ,  padding                : '0'
+                      },
+                  'div.number-spin-btn:hover':
+                      {  cursor                 : 'pointer'
+                      },
+                  'div.number-spin-btn:active':
+                      { 'background-color'      : '#999999'
+                      ,  border                 : '2px inset #999999'
+                      },
+                  'div.number-spin-btn-up:active:before':
+                      { 'border-color'          : 'transparent transparent white transparent'
+                      ,  left                   : '51%'
+                      ,  top                    : '26%'
+                      },
+                  'div.number-spin-btn-down:active:before':
+                      { 'border-color'          : 'white transparent transparent transparent'
+                      ,  left                   : '51%'
+                      ,  top                    : '76%'
                       }
 };
 
@@ -864,19 +929,23 @@ function main ($, CONSTANTS) {
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
       ;
 
-    /* Faster element creation. (3 to 4 times faster vs $('<type/>') )  */
-    var $make = function (type) {
-        return $(document.createElement(type));
-    };
+    /* Faster element creation. */
+    var $make = function (tagName, options) {
+            var domEl = [document.createElement(tagName)]
+              , jq = $
+              ;
+
+            jq.fn.prop.call(domEl, options, true);
+            return jq.merge(jq(), domEl);
+        };
 
     /* Creates a generic close button.  */
     var $makeCloseButton = function () {
-        return $make('header').text('x')
-                              .addClass('closeButton');
+        return $make('header', { 'class': 'closeButton' }).text('x');
     };
 
     /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
-    $('body').append($make('img').prop('src', CONSTANTS.THROBBER).hide());
+    $('body').append($make('img', { src: CONSTANTS.THROBBER }).hide());
 
     var $imageContainer
       , $previewContainer
@@ -922,10 +991,9 @@ function main ($, CONSTANTS) {
     var tintImageRed = function tint_image_Red (image) {
         $.log('Tinting image');
         var $image = $(image);
-        return $image.wrap($make('figure').addClass('tintWrapper')
-                                          .css({ height : ($image.height() + 6) + 'px'
-                                               , width  : ($image.width() + 6) + 'px'
-                                               }))
+        return $image.wrap($make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.height() + 6) + 'px'
+                                                                           , width  : ($image.width() + 6) + 'px'
+                                                                           }))
                      .data('oldtitle', $image.prop('title'))
                      .prop('title', $.l('Remove image'))
                      .addClass('tintImage');
@@ -961,100 +1029,121 @@ function main ($, CONSTANTS) {
         !function init_create_dropzone () {
             $.log('Creating drop zone.');
 
-            $imageContainer      = $make('div').prop('id', 'imageContainer');
-            $previewContainer    = $make('div').prop('id', 'previewContainer');
+            $imageContainer      = $make('div', { id: 'imageContainer' });
+            $previewContainer    = $make('div', { id: 'previewContainer' });
             var colorOptions     = []
               , optionsImage     = localStorage.getItem('iconSettings')
               , baseImage        = localStorage.getItem('magnifyingGlassBase')
               , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
-              , $autoeditControl = $make('input'   ).prop('id', 'caaAutoedit')
-                                                    .prop('type', 'checkbox')
-                                                    .prop('title', $.l('Submit as autoedits'))
-              , $autoeditLabel   = $make('label'   ).prop('for', 'caaAutoedit')
-                                                    .prop('id', 'caaAutoeditLabel')
-                                                    .prop('title', $.l('Submit as autoedits'))
-                                                    .text($.l('Submit as autoedits'))
-              , $colorDefault    = $make('input'   ).prop('id', 'ColorDefaultBtn')
-                                                    .prop('title', $.l('Changed colors note'))
-                                                    .prop('type', 'button')
-                                                    .prop('value', $.l('default'))
-              , $colorField      = $make('fieldset').prop('id', 'colorField')
-              , $colorLegend     = $make('legend'  ).prop('id', 'colorLegend')
-                                                    .text($.l('Colors'))
-              , $colorPicker     = $make('input'   ).prop('id', 'colorPicker')
-                                                    .prop('title', $.l('Changed colors note'))
-                                                    .prop('type', 'color')
-                                                    .prop('value', '66ff00')
-              , $colorSelect     = $make('select'  ).prop('id', 'colorSelect')
-                                                    .prop('title', $.l('Changed colors note'))
-                                                    .prop('size', 5)
-              , $ddFilesize      = $make('dd'      ).prop('id', 'previewFilesize')
-              , $ddResolution    = $make('dd'      ).prop('id', 'previewResolution')
-              , $dtFilesize      = $make('dt'      ).addClass('previewDT')
-                                                    .prop('id', 'dtFilesize')
-                                                    .text($.l('File size'))
-              , $dtResolution    = $make('dt'      ).addClass('previewDT')
-                                                    .prop('id', 'dtResolution')
+              , $autoeditControl = $make('input',    { id        : 'caaAutoedit'
+                                                     , type      : 'checkbox'
+                                                     , title     : $.l('Submit as autoedits')
+                                                     })
+              , $autoeditLabel   = $make('label',    { 'for'     : 'caaAutoedit'
+                                                     , id        : 'caaAutoeditLabel'
+                                                     , title     : $.l('Submit as autoedits')
+                                                     })
+                                                     .text($.l('Submit as autoedits'))
+              , $colorDefault    = $make('input',    { id        : 'ColorDefaultBtn'
+                                                     , title     : $.l('Changed colors note')
+                                                     , type      : 'button'
+                                                     , value     : $.l('default')
+                                                     })
+              , $colorField      = $make('fieldset', { id        : 'colorField' })
+              , $colorLegend     = $make('legend',   { id        :'colorLegend'  })
+                                                     .text($.l('Colors'))
+              , $colorPicker     = $make('input',    { id        : 'colorPicker'
+                                                     , title     : $.l('Changed colors note')
+                                                     , type      : 'color'
+                                                     , value     : '66ff00'
+                                                     })
+              , $colorSelect     = $make('select',   { id        : 'colorSelect'
+                                                     , size      : 5
+                                                     , title     : $.l('Changed colors note')
+                                                     })
+              , $ddFilesize      = $make('dd',       { id        : 'previewFilesize' })
+              , $ddResolution    = $make('dd',       { id        : 'previewResolution' })
+              , $dtFilesize      = $make('dt',       { 'class'   : 'previewDT'
+                                                     , id        : 'dtFilesize'
+                                                     })
+                                                     .text($.l('File size'))
+              , $dtResolution    = $make('dt',       { 'class'   : 'previewDT'
+                                                     , id        : 'dtResolution'
+                                                     })
                                                     .text($.l('(Image) Resolution'))
-              , $editor000Contnr = $make('div'     ).prop('id', 'editor000Container')
-              , $editor000Ctrl   = $make('input'   ).prop('id', 'CAAeditorDarknessControl')
-                                                    .prop('type', 'number')
-                                                    .prop('step', 1)
-                                                    .prop('min', 0)
-                                                    .prop('max', 100)
-                                                    .prop('title', $.l('How dark the bkgrnd'))
-                                                    .prop('value', 75)  // TODO: Don't hardcode this
-              , $editor000Label  = $make('label'   ).prop('for', 'CAAeditorDarknessControl')
-                                                    .prop('id', 'CAAeditorDarknessLabel')
-                                                    .prop('title', $.l('How dark the bkgrnd'))
+              , $editor000Contnr = $make('div',      { id        : 'editor000Container'
+                                                     })
+              , $editor000Ctrl   = $make('input',    { id        : 'CAAeditorDarknessControl' 
+                                                     , type      : 'number'
+                                                     , step      : 1
+                                                     , 'min'     : 0
+                                                     , 'max'     : 100
+                                                     , title     : $.l('How dark the bkgrnd')
+                                                     , value     : 75  // TODO: Don't hardcode this
+                                                     })
+              , $editor000Label  = $make('label',    { 'for'     : 'CAAeditorDarknessControl'
+                                                     , id        : 'CAAeditorDarknessLabel'
+                                                     , title     : $.l('How dark the bkgrnd')
+                                                     })
                                                     .text($.l('How dark the bkgrnd'))
-              , $imageMagnify    = $make('div'     ).addClass('imageSizeControl')
-                                                    .prop('id', 'imageMagnify')
-                                                    .prop('title', $.l('Magnify image'))
-              , $imageShrink     = $make('div'     ).addClass('imageSizeControl')
-                                                    .prop('id', 'imageShrink')
-                                                    .prop('title', $.l('Shrink image'))
-              , $langLabel       = $make('label'   ).prop('for', 'languageSelect')
-                                                    .prop('id', 'languageSelectLabel')
-                                                    .prop('title', $.l('Changed language note'))
+              , $imageMagnify    = $make('div',      { 'class'   : 'imageSizeControl'
+                                                     , id        : 'imageMagnify'
+                                                     , title     : $.l('Magnify image')
+                                                     })
+              , $imageShrink     = $make('div',      { 'class'   : 'imageSizeControl'
+                                                     , id        : 'imageShrink'
+                                                     , title     : $.l('Shrink image')
+                                                     })
+              , $langLabel       = $make('label',    { 'for'     : 'languageSelect'
+                                                     , id        : 'languageSelectLabel'
+                                                     , title     : $.l('Changed language note')
+                                                     })
                                                     .text($.l('Language') + ':')
-              , $langList        = $make('select'  ).prop('id', 'languageSelect')
-                                                    .prop('size', 3)
-                                                    .prop('title', $.l('Changed language note'))
-              , $optionsControl  = $make('div'     ).prop('id', 'optionsHeader')
-                                                    .prop('title', $.l('Options'))
-              , $optionsLegend   = $make('legend'  ).text($.l('Options'))
-                                                    .prop('id', 'optionsLegend')
-              , $optionsMenu     = $make('fieldset').prop('id', 'optionsMenu')
-                                                    .hide()
-              , $optionsNote     = $make('div'     ).prop('id', 'optionsNote')
-                                                    .text($.l('take effect next time'))
-              , $parseControl    = $make('input'   ).prop('id', 'caaOptionParse')
-                                                    .prop('title', $.l('Parse (help)'))
-                                                    .prop('type', 'checkbox')
-              , $parseLabel      = $make('label'   ).prop('for', 'caaOptionParse')
-                                                    .prop('id', 'caaOptionParseLabel')
-                                                    .prop('title', $.l('Parse (help)'))
-                                                    .text($.l('Parse web pages'))
-              , $previewImage    = $make('img'     ).prop('id', 'previewImage')
-                                                    .prop('draggable', false)
-              , $previewInfo     = $make('dl'      ).prop('id', 'previewText')
-                                                    .hide()
-              , $storageBtn      = $make('input'   ).prop('id', 'ClearStorageBtn')
-                                                    .prop('title', $.l('Remove stored images nfo'))
-                                                    .prop('type', 'button')
-                                                    .prop('value', $.l('Remove stored images'))
-                                                    .prop('disabled', localStorage.getItem('caaBatch_imageCache') === null)
-              , $removeControl   = $make('input'   ).prop('id', 'caaOptionRemove')
-                                                    .prop('title', $.l('Remove (help)'))
-                                                    .prop('type', 'checkbox')
-              , $removeLabel     = $make('label'   ).prop('for', 'caaOptionRemove')
-                                                    .prop('id', 'caaOptionRemoveLabel')
-                                                    .prop('title', $.l('Remove (help)'))
+              , $langList        = $make('select',   { id        : 'languageSelect'
+                                                     , size      : 3
+                                                     , title     : $.l('Changed language note')
+                                                     })
+              , $optionsControl  = $make('div',      { id        : 'optionsHeader'
+                                                     , title     : $.l('Options')
+                                                     })
+              , $optionsLegend   = $make('legend',   { id        : 'optionsLegend' })
+                                                     .text($.l('Options'))
+              , $optionsMenu     = $make('fieldset', { id        : 'optionsMenu' })
+                                                     .hide()
+              , $optionsNote     = $make('div',      { id        : 'optionsNote' })
+                                                     .text($.l('take effect next time'))
+              , $parseControl    = $make('input',    { id        : 'caaOptionParse'
+                                                     , title     : $.l('Parse (help)')
+                                                     , type      : 'checkbox'
+                                                     })
+              , $parseLabel      = $make('label',    { 'for'     : 'caaOptionParse'
+                                                     , id        : 'caaOptionParseLabel'
+                                                     , title     : $.l('Parse (help)')
+                                                     })
+                                                     .text($.l('Parse web pages'))
+              , $previewImage    = $make('img',      { id        : 'previewImage'
+                                                     , draggable : false
+                                                     })
+              , $previewInfo     = $make('dl',       { id        : 'previewText' })
+                                                     .hide()
+              , $storageBtn      = $make('input',    { id        : 'ClearStorageBtn'
+                                                     , title     : $.l('Remove stored images nfo')
+                                                     , type      : 'button'
+                                                     , value     : $.l('Remove stored images')
+                                                     , disabled  : localStorage.getItem('caaBatch_imageCache') === '[]'
+                                                     })
+              , $removeControl   = $make('input',    { id        : 'caaOptionRemove'
+                                                     , title     : $.l('Remove (help)')
+                                                     , type      : 'checkbox'
+                                                     })
+              , $removeLabel     = $make('label',    { 'for'     : 'caaOptionRemove'
+                                                     , id        : 'caaOptionRemoveLabel'
+                                                     , title     : $.l('Remove (help)')
+                                                     })
                                                     .text($.l('Remove images'))
-              , $sizeContainer   = $make('div'     ).prop('id', 'imageSizeControlsMenu')
-              , $version         = $make('span'    ).prop('id', 'caaVersion')
+              , $sizeContainer   = $make('div',      { id        : 'imageSizeControlsMenu' })
+              , $version         = $make('span',     { id        : 'caaVersion' })
                                                     .text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
               ;
 
@@ -1062,10 +1151,10 @@ function main ($, CONSTANTS) {
             Object.keys(CONSTANTS.COLORS).sort().map(function (colorItem) {
                 var color       = CONSTANTS.COLORS[colorItem]
                   ;
-                var $thisOption = $make('option').addClass('colorOption')
-                                                 .prop('value', colorItem)
-                                                 .data('default', color)
-                                                 .text($.l(colorItem));
+                var $thisOption = $make('option', { 'class' : 'colorOption'
+                                                  , value   : colorItem
+                                                  }).data('default', color)
+                                                    .text($.l(colorItem));
                 if (localStorage.getItem('caaBatch_colors_' + colorItem) === null) {
                     $.log('Initializing localStorage for ' + 'caaBatch_colors_' + colorItem + ' to ' + color);
                     localStorage.setItem('caaBatch_colors_' + colorItem, color);
@@ -1086,49 +1175,53 @@ function main ($, CONSTANTS) {
             });
             var userLang  = localStorage.getItem('caaBatch_language') || 'en';
             var $ARRlangs = languages.map(function (language) {
-                                              return $make('option').prop('selected', (language[0] === userLang))
-                                                                    .prop('value', language[0])
-                                                                    .text(language[1]);
+                                              return $make('option', { selected : (language[0] === userLang)
+                                                                     , value    : language[0]
+                                                                     }).text(language[1]);
                                           });
 
             /* Populate the DOM */
             $('#sidebar').empty()
-                         .appendAll([ $make('h1').prop('id', 'imageHeader')
-                                                 .text($.l('Images'))
-                                    , $sizeContainer.appendAll([ $imageMagnify.append(plusImage)
-                                                               , $imageShrink.append(minusImage)
-                                                               ])
+                         .appendAll(
+                          [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
+                          , $sizeContainer.appendAll(
+                                           [ $imageMagnify.append(plusImage)
+                                           , $imageShrink.append(minusImage)
+                                           ])
                                     , $optionsControl.append(optionsImage)
-                                    , $imageContainer.append($optionsMenu.appendAll([ $optionsLegend
-                                                                                    , $version
-                                                                                    , $removeControl
-                                                                                    , $removeLabel
-                                                                                    , $make('br')
-                                                                                    , $parseControl
-                                                                                    , $parseLabel
-                                                                                    , $make('br')
-                                                                                    , $storageBtn
-                                                                                    , $make('br')
-                                                                                    , $langLabel.append($langList.appendAll($ARRlangs))
-                                                                                    , $colorField.appendAll([ $colorLegend
-                                                                                                            , $colorSelect.appendAll(colorOptions)
-                                                                                                            , $colorPicker
-                                                                                                            , $colorDefault
-                                                                                                            , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
-                                                                                                            ])
-                                                                                    , $optionsNote
-                                                                                    ]))
+                                    , $imageContainer.append($optionsMenu.appendAll(
+                                                                          [ $optionsLegend
+                                                                          , $version
+                                                                          , $removeControl
+                                                                          , $removeLabel
+                                                                          , $make('br')
+                                                                          , $parseControl
+                                                                          , $parseLabel
+                                                                          , $make('br')
+                                                                          , $storageBtn
+                                                                          , $make('br')
+                                                                          , $langLabel.append($langList.appendAll($ARRlangs))
+                                                                          , $colorField.appendAll(
+                                                                                        [ $colorLegend
+                                                                                        , $colorSelect.appendAll(colorOptions)
+                                                                                        , $colorPicker
+                                                                                        , $colorDefault
+                                                                                        , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
+                                                                                        ])
+                                                                          , $optionsNote
+                                                                          ]))
                                     , $make('hr').css('border-top', CONSTANTS.BORDERS)
-                                    , $make('h1').prop('id', 'previewHeader')
-                                                 .text($.l('Preview Image'))
-                                    , $previewContainer.appendAll([ $previewImage
-                                                                  , $previewInfo.appendAll([ $dtResolution
-                                                                                           , $ddResolution
-                                                                                           , $dtFilesize
-                                                                                           , $ddFilesize
-                                                                                           ])
-                                                                  ])
-                                    ]);
+                                    , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
+                                    , $previewContainer.appendAll(
+                                                        [ $previewImage
+                                                        , $previewInfo.appendAll(
+                                                                       [ $dtResolution
+                                                                       , $ddResolution
+                                                                       , $dtFilesize
+                                                                       , $ddFilesize
+                                                                       ])
+                                                        ])
+                          ]);
 
             /* Autoeditor check */
             var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
@@ -1264,7 +1357,7 @@ function main ($, CONSTANTS) {
               ;
 
             $.log('Adding css for the CAA batch script.');
-            $make('style').prop('type', 'text/css').text(Object.keys(CSS).map(function (key) {
+            $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function (key) {
                 theseRules = Object.keys(CSS[key]).map(function (rule) {
                     return '\n    ' +  rule + ' : ' + CSS[key][rule];
                 }).join(';');
@@ -1273,17 +1366,16 @@ function main ($, CONSTANTS) {
 
             $.log('Adding image preview css classes.');
             sizes.forEach(function (size) {
-                classes.push($make('style').prop('id', 'style' + size)
-                                           .prop('type', 'text/css')
-                                           .text('.localImage { width: ' + size + 'px; }'));
+                classes.push($make('style', { id   : 'style' + size
+                                            , type : 'text/css'
+                                            }).text('.localImage { width: ' + size + 'px; }'));
             });
 
             /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title or checkbox columns.  Without the next line,
                those columns get squished when the table-layout is set to fixed layout. */
             $('thead').find('* th:first, * th:eq(2)').each(function () { $(this).css('width', $(this).width() + 10 + 'px'); });
 
-            classes.push($make('style').prop('id', 'tblStyle1')
-                                       .text('table.tbl { table-layout: fixed; }'));
+            classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
 
             $('head').appendAll(classes);
 
@@ -1352,13 +1444,12 @@ function main ($, CONSTANTS) {
               , title         = (source === 'local') ? 'Local file: ' + (file.name)
                                                      : source + ' file: ' + uri
               ;
-            var $img          = $make('img').addClass('localImage')
-                                            .data('source', source)
-                                            .data('file', file)
-                                            .prop({ alt       : title
-                                                  , draggable : true
-                                                  , title     : title
-                                                  });
+            var $img          = $make('img', { 'class'   : 'localImage'
+                                             , alt       : title
+                                             , draggable : true
+                                             , title     : title
+                                             }).data('source', source)
+                                               .data('file', file);
 
             dataURLreader.onload = function add_attributes_to_dropped_image(event) {
                 $.log('Running addImageToDropbox -> dataURLreader.onload');
@@ -1728,18 +1819,20 @@ Native support:
             /* The second selector here allows for the release links added by http://userscripts.org/scripts/show/93894 */
             var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
               , $thisForm       = $('form[action*="merge_queue"]')
-              , $caaBtn         = $make('input').prop('type', 'button').prop('value', $.l('Load CAA images'))
-                                               .prop('title', $.l('Load text one release'))
-                                               .addClass('caaLoad')
-              , $addBtn         = $make('input').prop('type', 'button').prop('value', '+')
-                                               .prop('title', $.l('Add image one release'))
-                                               .addClass('caaAdd')
-                                               .hide()
-              , $loadingDiv     = $make('div').text($.l('loading'))
-                                             .prepend($make('img').prop('src', CONSTANTS.THROBBER)
-                                                                  .addClass('throbberImage'))
-                                             .addClass('loadingDiv')
-                                             .hide()
+              , $caaBtn         = $make('input', { 'class' : 'caaLoad'
+                                                 , title   : $.l('Load text one release')
+                                                 , type    : 'button'
+                                                 , value   : $.l('Load CAA images')
+                                                 })
+              , $addBtn         = $make('input', { 'class' : 'caaAdd'
+                                                 , title   : $.l('Add image one release')
+                                                 , type    : 'button'
+                                                 , value   : '+'
+                                                 }).hide()
+              , $loadingDiv     = $make('div', { 'class' : 'loadingDiv' }).text($.l('loading'))
+                                                                          .prepend($make('img', { 'class' : 'throbberImage'
+                                                                                                , src     : CONSTANTS.THROBBER
+                                                                                                })).hide()
               , getMBID         = function get_release_MBID (attrStr) {
                                       return attrStr.split('/')
                                                     .pop()
@@ -1750,32 +1843,33 @@ Native support:
             var makeCAATypeList = function makeCAATypeList () {
                                       $.log('Creating CAA type select.');
                                       var types     = CONSTANTS.COVERTYPES
-                                        , $typeList = $make('select').prop('multiple', 'multiple')
-                                                                     .prop('size', types.length)
-                                                                     .addClass('caaSelect')
+                                        , $typeList = $make('select', { 'class'  : 'caaSelect'
+                                                                      , multiple : 'multiple'
+                                                                      , size     : types.length
+                                                                      })
                                         ;
 
                                       return $typeList.appendAll(types.map(function (type, i) {
-                                          return $make('option').prop('value', i+1)
-                                                                .text($.l('coverType:' + type));
+                                          return $make('option', { value : i+1 }).text($.l('coverType:' + type));
                                       }));
                                   };
 
             var makeDropbox = function makeDropbox () {
                                   $.log('Creating dropbox.');
                                   var $types = makeCAATypeList();
-                                  var $dropbox = $make('figure').addClass('CAAdropbox newCAAimage')
-                                                                .appendAll([ $makeCloseButton()
-                                                                           , $make('img').addClass('dropBoxImage')
-                                                                                         .prop('draggable', false)
-                                                                                         .wrap('<div>')
-                                                                                         .parent()
-                                                                           , $make('figcaption').appendAll([ $make('input').prop('type', 'text')
-                                                                                                                           .prop('placeholder', 'image comment')
-                                                                                                           , $make('br')
-                                                                                                           , $types
-                                                                                                           ])
-                                                                           ]);
+                                  var $dropbox = $make('figure', { 'class' : 'CAAdropbox newCAAimage' });
+                                  $dropbox.appendAll([ $makeCloseButton()
+                                                     , $make('img', { 'class'   : 'dropBoxImage'
+                                                                    , draggable : false
+                                                                    }).wrap('<div>')
+                                                                      .parent()
+                                                     , $make('figcaption').appendAll([ $make('input', { type        : 'text'
+                                                                                                      , placeholder : 'image comment'
+                                                                                                      })
+                                                                                     , $make('br')
+                                                                                     , $types
+                                                                                     ])
+                                                     ]);
                                   return $dropbox;
                              };
 
@@ -1817,10 +1911,10 @@ Native support:
                                 $releaseRow = $releaseAnchor.parents('tr:first');
                                 var colCount    = $releaseRow.find('td').length
                                   , thisMBID    = getMBID($releaseAnchor.attr('href'))
-                                  , $imageRow   = $make('td').prop('colspan', colCount)
-                                                             .addClass('imageRow')
-                                                             .wrap('<tr>')
-                                                             .parent()
+                                  , $imageRow   = $make('td', { 'class' : 'imageRow'
+                                                              , colspan : colCount
+                                                              }).wrap('<tr>')
+                                                                .parent()
                                   ;
 
                                 $.log('New release found, attaching a CAA row.', 1);
@@ -1830,10 +1924,11 @@ Native support:
                                                          .data('entity', thisMBID);
                                 var $thisLoadingDiv = $loadingDiv.clone();
                                 var $newCAARow  = $imageRow.clone()
-                                                           .find('td').append($make('div').addClass('caaDiv')
-                                                                                          .before($thisAddBtn)
-                                                                                          .before($thisLoadingDiv)
-                                                                                          .append($thisCAABtn)).end()
+                                                           .find('td')
+                                                           .append($make('div', { 'class' : 'caaDiv' }).before($thisAddBtn)
+                                                                                                       .before($thisLoadingDiv)
+                                                                                                       .append($thisCAABtn))
+                                                           .end()
                                                            .prop('class', $releaseRow.prop('class'));
                                 $thisForm.data(thisMBID, $newCAARow);
 
@@ -1940,10 +2035,11 @@ Native support:
 
         !function init_add_caa_table_controls () {
             $.log('Adding CAA load all releases button.');
-            var $caaAllBtn = $make('input').prop('type', 'button')
-                                          .prop('value', $.l('Load CAA images for all'))
-                                          .prop('title', $.l('Load text all releases'))
-                                          .addClass('caaAll');
+            var $caaAllBtn = $make('input', { 'class' : 'caaAll'
+                                            , title   : $.l('Load text all releases')
+                                            , type    : 'button'
+                                            , value   : $.l('Load CAA images for all')
+                                            });
             $('table.tbl').before($make('br'))
                           .before($caaAllBtn);
             $caaAllBtn.on('click', function caaAllBtn_click_handler () {
@@ -1965,6 +2061,263 @@ Native support:
                     (type = supportedImageType(image)) && loadRemoteFile(image, type);
                 });
             }();
+
+        /* Create image editor. */
+        !function create_image_editor_handler () {
+            $.log('Adding handler for image editor.');
+            $('body').on('click', '#previewImage', function (e) {
+                if ($('#previewImage').prop('src').length === 0) {
+                    return;
+                }
+
+                var $makeMask = function (where) {
+                    return $make('div', { 'class' : 'CAAmask'
+                                        ,  id     : 'CAAmask' + where
+                                        });
+                };
+
+                var $makeNumCtrl = function (where) {
+                    return $make('label', { 'class' : 'cropLabel'
+                                          , id    : 'CAAeditorCropLabel' + where
+                                          , title : $.l(where)
+                                          }).text($.l(where))
+                                            .prepend($make('input', { 'class' : 'cropControl'
+                                                                    , id      : 'CAAeditorCropControl' + where
+                                                                    , 'min'   : 0
+                                                                    , step    : 1
+                                                                    , title   : $.l('Crop image') + ': ' + $.l(where)
+                                                                    , type    : 'number'
+                                                                    , value   : 0
+                                                                    }));
+
+                };
+                var $makeFlipCtrl = function (direction) {
+                    var symbol = (direction === 'Vertical') ? '⇵' : '⇆';
+
+                    return $make('input', { 'class' : 'flipControl'
+                                          , id      : 'CAAeditorFlip' + direction
+                                          , title   : $.l('Flip image') + ' ' + symbol
+                                          , type    : 'button'
+                                          , value   : symbol
+                                          });
+
+                };
+
+                var $CAAimageEditor     = $make('div',      { id : 'CAAimageEditor' }).hide()
+                  , $ieDiv              = $make('div',      { id : 'CAAeditorDiv' })
+                  , $ieCanvasDiv        = $make('div',      { id : 'CAAeditorCanvasDiv' })
+                  , $ieCanvas           = $make('canvas',   { id : 'CAAeditorCanvas' })
+                  , $ieMenu             = $make('div',      { id : 'CAAeditorMenu' })
+                  , $ieRotateField      = $make('fieldset', { id : 'CAAeditorRotateField' })
+                  , $ieRotateLegend     = $make('legend',   { id : 'CAAeditorRotateLegend' }).text($.l('Rotate image'))
+                  , $ieRotateLabel      = $make('label',    { id    : 'CAAeditorRotateLabel'
+                                                            , title : $.l('How many degrees')
+                                                            }).text(' ' + $.l('degrees'))
+                  , $ieRotateControl    = $make('input',    { id : 'CAAeditorRotateControl'
+                                                            , 'max' : 360
+                                                            , 'min' : -360
+                                                            , step : 1
+                                                            , type : 'number'
+                                                            , value : 0
+                                                            })
+                  , $ieFlipField        = $make('fieldset', { id : 'CAAeditorFlipField' })
+                  , $ieFlipLegend       = $make('legend',   { id : 'CAAeditorFlipLegend' }).text($.l('Flip image'))
+                  , $ieCropField        = $make('fieldset', { id : 'CAAeditorCropField' })
+                  , $ieCropLegend       = $make('legend',   { id : 'CAAeditorCropLegend' }).text($.l('Crop image'))
+                  , $ieMaskColorLabel   = $make('label',    { 'class' : 'cropLabel'
+                                                            , id : 'CAAeditiorMaskColorLabel' 
+                                                            , title : $.l('Crop mask color')
+                                                            }).text($.l('Crop mask color'))
+                  , $ieMaskColorControl = $make('input',    { 'class' : 'cropControl'
+                                                            , id : 'CAAeditiorMaskColorControl'
+                                                            , type : 'color'
+                                                            , value : $.getColor('MASK')
+                                                            })
+                  , $CAAoverlay         = $make('div',      { id : 'CAAoverlay' }).hide()
+                  ;
+
+                $('body').prepend(
+                          $CAAimageEditor.appendAll(
+                                          [ $makeCloseButton
+                                          , $ieDiv.appendAll(
+                                                   [ $ieCanvasDiv.appendAll(
+                                                                  [ $makeMask('Left')
+                                                                  , $makeMask('Right')
+                                                                  , $makeMask('Top')
+                                                                  , $makeMask('Bottom')
+                                                                  , $ieCanvas
+                                                                  ])
+                                                   , $ieMenu.appendAll(
+                                                             [ $ieRotateField.appendAll(
+                                                                              [ $ieRotateLegend
+                                                                              , $ieRotateLabel.prepend($ieRotateControl)
+                                                                              ])
+                                                             , $ieFlipField.appendAll(
+                                                                            [ $ieFlipLegend
+                                                                            , $makeFlipCtrl('Vertical')
+                                                                            , $makeFlipCtrl('Horizontal')
+                                                                            ])
+                                                             , $ieCropField.appendAll(
+                                                                            [ $ieCropLegend
+                                                                            , $makeNumCtrl('Top')
+                                                                            , $makeNumCtrl('Bottom')
+                                                                            , $makeNumCtrl('Left')
+                                                                            , $makeNumCtrl('Right')
+                                                                            , $ieMaskColorLabel.prepend($ieMaskColorControl)
+                                                                            ])
+                                                             ])
+                                                   ])
+                                          ]))
+                         .prepend($CAAoverlay);
+
+                $.polyfillInputNumber();
+//TODO: Figure out why the number polyfill's change events aren't being detected in Firefox.
+//TODO: Figure out why the number polyfill controls are squished on the rotate and darkness controls.
+
+                var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
+                  , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
+                  , canvasWidth    = Math.round(canvasHeight * imageRatio)
+                  , degreesRotated = 0
+                  ;
+
+                /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
+                   then figure out the height based on the editor window's width instead of the other way around. */
+                var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
+
+                if (editorWindowWidth < (canvasWidth - 230)) {
+                    canvasWidth  = Math.round(editorWindowWidth - 230);
+                    canvasHeight = Math.round(canvasWidth / imageRatio);
+                }
+
+                $('#CAAeditorCanvasDiv').css({ height : canvasHeight + 'px'
+                                             , width  : canvasWidth + 'px'
+                                             });
+
+                /* Load the image into the canvas. */
+                var canvas = document.getElementById("CAAeditorCanvas")
+                  , ctx = canvas.getContext("2d")
+                  , img = new Image()
+                /* create a backup canvas for storing the unmodified image. */
+                  , backupCanvas = document.createElement("canvas")
+                  , backupCtx = backupCanvas.getContext("2d")
+                  ;
+
+                img.onload = function () {
+                    /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
+                    canvas.style.height = canvasHeight + 'px';
+                    canvas.style.width = canvasWidth + 'px';
+
+                    ctx.drawImage(img, 0, 0);
+
+                    backupCanvas.width = canvas.width;
+                    backupCanvas.height = canvas.height;
+                    backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+                };
+
+                img.src = $('#previewImage').prop('src');
+
+                var prepCanvas = function (callback) {
+                    var centerH        = canvas.height/2
+                      , centerW        = canvas.width/2
+                      ;
+                    /* Clear the canvas */
+                    ctx.save();
+                    ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+
+                    /* Move the origin point to the center of the canvas */
+                    ctx.translate(centerW, centerH);
+
+                    /* Run the callback */
+                    callback();
+
+                    /* Move the origin point back to the top left corner of the canvas */
+                    ctx.translate(-centerW, -centerH);
+
+                    /* Draw the image into the canvas */
+                    ctx.drawImage(backupCanvas, 0, 0);
+                };
+
+                var rotate = function (degrees) {
+                    var rotate = function () {
+                        ctx.rotate(-degreesRotated * Math.PI / 180);
+                        ctx.rotate(degrees * Math.PI / 180);
+                        degreesRotated = degrees;
+                    };
+                    prepCanvas(rotate);
+                };
+
+                var flip = function (h, v) {
+                    var flip = function () {
+                        ctx.scale(h ? -1 : 1, v ? -1 : 1);
+                    };
+                    prepCanvas(flip);
+                };
+
+                $('#CAAeditorFlipVertical').on('click', function () {
+                    flip(0,1);
+                });
+
+                $('#CAAeditorFlipHorizontal').on('click', function () {
+                    flip(1,0);
+                });
+
+                $('#CAAeditorRotateControl').on('change', function () {
+                    rotate($(this).val());
+                });
+
+                $('#CAAeditorCropControlTop').on('change', function () {
+                    $('#CAAmaskTop').css('height', $(this).val());
+                });
+
+                $('#CAAeditorCropControlBottom').on('change', function () {
+                    $('#CAAmaskBottom').css('height', $(this).val());
+                });
+
+                $('#CAAeditorCropControlLeft').on('change', function () {
+                    $('#CAAmaskLeft').css('width', $(this).val());
+                });
+
+                $('#CAAeditorCropControlRight').on('change', function () {
+                    $('#CAAmaskRight').css('width', $(this).val());
+                });
+
+                $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
+                $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', canvasWidth);
+
+                /* Create the css rule for the crop mask. */
+                $make('style', { id : 'CAAeditiorMaskColorStyle' }).text('.CAAmask { background-color: ' + $.getColor('MASK') + '; }')
+                                                                   .appendTo('head');
+
+                /* Create the color picker. */
+                $.log('Creating color picker for image editor');
+                var iePicker = new jscolor.color(document.getElementById('CAAeditiorMaskColorControl'), {});
+                iePicker.hash = true;
+                iePicker.pickerFace = 5;
+                iePicker.pickerInsetColor = 'black';
+                iePicker.fromString($.getColor('MASK'));
+
+                /* Add functionality to the color picker to change the css rule for the crop mask. */
+                $('#CAAeditiorMaskColorControl').on('change', function (e) {
+                    $('#CAAeditiorMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
+                    iePicker.fromString(this.value);
+                });
+
+//TODO: Figure out why the image editor color picker isn't changing the color in Firefox
+//TODO: Figure out why the image mask is invisible in Firefox
+
+                $('#CAAoverlay').show();
+                $('#CAAimageEditor').css('display', 'none')
+                                    .animate({ height  : 'toggle'
+                                             , opacity : 'toggle'
+                                             }, 'slow');
+            });
+        }();
     };
 
     /* Preview functionality */
@@ -2053,236 +2406,6 @@ Native support:
     }, '.newCAAimage');
     /* END: functionality to allow dragging from the Images box to a specific caa image box. */
 
-    /* Create image editor. */
-    !function create_image_editor_handler () {
-        $.log('Adding handler for image editor.');
-        $('body').on('click', '#previewImage', function (e) {
-            if ($('#previewImage').prop('src').length === 0) {
-                return;
-            }
-
-            var $makeMask = function (where) {
-                return $make('div').prop('id', 'CAAmask' + where)
-                                   .addClass('CAAmask');
-            };
-
-            var $makeNumCtrl = function (where) {
-                return $make('label').prop('id', 'CAAeditorCropLabel' + where)
-                                     .prop('title', $.l(where))
-                                     .addClass('cropLabel')
-                                     .text($.l(where))
-                                     .prepend($make('input').prop('type', 'number')
-                                                            .prop('step', 1)
-                                                            .prop('min', 0)
-                                                            .prop('value', 0)
-                                                            .prop('id', 'CAAeditorCropControl' + where)
-                                                            .prop('title', $.l('Crop image') + ': ' + $.l(where))
-                                                            .addClass('cropControl'));
-            };
-            var $makeFlipCtrl = function (direction) {
-                var symbol = (direction === 'Vertical') ? '⇵' : '⇆';
-
-                return $make('input').prop('id', 'CAAeditorFlip' + direction)
-                                     .prop('type', 'button')
-                                     .prop('title', $.l('Flip image') + ' ' + symbol)
-                                     .prop('value', symbol)
-                                     .addClass('flipControl');
-            };
-
-            $('body').prepend($make('div').prop('id', 'CAAimageEditor')
-                                          .hide()
-                                          .appendAll([ $makeCloseButton
-                                                     , $make('div').prop('id', 'CAAeditorDiv')
-                                                                   .appendAll([ $make('div').prop('id', 'CAAeditorCanvasDiv')
-                                                                                             .appendAll([ $makeMask('Left')
-                                                                                                        , $makeMask('Right')
-                                                                                                        , $makeMask('Top')
-                                                                                                        , $makeMask('Bottom')
-                                                                                                        , $make('canvas').prop('id', 'CAAeditorCanvas')
-                                                                                                        ])
-                                                                              , $make('div').prop('id', 'CAAeditorMenu')
-                                                                                            .appendAll([ $make('fieldset').prop('id', 'CAAeditorRotateField')
-                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorRotateLegend')
-                                                                                                                                                      .text($.l('Rotate image'))
-                                                                                                                                     , $make('label').prop('id', 'CAAeditorRotateLabel')
-                                                                                                                                                     .prop('title', $.l('How many degrees'))
-                                                                                                                                                     .text(' ' + $.l('degrees'))
-                                                                                                                                                     .prepend($make('input').prop('id', 'CAAeditorRotateControl')
-                                                                                                                                                                            .prop('type', 'number')
-                                                                                                                                                                            .prop('step', 1)
-                                                                                                                                                                            .prop('min', -360)
-                                                                                                                                                                            .prop('max', 360)
-                                                                                                                                                                            .prop('value', 0))
-                                                                                                                                     ])
-                                                                                                       , $make('fieldset').prop('id', 'CAAeditorFlipField')
-                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorFlipLegend')
-                                                                                                                                                 .text($.l('Flip image'))
-                                                                                                                                     , $makeFlipCtrl('Vertical')
-                                                                                                                                     , $makeFlipCtrl('Horizontal')
-                                                                                                                                     ])
-                                                                                                       , $make('fieldset').prop('id', 'cropField')
-                                                                                                                          .appendAll([ $make('legend').prop('id', 'CAAeditorCropLegend')
-                                                                                                                                                      .text($.l('Crop image'))
-                                                                                                                                     , $makeNumCtrl('Top')
-                                                                                                                                     , $makeNumCtrl('Bottom')
-                                                                                                                                     , $makeNumCtrl('Left')
-                                                                                                                                     , $makeNumCtrl('Right')
-                                                                                                                                     , $make('label').prop('id', 'CAAeditiorMaskColorLabel')
-                                                                                                                                                     .prop('title', $.l('Crop mask color'))
-                                                                                                                                                     .text($.l('Crop mask color'))
-                                                                                                                                                     .addClass('cropLabel')
-                                                                                                                                                     .prepend($make('input').prop('id', 'CAAeditiorMaskColorControl')
-                                                                                                                                                                            .prop('type', 'color')
-                                                                                                                                                                            .prop('value', $.getColor('MASK'))
-                                                                                                                                                                            .addClass('cropControl'))
-                                                                                                                                     ])
-                                                                                                        ])
-                                                                              ])
-                                                     ]))
-                     .prepend($make('div').prop('id', 'CAAoverlay')
-                                          .hide());
-
-            var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
-              , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
-              , canvasWidth    = Math.round(canvasHeight * imageRatio)
-              , degreesRotated = 0
-              ;
-
-            /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
-               then figure out the height based on the editor window's width instead of the other way around. */
-            var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
-
-            if (editorWindowWidth < (canvasWidth - 230)) {
-                canvasWidth  = Math.round(editorWindowWidth - 230);
-                canvasHeight = Math.round(canvasWidth / imageRatio);
-            }
-
-            $('#CAAeditorCanvasDiv').css({ height : canvasHeight + 'px'
-                                         , width  : canvasWidth + 'px'
-                                         });
-
-            /* Load the image into the canvas. */
-            var canvas = document.getElementById("CAAeditorCanvas")
-              , ctx = canvas.getContext("2d")
-              , img = new Image()
-            /* create a backup canvas for storing the unmodified image. */
-              , backupCanvas = document.createElement("canvas")
-              , backupCtx = backupCanvas.getContext("2d")
-              ;
-
-            img.onload = function () {
-                /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
-                canvas.style.height = canvasHeight + 'px';
-                canvas.style.width = canvasWidth + 'px';
-
-                ctx.drawImage(img, 0, 0);
-
-                backupCanvas.width = canvas.width;
-                backupCanvas.height = canvas.height;
-                backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
-            };
-
-            img.src = $('#previewImage').prop('src');
-
-            var prepCanvas = function (callback) {
-                var centerH        = canvas.height/2
-                  , centerW        = canvas.width/2
-                  ;
-                /* Clear the canvas */
-                ctx.save();
-                ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.restore();
-
-                /* Move the origin point to the center of the canvas */
-                ctx.translate(centerW, centerH);
-
-                /* Run the callback */
-                callback();
-
-                /* Move the origin point back to the top left corner of the canvas */
-                ctx.translate(-centerW, -centerH);
-
-                /* Draw the image into the canvas */
-                ctx.drawImage(backupCanvas, 0, 0);
-            };
-
-            var rotate = function (degrees) {
-                var rotate = function () {
-                    ctx.rotate(-degreesRotated * Math.PI / 180);
-                    ctx.rotate(degrees * Math.PI / 180);
-                    degreesRotated = degrees;
-                };
-                prepCanvas(rotate);
-            };
-
-            var flip = function (h, v) {
-                var flip = function () {
-                    ctx.scale(h ? -1 : 1, v ? -1 : 1);
-                };
-                prepCanvas(flip);
-            };
-
-            $('#CAAeditorFlipVertical').on('click', function () {
-                flip(0,1);
-            });
-
-            $('#CAAeditorFlipHorizontal').on('click', function () {
-                flip(1,0);
-            });
-
-            $('#CAAeditorRotateControl').on('change', function () {
-                rotate($(this).val());
-            });
-
-            $('#CAAeditorCropControlTop').on('change', function () {
-                $('#CAAmaskTop').css('height', $(this).val());
-            });
-
-            $('#CAAeditorCropControlBottom').on('change', function () {
-                $('#CAAmaskBottom').css('height', $(this).val());
-            });
-
-            $('#CAAeditorCropControlLeft').on('change', function () {
-                $('#CAAmaskLeft').css('width', $(this).val());
-            });
-
-            $('#CAAeditorCropControlRight').on('change', function () {
-                $('#CAAmaskRight').css('width', $(this).val());
-            });
-
-            $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
-            $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', canvasWidth);
-
-            /* Create the css rule for the crop mask. */
-            $make('style').prop('id', 'CAAeditiorMaskColorStyle')
-                          .text('.CAAmask { background-color: ' + $.getColor('MASK') + '; }')
-                          .appendTo('head');
-
-            /* Create the color picker. */
-            $.log('Creating color picker for image editor');
-            var myPicker = new jscolor.color(document.getElementById('CAAeditiorMaskColorControl'), {});
-            myPicker.hash = true;
-            myPicker.pickerFace = 5;
-            myPicker.pickerInsetColor = 'black';
-
-            /* Add functionality to the color picker to change the css rule for the crop mask. */
-            $('#CAAeditiorMaskColorControl').on('change', function () {
-                $('#CAAeditiorMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
-            });
-
-            $('#CAAoverlay').show();
-            $('#CAAimageEditor').css('display', 'none')
-                                .animate({ height  : 'toggle'
-                                         , opacity : 'toggle'
-                                         }, 'slow');
-        });
-    }();
-
     /* Adjust the table layout and CAA rows after a screen resize event occurs. */
     window.onresize = function adjust_table_after_window_resize () {
         $.log('Screen resize detected, adjusting layout.');
@@ -2298,11 +2421,11 @@ Native support:
 
     !function add_manual_starter_for_init () {
         $.log('Adding manual starter link.');
-        var $triggerLink = $make('a').text($.l('Add cover art'))
-                                     .css('cursor', 'pointer')
-                                     .wrap('<li>')
-                                     .on('click', function start_cover_art_script () { init(); })
-                                     .parent();
+        $.addRule('#triggerLink', '{ cursor: pointer }');
+        var $triggerLink = $make('a', { id : 'triggerLink' }).text($.l('Add cover art'))
+                                                             .wrap('<li>')
+                                                             .on('click', function start_cover_art_script () { init(); })
+                                                             .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
 }
@@ -2313,17 +2436,21 @@ function thirdParty($, CONSTANTS, getColor) {
     /*jshint strict:false */
     jQuery.noConflict();
 
+    if (!document.head) {
+        document.head = document.getElementsByTagName('head')[0];
+    }
+
     jQuery.extend({
         /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
         addScript: function addScript (scriptSource) {
             var script = document.createElement('script');
             script.type = 'text/javascript';
             script.textContent = localStorage.getItem(scriptSource);
-            document.getElementsByTagName('head')[0].appendChild(script);
+            document.head.appendChild(script);
         },
         // Creates and adds a new css rule
         addRule: function addRule(selector, rule) {
-            $('<style>').prop('type', 'text/css').text(selector + rule).appendTo($('head'));
+            $('<style type="text/css">').text(selector + rule).appendTo('head');
         },
         // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
         dataURItoBlob: function dataURItoBlob(dataURI, mime) {
@@ -2362,6 +2489,19 @@ function thirdParty($, CONSTANTS, getColor) {
         log: function log(str, verbose) {
             'undefined' === typeof verbose && (verbose = false);
             (!verbose || CONSTANTS.DEBUG_VERBOSE) && CONSTANTS.DEBUGMODE && console.log(str);
+        },
+        /* Polyfill input[type=number], if needed. */
+        polyfillInputNumber : function () {
+            var testEle = document.createElement('input');
+            testEle.setAttribute('type','number');
+            if (testEle.type === 'number') {
+                $.log('input[type=number] is supported, no polyfill needed.');
+            } else {
+                $.log('input[type=number] is not supported, loading polyfill.');
+                // The above bit already tested for number support; no need to load Modernizr.
+                var Modernizr = { inputtypes: { number: false }};
+                $.addScript('inputNumberPolyfill');
+            }
         }
     });
 
@@ -2392,7 +2532,7 @@ function thirdParty($, CONSTANTS, getColor) {
 !function main_loader(i) {
     'use strict';
     var script
-      , head = document.getElementsByTagName('head')[0]
+      , head = document.head || document.getElementsByTagName('head')[0]
       , requires = ['https://raw.github.com/brianfreud/greasemonkey-batchCAA/master/scripts.js']
       , makeScript = function makeScript () {
             script = document.createElement('script');
