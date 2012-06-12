@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1181
+// @version     0.01.1187
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -21,7 +21,7 @@
 
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
 // See https://github.com/jshint/jshint/issues/541
-/*jshint bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true */
+/*jshint bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
 /* Installation and requirements:
 
@@ -45,6 +45,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for removing existing CAA images
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
+//TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 
 var height = function (id) {
     'use strict';
@@ -52,7 +53,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1181'
+                , VERSION       : '0.1.1187'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -927,6 +928,9 @@ function main ($, CONSTANTS) {
 
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
+      , re = { image : /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp|ico)$/i
+             , uri   : /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi
+             }
       ;
 
     /* Faster element creation. */
@@ -1026,8 +1030,9 @@ function main ($, CONSTANTS) {
             $('#page').css('background', '#FFF');
         }();
 
-        !function init_create_dropzone () {
-            $.log('Creating drop zone.');
+
+        !function init_create_mainUI () {
+            $.log('Creating main UI and the options menu.');
 
             $imageContainer      = $make('div', { id: 'imageContainer' });
             $previewContainer    = $make('div', { id: 'previewContainer' });
@@ -1472,11 +1477,11 @@ function main ($, CONSTANTS) {
 
             dataURLreader.readAsDataURL(file);
             binaryReader.readAsBinaryString(file);
+            return;
         };
 
         var supportedImageType = function supportedImageType (uri) {
-            var re = /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp)$/i
-              , matches = re.exec(uri)
+            var matches = re.image.exec(uri)
               ;
             if (matches === null) {
                 return false;
@@ -1496,6 +1501,8 @@ function main ($, CONSTANTS) {
                 case '.bmp'  : return 'bmp';
                 /* Google WebP */
                 case '.webp' : return 'webp';
+                /* Icon */
+                case '.ico'  : return 'ico';
                 /* JPEG Network Graphics */
                 case '.jng'  : return 'jng';
                 /* JPEG2000 */
@@ -1660,18 +1667,20 @@ Native support:
 
                                                              switch (imgType) {
                                                                  case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
+                                                                 case ('png'): mime = 'png'; break;
+                                                                 case ('webp'): mime = 'webp'; break;
                                                                  case ('bmp'): mime = 'bmp'; break;
                                                                  case ('gif'): mime = 'gif'; break;
+                                                                 case ('ico'): mime = 'vnd.microsoft.icon'; break;
                                                                  case ('jng'): mime = 'x-jng'; break;
                                                                  case ('jp2'): mime = 'jp2'; break;
+                                                                 case ('ico'): mime = 'ico'; break;
                                                                  case ('pcx'): mime = 'pcx'; break;
                                                                  case ('pic'): mime = 'x-lotus-pic'; break;
                                                                  case ('pict'): mime = 'pict'; break;
-                                                                 case ('png'): mime = 'png'; break;
                                                                  case ('pnt'): mime = 'pnt'; break;
                                                                  case ('tga'): mime = 'tga'; break;
                                                                  case ('tif'): mime = 'tiff'; break;
-                                                                 case ('webp'): mime = 'webp'; break;
 
                                                              }
                                                              var imageFile = $.dataURItoBlob(imageBase64, mime);
@@ -1713,6 +1722,74 @@ Native support:
                                                                  }, handleError);
                                                              }, handleError);
                                                          });
+            return;
+        };
+
+        var getRemotePage = function (uri) {
+            $.log('Loading ' + uri);
+            var imageTest = re.image;
+
+            $.ajax({ url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" + 
+                          encodeURIComponent(uri) + "%22&format=xml'&callback=?"
+                   , dataType: "jsonp"
+                   , context: this
+                   , success: function yqlResponseHandler(data, textStatus, jqXHR) {
+                                  if (!data.results[0]) {
+                                      $.log('Page is blocked from YQL via robots.txt, ' + uri);
+// TODO: Handle this case
+                                  } else {
+                                      $.log('Processing ' + uri);
+                                      var links = []
+                                        , base = (this.baseuri || '')
+                                        , processURI = function (uri, baseuri) {
+                                              imageTest.test(uri) && links.push((baseuri || '') + uri);
+                                          }
+                                        ;
+                                      $(data.results[0]).find('img')
+                                                        .each(function () {
+                                                                  processURI(this.src, base);
+                                                              })
+                                                        .end()
+                                                        .find('a')
+                                                        .each(function () {
+                                                                  processURI(this.href, base);
+                                                              });
+                                      links.length && handleURIs({ text: links.filter(function(uri, index) {
+                                                                                         return links.indexOf(uri) == index;
+                                                                                      })
+                                                                 });
+                                  }
+                              }
+                   });
+        };
+
+        var handleURIs = function (uris) {
+            switch (!0) {
+                case (void 0 !== uris.file_list && !!uris.file_list.length): // local file(s)
+                    $.log('imageContainer: drop ==> local file');
+                    loadLocalFile(uris.e);
+                    break;
+                case (void 0 !== uris.uri && !!uris.uri.length): // remote image drag/dropped
+                    $.log('imageContainer: drop ==> uri');
+                    uris.text = [uris.uri];
+                    /* falls through */
+                case (void 0 !== uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
+                    $.log('imageContainer: drop ==> list of uris');
+                    var type;
+                    uris.text.forEach(function (uri) {
+                        type = supportedImageType(uri);
+                        $.log('imageContainer: ' + type + ' detected at ' + uri);
+                        if (type) {
+                            loadRemoteFile(uri, type);
+                        } else {
+                            $.log(uri + ' does not appear to be an image; trying it as webpage.');
+                            getRemotePage(uri);
+                        }
+                    });
+                    break;
+                default:
+                    $.log('This is not something which can provide a usable image.');
+            }
         };
 
         !function init_activate_dnd_at_dropzone () {
@@ -1736,42 +1813,14 @@ Native support:
                     e.preventDefault();
                     e = e.originalEvent || e;
 
-                    var uriTest = /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi;
                     var dropped = { file_list : e.dataTransfer.files
-                                  , text      : e.dataTransfer.getData('Text').match(uriTest) || ''
+                                  , text      : e.dataTransfer.getData('Text').match(re.uri) || ''
                                   , uri       : e.dataTransfer.getData('text/uri-list')
+                                  , e         : e
                                   };
 
                     $.log(dropped);
-                    switch (!0) {
-                        case !!dropped.file_list.length: // local file(s)
-                            $.log('imageContainer: drop ==> local file');
-                            loadLocalFile(e);
-                            break;
-                        case !!dropped.uri.length: // remote image drag/dropped
-                            $.log('imageContainer: drop ==> uri');
-                            dropped.text = [dropped.uri];
-                            /* falls through */
-                        case !!dropped.text.length: // plaintext list of urls drag/dropped
-                            $.log('imageContainer: drop ==> list of uris');
-                            var type, uri;
-                            for (var i = 0, len = dropped.text.length; i < len; i++) {
-                                uri = dropped.text[i];
-                                type = supportedImageType(uri);
-                                $.log('imageContainer: ' + type + ' detected');
-                                if (type) {
-                                    loadRemoteFile(uri, type);
-                                    break;
-                                } else {
-//TODO: Add loading webpages
-                                $.log(uri + ' does not appear to be a jpeg, skipping.');
-                                }
-                            }
-                            break;
-                        default:
-                            $.log('Whatever was just dropped is not something which can provide a jpeg.');
-                    }
-
+                    handleURIs(dropped);
                 }
             });
         }();
