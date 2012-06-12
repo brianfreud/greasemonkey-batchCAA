@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1180
+// @version     0.01.1181
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,7 +44,6 @@ Opera: Not compatible, sorry.
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Add functionality to #CAAeditorDarknessControl
-//TODO: input number polyfill?
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 
 var height = function (id) {
@@ -53,7 +52,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1180'
+                , VERSION       : '0.1.1181'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -753,6 +752,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   'div.number-spin-btn':
                       { 'background-color'      : '#CCCCCC'
                       ,  border                 : '2px outset #CCCCCC'
+                      ,  height                 : '11.5px!important'
                       ,  width                  : '1.2em'
                       },
                   'div.number-spin-btn-up':
@@ -2500,7 +2500,10 @@ function thirdParty($, CONSTANTS, getColor) {
                 $.log('input[type=number] is not supported, loading polyfill.');
                 // The above bit already tested for number support; no need to load Modernizr.
                 var Modernizr = { inputtypes: { number: false }};
-                $.addScript('inputNumberPolyfill');
+                /* This HAS to use eval, instead of using addScript.  If addScript is used, the DOM changes are made, but
+                   because the code would exist in a different sandbox from this script, the change events would not be passed
+                   to this script's handlers.  Eval keeps it in this same javascript context. */
+                eval(localStorage.getItem('inputNumberPolyfill'));
             }
         }
     });
