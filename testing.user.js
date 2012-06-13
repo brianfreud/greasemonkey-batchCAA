@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1187
+// @version     0.01.1216
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,6 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
+//TODO: Fix webp support for Firefox
 
 var height = function (id) {
     'use strict';
@@ -53,7 +54,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1187'
+                , VERSION       : '0.1.1216'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -154,7 +155,7 @@ var CONSTANTS = { DEBUGMODE     : true
 
 /* Special case Canadian English. */
 CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(CONSTANTS.TEXT.en));
-CONSTANTS.TEXT['en-ca'].languageName             = 'English (Canadian)';
+CONSTANTS.TEXT['en-ca'].languageName             += ' (Canadian)';
 CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
 CONSTANTS.TEXT['en-ca']['Changed colors note']   = 'Changes to the colour settings will take effect the next time that this script is run.';
 CONSTANTS.TEXT['en-ca']['take effect next time'] = 'Changes to the language and colour settings will take effect the next time that this script is run.';
@@ -811,7 +812,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       }
 };
 
-/* START remote image accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
+/* START remote file accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
    new context loses the special permissions granted to userscripts, and thus does not have access to GM_xmlhttpRequest. */
 
@@ -828,8 +829,8 @@ body.appendChild(messageDiv);
 messageDiv.addEventListener('click', getUri, true);
 
 /* When a click event alerts the code that a new link is in the communications div, read that link's uri out of the linked span.
-   Then convert the binary image into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
-   trigger a doubleclick event to let the other half of this code, in the other javascript context, know that the image data has
+   Then convert the binary file into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
+   trigger a doubleclick event to let the other halves of this code, in the other javascript context, know that the file data has
    been retrieved. */
 function getUri(e) {
     'use strict';
@@ -893,7 +894,7 @@ function getUri(e) {
         return base64_encode(data_string(binary));
     };
 
-    var storeImage = function storeImage(response) {
+    var storeRetrievedFile = function storeRetrievedFile(response) {
             var thisComlink = e.target
               , evt         = document.createEvent("MouseEvents")
               ;
@@ -913,18 +914,20 @@ function getUri(e) {
     var gmXHR = GM_xmlhttpRequest; // Workaround to jshint, since GM_xmlhttpRequest is not a constructor but looks like one to jshint.
     gmXHR({ method           : "GET"
           , overrideMimeType : 'text/plain; charset=x-user-defined'
-          , onload           : storeImage
+          , onload           : storeRetrievedFile
           , responseType     : 'arraybuffer'
           , url              : e.target.innerHTML
           });
 }
-/* END remote image accessor functions. */
+/* END remote file accessor functions. */
 
 function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
 
     $.log('Script initializing.');
+
+    $('head').append('<base href="">');
 
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
@@ -1079,7 +1082,7 @@ function main ($, CONSTANTS) {
                                                     .text($.l('(Image) Resolution'))
               , $editor000Contnr = $make('div',      { id        : 'editor000Container'
                                                      })
-              , $editor000Ctrl   = $make('input',    { id        : 'CAAeditorDarknessControl' 
+              , $editor000Ctrl   = $make('input',    { id        : 'CAAeditorDarknessControl'
                                                      , type      : 'number'
                                                      , step      : 1
                                                      , 'min'     : 0
@@ -1640,88 +1643,97 @@ Native support:
             }
         };
 
-        var loadRemoteFile = function load_remote_file (uri, imgType) {
-            'undefined' === typeof imgType && (imgType = 'jpg');
-            var loadStage = ''
-              , $xhrComlink = $('#xhrComlink')
-              ;
-            var handleError = function error_handler_for_loadRemoteFile_XHR (e, flagged) {
+        var addRemoteImage = function add_remote_image (e) {
+            $.log('dblclick detected on comlink; creating file and thumbnail.');
+            var $comlink = $(this)
+              , imageBase64 = $(this).text()
+              , loadStage = ''
+              , mime
+              , thisImageFilename = 'image' + Date.now() + '.jpg'
+              , imageType = e.data.imageType
+              , uri = e.data.uri
+              , handleError = function error_handler_for_loadRemoteFile_XHR (e, flagged) {
                                   'undefined' === typeof flagged && (flagged = false);
                                   $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.', flagged);
                                   $.log(e, flagged);
-                                };
+                              }
+              ;
+
+
+            if (!$comlink.hasClass('image')) { // This comlink isn't being used for an image file.
+                $.log('Comlink does not hold an image; quitting addRemoteImage.');
+                return;
+            }
+            $.log('Comlink holds an image; addRemoteImage continuing.');
+
+            switch (imageType) {
+                case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
+                case ('png'): mime = 'png'; break;
+                case ('webp'): mime = 'webp'; break;
+                case ('bmp'): mime = 'bmp'; break;
+                case ('gif'): mime = 'gif'; break;
+                case ('ico'): mime = 'vnd.microsoft.icon'; break;
+                case ('jng'): mime = 'x-jng'; break;
+                case ('jp2'): mime = 'jp2'; break;
+                case ('ico'): mime = 'ico'; break;
+                case ('pcx'): mime = 'pcx'; break;
+                case ('pic'): mime = 'x-lotus-pic'; break;
+                case ('pict'): mime = 'pict'; break;
+                case ('pnt'): mime = 'pnt'; break;
+                case ('tga'): mime = 'tga'; break;
+                case ('tif'): mime = 'tiff'; break;
+
+            }
+            var imageFile = $.dataURItoBlob(imageBase64, mime);
+            /* Create a new file in the temp local file system. */
+            loadStage = 'getFile';
+            localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
+                /* Write to the new file. */
+                loadStage = 'createWriter';
+                thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
+                    fileWriter.onwritestart = function fileWriter_onwritestart (e) {
+                        // fileWriter.position points to 0.
+                        $.log('fileWriter is writing a remote image file to a local file.');
+                    };
+                    fileWriter.onwriteend = function fileWriter_onwriteend (e) {
+                        // fileWriter.position points to the next empty byte in the file.
+                        $.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
+                        if (fileWriter.position) {
+                            $.log('Adding remote image to the drop zone.');
+                            thisFile.file(function (file) {
+                                if (imageType !== 'jpg') {
+                                    file = convertImage(file, imageType, uri);
+                                    addImageToDropbox(file, 'converted remote ' + imageType, uri);
+                                } else {
+                                    addImageToDropbox(file, 'Remote', uri);
+                                }
+                            });
+                        }
+                    };
+
+                    loadStage = 'createWriter: problem within the writer. (But ignore this error.)';
+                    fileWriter.onerror = handleError(e, 1);
+                    loadStage = 'createWriter: abort within the writer. (But ignore this error.)';
+                    fileWriter.onabort = handleError(e, 1);
+
+                    fileWriter.write(imageFile);
+                    $.log('Remote file has been retrieved and writen.');
+                    $.log(localFS);
+                    $comlink.remove();
+                }, handleError);
+            }, handleError);
+        };
+
+        var loadRemoteFile = function load_remote_file (uri, imageType) {
+            'undefined' === typeof imageType && (imageType = 'jpg');
 
             $.log('Creating comlink to trigger other context to get the image.');
-            $make('pre').text(uri)
-                        .appendTo($xhrComlink)
-                                         .trigger('click')
+            $make('pre', { 'class': 'image' }).text(uri)
+                                              .appendTo('#xhrComlink')
+                                              .trigger('click')
             /* At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
                event, which will then continue the import. */
-                                         .on('dblclick', function create_blob_and_add_thumbnail (e) {
-                                                             $.log('dblclick detected on comlink; creating file and thumbnail.');
-                                                             var $comlink = $(this)
-                                                               , imageBase64 = $(this).text()
-                                                               , mime
-                                                               , thisImageFilename = 'image' + Date.now() + '.jpg'
-                                                               ;
-
-                                                             switch (imgType) {
-                                                                 case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
-                                                                 case ('png'): mime = 'png'; break;
-                                                                 case ('webp'): mime = 'webp'; break;
-                                                                 case ('bmp'): mime = 'bmp'; break;
-                                                                 case ('gif'): mime = 'gif'; break;
-                                                                 case ('ico'): mime = 'vnd.microsoft.icon'; break;
-                                                                 case ('jng'): mime = 'x-jng'; break;
-                                                                 case ('jp2'): mime = 'jp2'; break;
-                                                                 case ('ico'): mime = 'ico'; break;
-                                                                 case ('pcx'): mime = 'pcx'; break;
-                                                                 case ('pic'): mime = 'x-lotus-pic'; break;
-                                                                 case ('pict'): mime = 'pict'; break;
-                                                                 case ('pnt'): mime = 'pnt'; break;
-                                                                 case ('tga'): mime = 'tga'; break;
-                                                                 case ('tif'): mime = 'tiff'; break;
-
-                                                             }
-                                                             var imageFile = $.dataURItoBlob(imageBase64, mime);
-                                                             /* Create a new file in the temp local file system. */
-                                                             loadStage = 'getFile';
-                                                             localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
-                                                                 /* Write to the new file. */
-                                                                 loadStage = 'createWriter';
-                                                                 thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
-                                                                     fileWriter.onwritestart = function fileWriter_onwritestart (e) {
-                                                                         // fileWriter.position points to 0.
-                                                                         $.log('fileWriter is writing a remote image file to a local file.');
-                                                                     };
-                                                                     fileWriter.onwriteend = function fileWriter_onwriteend (e) {
-                                                                         // fileWriter.position points to the next empty byte in the file.
-                                                                         $.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
-                                                                         if (fileWriter.position) {
-                                                                             $.log('Adding remote image to the drop zone.');
-                                                                             thisFile.file(function (file) {
-                                                                                 if (imgType !== 'jpg') {
-                                                                                     file = convertImage(file, imgType, uri);
-                                                                                     addImageToDropbox(file, 'converted remote ' + imgType, uri);
-                                                                                 } else {
-                                                                                     addImageToDropbox(file, 'Remote', uri);
-                                                                                 }
-                                                                             });
-                                                                         }
-                                                                     };
-
-                                                                     loadStage = 'createWriter: problem within the writer. (But ignore this error.)';
-                                                                     fileWriter.onerror = handleError(e, 1);
-                                                                     loadStage = 'createWriter: abort within the writer. (But ignore this error.)';
-                                                                     fileWriter.onabort = handleError(e, 1);
-
-                                                                     fileWriter.write(imageFile);
-                                                                     $.log('Remote file has been retrieved and writen.');
-                                                                     $.log(localFS);
-                                                                     $comlink.remove();
-                                                                 }, handleError);
-                                                             }, handleError);
-                                                         });
+                                              .on('dblclick', { imageType: imageType, uri: uri }, addRemoteImage);
             return;
         };
 
@@ -1729,35 +1741,72 @@ Native support:
             $.log('Loading ' + uri);
             var imageTest = re.image;
 
-            $.ajax({ url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" + 
-                          encodeURIComponent(uri) + "%22&format=xml'&callback=?"
+            $.ajax({ url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" +
+                          encodeURIComponent(uri) +
+                          "%22%20and%20xpath%3D%22/html%22" + // Tells YQL to include the <head> as well as the <body>
+                          "&format=xml&callback=?"
                    , dataType: "jsonp"
                    , context: this
                    , success: function yqlResponseHandler(data, textStatus, jqXHR) {
-                                  if (!data.results[0]) {
+                                  var links = []
+                                    , processURI = function (uri) {
+                                            imageTest.test(uri) && links.push(uri);
+                                        }
+                                    , unique = function(uri, index) {
+                                            return links.indexOf(uri) === index;
+                                        }
+                                    , sendLinksToHandler = function (base) {
+                                            links.length && handleURIs({ base: base
+                                                                       , text: links.filter(unique)
+                                                                       });
+                                        }
+                                    , handleBaseTag = function ($remotePage) {
+                                            var base = $remotePage.filter('base').attr('href') || '';
+                                            $('base').prop('href', base);
+                                            return base;
+                                        }
+                                    , populateImageLinks = function ($remotePage) {
+                                            $remotePage.find('img')
+                                                       .each(function () {
+                                                                 processURI(this.src);
+                                                             })
+                                                       .end()
+                                                       .find('a')
+                                                       .each(function () {
+                                                                 processURI(this.href);
+                                                       });
+                                        }
+                                    ;
+
+                                  if (!data.results[0]) { // Received an empty response from YQL - means that the page blocks YQL with robots.txt.
                                       $.log('Page is blocked from YQL via robots.txt, ' + uri);
-// TODO: Handle this case
+                                      $.log('Creating comlink to trigger other context to get the file.');
+                                      $make('pre', { 'class': 'page' }).text(uri)
+                                                                       .appendTo('#xhrComlink')
+                                                                       .trigger('click')
+                                                   /* At this point, the event handler in the other javascript scope takes over.
+                                                      It will then trigger a dblclick event, which will then continue the process. */
+                                                                       .on('dblclick', function processRobotsWebpage (e) {
+                                                                           var $comlink   = $(this)
+                                                                             , remoteHTML = atob($(this).text())
+                                                                             , $remotePage = $(remoteHTML)
+                                                                             ;
+
+                                                                           if (!$comlink.hasClass('page')) { // This comlink isn't being used for an webpage.
+                                                                               $.log('Comlink does not hold a webpage; quitting processRobotsWebpage.');
+                                                                               return;
+                                                                           }
+                                                                           $.log('Comlink holds a webpage; processRobotsWebpage continuing.');
+                                                                           var base = handleBaseTag($remotePage);
+                                                                           populateImageLinks($remotePage);
+                                                                           sendLinksToHandler(base);
+                                                                       });
                                   } else {
                                       $.log('Processing ' + uri);
-                                      var links = []
-                                        , base = (this.baseuri || '')
-                                        , processURI = function (uri, baseuri) {
-                                              imageTest.test(uri) && links.push((baseuri || '') + uri);
-                                          }
-                                        ;
-                                      $(data.results[0]).find('img')
-                                                        .each(function () {
-                                                                  processURI(this.src, base);
-                                                              })
-                                                        .end()
-                                                        .find('a')
-                                                        .each(function () {
-                                                                  processURI(this.href, base);
-                                                              });
-                                      links.length && handleURIs({ text: links.filter(function(uri, index) {
-                                                                                         return links.indexOf(uri) == index;
-                                                                                      })
-                                                                 });
+                                      var $remotePage = $(data.results[0]);
+                                      var base = handleBaseTag($remotePage);
+                                      populateImageLinks($remotePage);
+                                      sendLinksToHandler(base);
                                   }
                               }
                    });
@@ -1776,6 +1825,7 @@ Native support:
                 case (void 0 !== uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
                     $.log('imageContainer: drop ==> list of uris');
                     var type;
+
                     uris.text.forEach(function (uri) {
                         type = supportedImageType(uri);
                         $.log('imageContainer: ' + type + ' detected at ' + uri);
@@ -1814,6 +1864,7 @@ Native support:
                     e = e.originalEvent || e;
 
                     var dropped = { file_list : e.dataTransfer.files
+                                  , base      : $(e.dataTransfer.getData('Text')).find('base').attr('href') || ''
                                   , text      : e.dataTransfer.getData('Text').match(re.uri) || ''
                                   , uri       : e.dataTransfer.getData('text/uri-list')
                                   , e         : e
@@ -2174,7 +2225,7 @@ Native support:
                   , $ieCropField        = $make('fieldset', { id : 'CAAeditorCropField' })
                   , $ieCropLegend       = $make('legend',   { id : 'CAAeditorCropLegend' }).text($.l('Crop image'))
                   , $ieMaskColorLabel   = $make('label',    { 'class' : 'cropLabel'
-                                                            , id : 'CAAeditiorMaskColorLabel' 
+                                                            , id : 'CAAeditiorMaskColorLabel'
                                                             , title : $.l('Crop mask color')
                                                             }).text($.l('Crop mask color'))
                   , $ieMaskColorControl = $make('input',    { 'class' : 'cropControl'
