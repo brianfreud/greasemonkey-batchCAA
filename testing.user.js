@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1217
+// @version     0.01.1240
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -55,7 +55,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1217'
+                , VERSION       : '0.1.1240'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -825,60 +825,56 @@ var body       = document.getElementsByTagName('body')[0]
 messageDiv.id = 'xhrComlink';
 body.appendChild(messageDiv);
 
-/* Create an event listener, in the priviledged userscript context, which will listen for new uri additions to the xhrComlink div.
-   This cannot use custom events, as they would only exist in one of the two javascript contexts. */
-messageDiv.addEventListener('click', getUri, true);
-
 /* When a click event alerts the code that a new link is in the communications div, read that link's uri out of the linked span.
    Then convert the binary file into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
    trigger a doubleclick event to let the other halves of this code, in the other javascript context, know that the file data has
    been retrieved. */
-function getUri(e) {
+var getUri = function (e) {
     'use strict';
 
-  // START from http://phpjs.org
-  var base64_encode = function base64_encode(data) {
-            // http://kevin.vanzonneveld.net
-            // +   original by: Tyler Akins (http://rumkin.com)
-            // +   improved by: Bayron Guevara
-            // +   improved by: Thunder.m
-            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-            // +   bugfixed by: Pellentesque Malesuada
-            // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-            // +   improved by: Rafał Kukawski (http://kukawski.pl)
-            // *     example 1: base64_encode('Kevin van Zonneveld');
-            // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
-            // mozilla has this native
-            // - but breaks in 2.0.0.12!
-            //}
-            var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-            var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
-                ac = 0,
-                enc = "",
-                tmp_arr = [];
+    // START from http://phpjs.org
+    var base64_encode = function base64_encode(data) {
+        // http://kevin.vanzonneveld.net
+        // +   original by: Tyler Akins (http://rumkin.com)
+        // +   improved by: Bayron Guevara
+        // +   improved by: Thunder.m
+        // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+        // +   bugfixed by: Pellentesque Malesuada
+        // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+        // +   improved by: Rafał Kukawski (http://kukawski.pl)
+        // *     example 1: base64_encode('Kevin van Zonneveld');
+        // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
+        // mozilla has this native
+        // - but breaks in 2.0.0.12!
+        //}
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
+            ac = 0,
+            enc = "",
+            tmp_arr = [];
 
-            if (!data) {
-                return data;
-            }
-            do { // pack three octets into four hexets
-                o1 = data.charCodeAt(i++);
-                o2 = data.charCodeAt(i++);
-                o3 = data.charCodeAt(i++);
+        if (!data) {
+            return data;
+        }
+        do { // pack three octets into four hexets
+            o1 = data.charCodeAt(i++);
+            o2 = data.charCodeAt(i++);
+            o3 = data.charCodeAt(i++);
 
-                bits = o1 << 16 | o2 << 8 | o3;
+            bits = o1 << 16 | o2 << 8 | o3;
 
-                h1 = bits >> 18 & 0x3f;
-                h2 = bits >> 12 & 0x3f;
-                h3 = bits >> 6 & 0x3f;
-                h4 = bits & 0x3f;
+            h1 = bits >> 18 & 0x3f;
+            h2 = bits >> 12 & 0x3f;
+            h3 = bits >> 6 & 0x3f;
+            h4 = bits & 0x3f;
 
-                // use hexets to index into b64, and append result to encoded string
-                tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
-            } while (i < data.length);
-            enc = tmp_arr.join('');
-            var r = data.length % 3;
-            return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
-        };
+            // use hexets to index into b64, and append result to encoded string
+            tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+        } while (i < data.length);
+        enc = tmp_arr.join('');
+        var r = data.length % 3;
+        return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+    };
     // END (phpjs.org)
 
     // START from Tim Smart at http://pastebin.ca/1425789
@@ -896,33 +892,44 @@ function getUri(e) {
     };
 
     var storeRetrievedFile = function storeRetrievedFile(response) {
-            var thisComlink = e.target
-              , evt         = document.createEvent("MouseEvents")
-              ;
+        var base64File
+          , thisComlink = e.target
+          , evt         = document.createEvent("MouseEvents")
+          ;
 
-            thisComlink.innerHTML = '';
+        thisComlink.innerHTML = '';
+        thisComlink.appendChild(
+                               document.createTextNode(
+                                                      bin2base64(response.responseText)
+                                                      )
+                               );
 
-            thisComlink.appendChild(
-                document.createTextNode(
-                    bin2base64(response.responseText)
-                )
-            );
-
-            evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
-            thisComlink.dispatchEvent(evt);
-        };
+        evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+        thisComlink.dispatchEvent(evt);
+    };
 
     var gmXHR = GM_xmlhttpRequest; // Workaround to jshint, since GM_xmlhttpRequest is not a constructor but looks like one to jshint.
-    gmXHR({ method           : "GET"
-          , overrideMimeType : 'text/plain; charset=x-user-defined'
-          , onload           : storeRetrievedFile
-          , responseType     : 'arraybuffer'
-          , url              : e.target.innerHTML
-          });
+    var gmXOptions = { method           : 'GET'
+                     , overrideMimeType : 'text/plain; charset=x-user-defined'
+                     , onload           : storeRetrievedFile
+                     , url              : e.target.innerHTML
+                     };
+    gmXHR(gmXOptions);
 }
+
+var getUriWorkaround = function (e) { // Works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
+    setTimeout(function() {
+        getUri(e);
+    }, 0);
+};
+
+/* Create an event listener, in the priviledged userscript context, which will listen for new uri additions to the xhrComlink div.
+   This cannot use custom events, as they would only exist in one of the two javascript contexts. */
+messageDiv.addEventListener('click', getUriWorkaround, true);
+
 /* END remote file accessor functions. */
 
-function main ($, CONSTANTS) {
+var main = function main ($, CONSTANTS) {
     'use strict';
     jQuery.noConflict();
 
