@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1216
+// @version     0.01.1217
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -43,6 +43,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for cancelling image editor
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
+//TODO: Add support for positioning/repositioning CAA images
 //TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
@@ -54,7 +55,7 @@ var height = function (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1216'
+                , VERSION       : '0.1.1217'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1493,35 +1494,45 @@ function main ($, CONSTANTS) {
             $.log('Testing file with extension "' + matched + '" to see if it is a supported extension.');
             switch (matched) {
                 /* JPEG */
-                case matches[$.inArray(matched, ['.jpg', '.jpeg', '.jpe', '.jfif', '.jif'])]: return 'jpg';
+                case '.jpg'   : /* falls through */
+                case '.jpeg'  : /* falls through */
+                case '.jpe'   : /* falls through */
+                case '.jfif'  : /* falls through */
+                case '.jif'   : return 'jpg';
                 /* Progressive JPEG */
-                case matches[$.inArray(matched, ['.pjp', '.pjpeg'])]: return 'jpg';
+                case '.pjp'   : /* falls through */
+                case '.pjpeg' : return 'jpg';
                 /* Portable Network Graphics */
-                case '.png'  : return 'png';
+                case '.png'   : return 'png';
                 /* GIF */
-                case '.gif'  : return 'gif';
+                case '.gif'   : return 'gif';
                 /* Bitmap */
-                case '.bmp'  : return 'bmp';
+                case '.bmp'   : return 'bmp';
                 /* Google WebP */
-                case '.webp' : return 'webp';
+                case '.webp'  : return 'webp';
                 /* Icon */
-                case '.ico'  : return 'ico';
+                case '.ico'   : return 'ico';
                 /* JPEG Network Graphics */
-                case '.jng'  : return 'jng';
+                case '.jng'   : return 'jng';
                 /* JPEG2000 */
-                case matches[$.inArray(matched, ['.j2c', '.j2k', '.jp2', '.jpc', '.jpt'])]: return 'jp2';
+                case '.j2c'   : /* falls through */
+                case '.j2k'   : /* falls through */
+                case '.jp2'   : /* falls through */
+                case '.jpc'   : /* falls through */
+                case '.jpt'   : return 'jp2';
                 /* ZSoft IBM PC Paintbrush */
-                case '.pcx'  : return 'pcx';
+                case '.pcx'   : return 'pcx';
                 /* Lotus Picture */
-                case '.pic'  : return 'pic';
+                case '.pic'   : return 'pic';
                 /* Macintosh */
-                case '.pict'  : return 'pict';
+                case '.pict'   : return 'pict';
                 /* MacPaint file format */
-                case '.pnt'  : return 'pnt';
+                case '.pnt'   : return 'pnt';
                 /* Targa file format */
-                case '.tga'  : return 'tga';
+                case '.tga'   : return 'tga';
                 /* Aldus Tagged Image File Format */
-                case matches[$.inArray(matched, ['.tif', '.tiff'])]: return 'tiff';
+                case '.tif'   : /* falls through */
+                case '.tiff'  : return 'tiff';
                 default     : return false;
             }
         };
