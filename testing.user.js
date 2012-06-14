@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1247
+// @version     0.01.1248
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -37,14 +37,12 @@ Opera: Not compatible, sorry.
 
 //TODO: "About"
 //TODO: Edit submission
-//TODO: Eliminate the 2nd image load for remote images
 //TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for saving edited images
 //TODO: Add support for cancelling image editor
 //TODO: Add support for editing existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Add support for positioning/repositioning CAA images
-//TODO: Add functionality to #CAAeditorDarknessControl
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
@@ -55,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1247'
+                , VERSION       : '0.1.1248'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -77,6 +75,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Track'
                                   , 'Other'
                                   ]
+                , IEDARKNESSLVL : 75
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
@@ -1097,8 +1096,8 @@ var main = function main ($, CONSTANTS) {
                                                      , step      : 1
                                                      , 'min'     : 0
                                                      , 'max'     : 100
+                                                     , value     : localStorage.getItem('caaBatch_editorDarkness') || CONSTANTS.IEDARKNESSLVL
                                                      , title     : $.l('How dark the bkgrnd')
-                                                     , value     : 75  // TODO: Don't hardcode this
                                                      })
               , $editor000Label  = $make('label',    { 'for'     : 'CAAeditorDarknessControl'
                                                      , id        : 'CAAeditorDarknessLabel'
@@ -1275,7 +1274,6 @@ var main = function main ($, CONSTANTS) {
             $.log('Adding handler for language selector.');
             $('#languageSelect').on('change', function change_language_preference_handler (e) {
                 localStorage.setItem('caaBatch_language', $.single(this).find(':selected').val());
-                $('#languageSelect').prop('disabled', true);
             });
         }();
 
@@ -1284,8 +1282,16 @@ var main = function main ($, CONSTANTS) {
             $.log('Adding handler for the clear image storage button.');
             $('#ClearStorageBtn').on('click', function clear_storage_handler (e) {
                 localStorage.setItem('caaBatch_imageCache', '[]');
-                $('#ClearStorageBtn').prop('disabled', true);
+                $.single(this).prop('disabled', true);
                 cachedImages = [];
+            });
+        }();
+
+        /* Add functionality to the image editor darkness control. */
+        !function add_image_editor_darkness_control_handler () {
+            $.log('Adding handler for the image editor darkness control.');
+            $('#CAAeditorDarknessControl').on('click', function image_editor_darkness_control_handler (e) {
+                localStorage.setItem('caaBatch_editorDarkness', $.single(this).val());
             });
         }();
 
