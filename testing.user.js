@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1248
+// @version     0.01.1250
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -16,7 +16,7 @@
 // @include     http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
 // ==/UserScript==
-123/70 => 
+
 // Translations handled at https://www.transifex.net/projects/p/CAABatch/
 
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
@@ -46,7 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
-console.time("aaaa");
+
 
 var height = function get_client_height (id) {
     'use strict';
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1248'
+                , VERSION       : '0.1.1250'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -2139,20 +2139,19 @@ Native support:
 
                 var colCount    = $releaseRow.find('td').length
                   , thisMBID    = re.mbid.exec($releaseAnchor.attr('href'))
-                  , $imageRow   = $make('td', { 'class' : 'imageRow'
-                                              , colspan : colCount
-                                              })                                                                
                   ;
 
                 $.log('New release found, attaching a CAA row.', 1);
-                var $thisAddBtn = $addBtn.clone().data('entity', thisMBID)
-                  , $thisCAABtn = $caaBtn.clone().data('entity', thisMBID)
-                  , $thisLoadingDiv = $loadingDiv.clone()
-                  , $newCAARow  = $imageRow.clone().appendAll([ $thisAddBtn
-                                                              , $thisLoadingDiv
-                                                              , $make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
-                                                              ])
-                                                   .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
+                var $thisAddBtn = $addBtn.quickClone().data('entity', thisMBID)
+                  , $thisCAABtn = $caaBtn.quickClone().data('entity', thisMBID)
+                  , $thisLoadingDiv = $loadingDiv.quickClone(true)
+                  , $newCAARow  = $make('td', { 'class' : 'imageRow'
+                                              , colspan : colCount
+                                              }).appendAll([ $thisAddBtn
+                                                                       , $thisLoadingDiv
+                                                                       , $make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
+                                                                       ])
+                                                .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
                 $thisForm.data(thisMBID, $newCAARow);
 
                 $.log('Attaching DOMNodeInserted event handler.', 1);
@@ -2631,8 +2630,11 @@ function thirdParty($, CONSTANTS, getColor) {
         },
         // Logs a message to the console if debug mode is on.
         log: function log(str, verbose) {
+            if (!CONSTANTS.DEBUGMODE) {
+                return;
+            }
             'undefined' === typeof verbose && (verbose = false);
-            (!verbose || CONSTANTS.DEBUG_VERBOSE) && CONSTANTS.DEBUGMODE && console.log(str);
+            (!verbose || CONSTANTS.DEBUG_VERBOSE) && console.log(str);
             return;
         },
         /* Polyfill input[type=number], if needed. */
@@ -2663,6 +2665,13 @@ function thirdParty($, CONSTANTS, getColor) {
     $.fn.vis = function jQuery_vis (i) {
         return this.css('visibility', i ? 'visible'
                                         : 'hidden');
+    };
+
+    // A faster .clone(); clones only the nodes, without regard to events.  deep = true == deep node copy.
+    $.fn.quickClone = function jQuery_vis (deep) {
+        return this.map(function jQuery_quickClone (deep) {
+            return this.cloneNode(deep || false);
+        });
     };
 
     // Tests whether an element has a defined property value.
@@ -2708,7 +2717,6 @@ function thirdParty($, CONSTANTS, getColor) {
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
             loadLocal(thirdParty);
-console.timeEnd("aaaa");
             loadLocal(main);
         };
         if ( requires.length === 1 &&
