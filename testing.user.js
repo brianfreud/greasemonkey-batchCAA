@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1240
+// @version     0.01.1247
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -49,13 +49,13 @@ Opera: Not compatible, sorry.
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
 
-var height = function (id) {
+var height = function get_client_height (id) {
     'use strict';
     return document.getElementById(id).clientHeight;
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1240'
+                , VERSION       : '0.1.1247'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -829,7 +829,7 @@ body.appendChild(messageDiv);
    Then convert the binary file into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
    trigger a doubleclick event to let the other halves of this code, in the other javascript context, know that the file data has
    been retrieved. */
-var getUri = function (e) {
+var getUri = function getURI (e) {
     'use strict';
 
     // START from http://phpjs.org
@@ -915,9 +915,10 @@ var getUri = function (e) {
                      , url              : e.target.innerHTML
                      };
     gmXHR(gmXOptions);
-}
+};
 
-var getUriWorkaround = function (e) { // Works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
+var getUriWorkaround = function getUriWorkaround (e) { // Works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
+    'use strict';
     setTimeout(function() {
         getUri(e);
     }, 0);
@@ -940,12 +941,13 @@ var main = function main ($, CONSTANTS) {
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
       , cachedImages = localStorage.getItem('caaBatch_imageCache')
       , re = { image : /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp|ico)$/i
+             , mbid  : /\w{8}\-\w{4}\-\w{4}\-\w{4}-\w{12}/
              , uri   : /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi
              }
       ;
 
     /* Faster element creation. */
-    var $make = function (tagName, options) {
+    var $make = function $make (tagName, options) {
             var domEl = [document.createElement(tagName)]
               , jq = $
               ;
@@ -955,7 +957,7 @@ var main = function main ($, CONSTANTS) {
         };
 
     /* Creates a generic close button.  */
-    var $makeCloseButton = function () {
+    var $makeCloseButton = function $makeCloseButton () {
         return $make('header', { 'class': 'closeButton' }).text('x');
     };
 
@@ -999,7 +1001,7 @@ var main = function main ($, CONSTANTS) {
     /* Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status. */
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         $.log('Testing edit status to determine background color for dropbox.');
-        var state = ($ele.find('option:selected').length && $ele.find('img').hasProp('src'));
+        var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
         return $.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
     };
 
@@ -1030,7 +1032,7 @@ var main = function main ($, CONSTANTS) {
         };
 
         window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
-        window.requestFileSystem(window.TEMPORARY, CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function (e) {
+        window.requestFileSystem(window.TEMPORARY, CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function requestFileSystem_error_handler (e) {
             $.log('Requesting a temporary local file system failed.  Error message is:');
             $.log(e);
         });
@@ -1164,7 +1166,7 @@ var main = function main ($, CONSTANTS) {
               ;
 
             /* Populate the colors list */
-            Object.keys(CONSTANTS.COLORS).sort().map(function (colorItem) {
+            Object.keys(CONSTANTS.COLORS).sort().map(function populate_colors_list (colorItem) {
                 var color       = CONSTANTS.COLORS[colorItem]
                   ;
                 var $thisOption = $make('option', { 'class' : 'colorOption'
@@ -1181,16 +1183,16 @@ var main = function main ($, CONSTANTS) {
             /* Populate the languages list */
             var languages = [];
 
-            Object.keys(CONSTANTS.TEXT).forEach(function(key) {
+            Object.keys(CONSTANTS.TEXT).forEach(function populate_languages_list (key) {
                 languages.push([key, CONSTANTS.TEXT[key].languageName]);
             });
-            languages.sort(function (a, b) {
+            languages.sort(function sort_languages_list (a, b) {
                 return a[1] === b[1] ? 0                 // a[1] == b[1] ->  0
                                      : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
                                                    : -1; // a[1] <  b[1] -> -1
             });
             var userLang  = localStorage.getItem('caaBatch_language') || 'en';
-            var $ARRlangs = languages.map(function (language) {
+            var $ARRlangs = languages.map(function make_language_options (language) {
                                               return $make('option', { selected : (language[0] === userLang)
                                                                      , value    : language[0]
                                                                      }).text(language[1]);
@@ -1262,7 +1264,7 @@ var main = function main ($, CONSTANTS) {
         /* Add remember preferences capability to the autoedit checkbox. */
         !function autoedit_checkbox_handler () {
             $.log('Adding handler for remembering preferences of the autoedit checkbox.');
-            $('#caaAutoedit').on('click', function (e) {
+            $('#caaAutoedit').on('click', function change_autoeditor_preference_handler (e) {
                 $.log('Autoeditor pref now set to: ' + $(this).is(':checked'));
                 localStorage.setItem('caaBatch_autoeditPref', $(this).is(':checked'));
             });
@@ -1271,7 +1273,7 @@ var main = function main ($, CONSTANTS) {
         /* Add functionality to the language selector. */
         !function add_color_select_handler () {
             $.log('Adding handler for language selector.');
-            $('#languageSelect').on('change', function (e) {
+            $('#languageSelect').on('change', function change_language_preference_handler (e) {
                 localStorage.setItem('caaBatch_language', $(this).find(':selected').val());
                 $('#languageSelect').prop('disabled', true);
             });
@@ -1280,7 +1282,7 @@ var main = function main ($, CONSTANTS) {
         /* Add functionality to the clear image storage button. */
         !function add_clear_image_storage_handler () {
             $.log('Adding handler for the clear image storage button.');
-            $('#ClearStorageBtn').on('click', function (e) {
+            $('#ClearStorageBtn').on('click', function clear_storage_handler (e) {
                 localStorage.setItem('caaBatch_imageCache', '[]');
                 $('#ClearStorageBtn').prop('disabled', true);
                 cachedImages = [];
@@ -1297,13 +1299,13 @@ var main = function main ($, CONSTANTS) {
         /* Add functionality to the color picker. */
         !function add_color_select_handler () {
             $.log('Adding handler for color picker.');
-            $('#colorSelect').on('change', function (e) {
+            $('#colorSelect').on('change', function change_color_selection_handler (e) {
                 var color = localStorage.getItem('caaBatch_colors_' + $(this).find(':selected').val());
                 $.log('Getting localStorage for ' + 'caaBatch_colors_' + $(this).find(':selected').val() + '.  Result: ' + color);
                 myPicker.fromString(color);
             });
             /* Store new color value in localStorage. */
-            $('#colorPicker').change(function (e) {
+            $('#colorPicker').change(function change_color_preference_handler (e) {
                 localStorage.setItem('caaBatch_colors_' + $('#colorSelect').find(':selected').val(), this.value);
                 $.log('Setting localStorage for ' + 'caaBatch_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
             });
@@ -1373,15 +1375,15 @@ var main = function main ($, CONSTANTS) {
               ;
 
             $.log('Adding css for the CAA batch script.');
-            $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function (key) {
-                theseRules = Object.keys(CSS[key]).map(function (rule) {
-                    return '\n    ' +  rule + ' : ' + CSS[key][rule];
+            $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function create_css_rules (key) {
+                theseRules = Object.keys(CSS[key]).map(function create_css_rules_internal (rule) {
+                    return ['\n    ', rule, ' : ', CSS[key][rule]].join('');
                 }).join(';');
-                return key + ' { ' + theseRules + ';\n}';
+                return [key, ' { ', theseRules, ';\n}'].join('');
             }).join('\n')).appendTo('head');
 
             $.log('Adding image preview css classes.');
-            sizes.forEach(function (size) {
+            sizes.forEach(function create_css_style_elements (size) {
                 classes.push($make('style', { id   : 'style' + size
                                             , type : 'text/css'
                                             }).text('.localImage { width: ' + size + 'px; }'));
@@ -1389,7 +1391,11 @@ var main = function main ($, CONSTANTS) {
 
             /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title or checkbox columns.  Without the next line,
                those columns get squished when the table-layout is set to fixed layout. */
-            $('thead').find('* th:first, * th:eq(2)').each(function () { $(this).css('width', $(this).width() + 10 + 'px'); });
+            $('thead').find('th')
+                      .filter(':first, :eq(2)')
+                      .each(function block_column_squishing () {
+                                $(this).css('width', ($(this).width() + 10) + 'px');
+                            });
 
             classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
 
@@ -1402,10 +1408,10 @@ var main = function main ($, CONSTANTS) {
                 }
             };
             $.extend({
-                     imagesTiny   : function () { useSheets(1, 0, 0, 0); },
-                     imagesSmall  : function () { useSheets(0, 1, 0, 0); },
-                     imagesMedium : function () { useSheets(0, 0, 1, 0); },
-                     imagesLarge  : function () { useSheets(0, 0, 0, 1); }
+                     imagesTiny   : function imagesTiny () { useSheets(1, 0, 0, 0); },
+                     imagesSmall  : function imagesSmall () { useSheets(0, 1, 0, 0); },
+                     imagesMedium : function imagesMedium () { useSheets(0, 0, 1, 0); },
+                     imagesLarge  : function imagesLarge () { useSheets(0, 0, 0, 1); }
                      });
 
             $.imagesSmall();
@@ -1445,10 +1451,10 @@ var main = function main ($, CONSTANTS) {
             }
         };
 
-        $('#imageShrink').on('click', function () {
+        $('#imageShrink').on('click', function imageShrink_click_handler () {
             imageSize(-1);
         });
-        $('#imageMagnify').on('click', function () {
+        $('#imageMagnify').on('click', function imageMagnify_click_handler () {
             imageSize(1);
         });
 
@@ -1951,11 +1957,6 @@ Native support:
                                                                           .prepend($make('img', { 'class' : 'throbberImage'
                                                                                                 , src     : CONSTANTS.THROBBER
                                                                                                 })).hide()
-              , getMBID         = function get_release_MBID (attrStr) {
-                                      return attrStr.split('/')
-                                                    .pop()
-                                                    .replace('#_','');
-                                  }
               ;
 
             var makeCAATypeList = function makeCAATypeList () {
@@ -1993,154 +1994,172 @@ Native support:
 
             var $dropBox = makeDropbox();
 
+            var caaResponseHandler = function caaResponseHandler (response, textStatus, jqXHR, data) {
+                if ('object' !== typeof(response)) { // Firefox
+                    response = JSON.parse(response);
+                }
+                $.log('Received CAA response, parsing...');
+                if ($.isEmptyObject(response)) {
+                    $.log('CAA response: no images in CAA for this release.');
+                    return;
+                }
+
+              var $newCAARow  = data.$newCAARow
+                , $thisAddBtn = data.$thisAddBtn
+                ;
+              
+              $.each(response.images, function parseCAAResponse (i) {
+                    $.log('Parsing CAA response: image #' + i);
+                    if ($newCAARow.find('.newCAAimage').length === 0) {
+                        $thisAddBtn.trigger('click');
+                    }
+                    var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
+                    $emptyDropBox.find('input').replaceWith($make('div').text(this.comment)).end()
+                                 .find('br, .closeButton').remove().end()
+                                 .find('select').prop('disabled', true).end()
+                                 .removeClass('newCAAimage');
+                    /* This next bit of code does the same thing as the lowsrc attribute.  This would have
+                       been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
+                       http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
+                    var $img = $emptyDropBox.find('img');
+                    $img[0].src = CONSTANTS.THROBBER;
+                    $img.css('padding-top', '20px');
+                    var realImg = new Image();
+                    realImg.src = this.image;
+                    realImg.onload = function assign_real_caa_image () {
+                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight)
+                            .css('padding-top', '0px');
+                        var xhrReq = $.ajax({
+                            url: realImg.src,
+                            success: function (request) {
+                                $img.data('size', addCommas(request.length))
+                                    .prop('src', realImg.src);
+                            }
+                          });
+                    };
+                    /* End lowsrc workaround. */
+                    $.each(this.types, function assign_image_type (i) {
+                        var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
+                        $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
+                    });
+                    checkScroll($newCAARow.find('div.loadingDiv'));
+                });
+                $newCAARow.find('.loadingDiv, .caaAdd').toggle();
+                $newCAARow.find('.caaDiv').slideDown('slow');
+            };
+
+            var caaRowLoadHandler = function invoke_CAA_row_button_click_handler (e) {
+                $.log('Add CAA images to release row button triggered.');
+                var $newCAARow  = e.data.$newCAARow;
+
+                $newCAARow.find('.loadingDiv').show();
+                $newCAARow.find('.caaLoad').hide();
+                $newCAARow.find('.caaDiv').slideUp();
+
+                var $widthEle = $('.caaLoad:first').parents('td:first')
+                  , $tableParent = $('.caaLoad:first').parents('table:first')
+                  , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
+                  ;
+
+                if (!$tableParent.hasClass('tbl')) {
+                    $widthEle = $tableParent.parents('td:first');
+                }
+                for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
+                       $(this).after($dropBox.clone(true));
+                }
+                $.log('Requesting CAA info for ' + $(this).data('entity'));
+                $.ajax({ cache    : false
+                       , context  : this
+                       , url      : caaRequest
+                       , error    : function handler(jqXHR, textStatus, errorThrown, data) {
+                                        /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
+                                        $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
+                                        $newCAARow.find('div.loadingDiv, .caaAdd').toggle();
+                                        $newCAARow.find('div.caaDiv').slideDown('slow');
+                                    }
+                       , success  : function caa_response_mediator (response, textStatus, jqXHR) {
+                                        return caaResponseHandler(response, textStatus, jqXHR, { $newCAARow  : $newCAARow
+                                                                                               , $thisAddBtn : e.data.$thisAddBtn
+                                                                                               });
+                                    }
+                       });
+            };
+
+            var caaAddNewImageBox = function invoke_Add_image_space_button_click_handler () {
+                $.log('Add new CAA image space button triggered.');
+                var $imageDiv = $(this).next();
+                $imageDiv.append($dropBox.clone(true));
+                checkScroll($imageDiv);
+            };
+
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
-                                $.log('Release row handler triggered.');
-                                var $releaseAnchor = $(this),
-                                    $releaseRow;
-                                if ('undefined' !== typeof event && event.hasOwnProperty('originalEvent')) {
-                                    $.log('Release row handler is running due to a mutation event.');
-                                    $releaseRow = $(event.originalEvent.srcElement);
-                                    $releaseAnchor = $releaseRow.find('a:first');
-                                    if (event.originalEvent.srcElement.localName !== 'tr') {
-                                        $.log('Aborting; mutation event was not triggered by a tr insertion.');
-                                        return;
-                                    } else if ($releaseAnchor.text() === 'edit') {
-                                        $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
-                                        $releaseRow.remove();
-                                        return;
-                                    }
-                                }
-                                if (typeof $releaseAnchor.attr('href') === 'undefined') {
-                                    $.log('Aborting; not a valid release tr.');
-                                    return;
-                                }
-                                var tableLocation;
-                                if (!document.location.pathname.match(/\/artist\/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}$/)) {
-                                    /* Release, Label, and single RG pages. */
-                                    tableLocation = 'table:first';
-                                } else { /* Artist RG listing pages */
-                                    tableLocation = 'table:eq(1)';
-                                }
-                                if (!$releaseAnchor.parents(tableLocation).hasClass('tbl')) {
-                                    $.log('Aborting; tr describes a track, not a release.');
-                                    return;
-                                }
+                $.log('Release row handler triggered.');
+                var $releaseAnchor = $(this),
+                    $releaseRow;
+                if ('undefined' !== typeof event && event.hasOwnProperty('originalEvent')) {
+                    $.log('Release row handler is running due to a mutation event.');
+                    $releaseRow = $(event.originalEvent.srcElement);
+                    $releaseAnchor = $releaseRow.find('a:first');
+                    if (event.originalEvent.srcElement.localName !== 'tr') {
+                        $.log('Aborting; mutation event was not triggered by a tr insertion.');
+                        return;
+                    } else if ($releaseAnchor.text() === 'edit') {
+                        $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
+                        $releaseRow.remove();
+                        return;
+                    }
+                }
+                if (typeof $releaseAnchor.attr('href') === 'undefined') {
+                    $.log('Aborting; not a valid release tr.');
+                    return;
+                }
 
-                                $releaseRow = $releaseAnchor.parents('tr:first');
-                                var colCount    = $releaseRow.find('td').length
-                                  , thisMBID    = getMBID($releaseAnchor.attr('href'))
-                                  , $imageRow   = $make('td', { 'class' : 'imageRow'
-                                                              , colspan : colCount
-                                                              }).wrap('<tr>')
-                                                                .parent()
-                                  ;
+                var tableLocation;
 
-                                $.log('New release found, attaching a CAA row.', 1);
-                                var $thisAddBtn = $addBtn.clone()
-                                                         .data('entity', thisMBID);
-                                var $thisCAABtn = $caaBtn.clone()
-                                                         .data('entity', thisMBID);
-                                var $thisLoadingDiv = $loadingDiv.clone();
-                                var $newCAARow  = $imageRow.clone()
-                                                           .find('td')
-                                                           .append($make('div', { 'class' : 'caaDiv' }).before($thisAddBtn)
-                                                                                                       .before($thisLoadingDiv)
-                                                                                                       .append($thisCAABtn))
-                                                           .end()
-                                                           .prop('class', $releaseRow.prop('class'));
-                                $thisForm.data(thisMBID, $newCAARow);
+                if (!document.location.pathname.match(/\/artist\/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}$/)) {
+                    /* Release, Label, and single RG pages. */
+                    tableLocation = 'table:first';
+                } else { /* Artist RG listing pages */
+                    tableLocation = 'table:eq(1)';
+                }
+                if (!$releaseAnchor.parents(tableLocation).hasClass('tbl')) {
+                    $.log('Aborting; tr describes a track, not a release.');
+                    return;
+                }
 
-                                // This next is done via event to allow for script-initiated row transforms (e.g. TableSorter)
-                                $.log('Attaching DOMNodeInserted event handler.', 1);
-                                $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
-                                    $.log('DOMNodeInserted event handler triggered.', 1);
-                                    $releaseRow.after($newCAARow);
-                                }).trigger('DOMNodeInserted');
+                $releaseRow = $releaseAnchor.parents('tr:first');
 
-                                $thisAddBtn.on('click', function invoke_Add_image_space_button_click_handler () {
-                                    $.log('Add new CAA image space button triggered.');
-                                    var $imageDiv = $(this).next();
-                                    $imageDiv.append($dropBox.clone(true));
-                                    checkScroll($imageDiv);
+                var colCount    = $releaseRow.find('td').length
+                  , thisMBID    = re.mbid.exec($releaseAnchor.attr('href'))
+                  , $imageRow   = $make('td', { 'class' : 'imageRow'
+                                              , colspan : colCount
+                                              })                                                                
+                  ;
 
-                                });
+                $.log('New release found, attaching a CAA row.', 1);
+                var $thisAddBtn = $addBtn.clone().data('entity', thisMBID)
+                  , $thisCAABtn = $caaBtn.clone().data('entity', thisMBID)
+                  , $thisLoadingDiv = $loadingDiv.clone()
+                  , $newCAARow  = $imageRow.clone().appendAll([ $thisAddBtn
+                                                              , $thisLoadingDiv
+                                                              , $make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
+                                                              ])
+                                                   .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
+                $thisForm.data(thisMBID, $newCAARow);
 
-                                $thisCAABtn.on('click', function invoke_CAA_row_button_click_handler () {
-                                    $.log('Add CAA images to release row button triggered.');
-                                    $newCAARow.find('.loadingDiv').show();
-                                    $newCAARow.find('.caaLoad').hide();
-                                    $newCAARow.find('.caaDiv').slideUp();
-                                    var $widthEle = $('.caaLoad:first').parents('td:first')
-                                      , $tableParent = $('.caaLoad:first').parents('table:first')
-                                      , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
-                                      ;
-                                    if (!$tableParent.hasClass('tbl')) {
-                                        $widthEle = $tableParent.parents('td:first');
-                                    }
-                                    for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
-                                           $(this).after($dropBox.clone(true));
-                                    }
-                                    $.log('Requesting CAA info for ' + $(this).data('entity'));
-                                    $.ajax({ cache    : false
-                                           , context  : this
-                                           , url      : caaRequest
-                                           , error    : function handler(jqXHR, textStatus, errorThrown) {
-                                                            /* Reference http://tickets.musicbrainz.org/browse/CAA-24 */
-                                                            $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-                                                            $newCAARow.find('div.loadingDiv, .caaAdd').toggle();
-                                                            $newCAARow.find('div.caaDiv').slideDown('slow');
-                                                        }
-                                           , success  : function caaResponseHandler (data, textStatus, jqXHR) {
-                                                            if ('object' !== typeof(data)) { // Firefox
-                                                                data = JSON.parse(data);
-                                                            }
-                                                            $.log('Received CAA data, parsing...');
-                                                            if ($.isEmptyObject(data)) {
-                                                                $.log('CAA response: no images in CAA for this release.');
-                                                            } else {
-                                                                $.each(data.images, function parseCAAResponse (i) {
-                                                                    $.log('Parsing CAA response: image #' + i);
-                                                                    if ($newCAARow.find('.newCAAimage').length === 0) {
-                                                                        $thisAddBtn.trigger('click');
-                                                                    }
-                                                                    var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                                                                    $emptyDropBox.find('input').replaceWith($make('div').text(this.comment)).end()
-                                                                                 .find('br, .closeButton').remove().end()
-                                                                                 .find('select').prop('disabled', true).end()
-                                                                                 .removeClass('newCAAimage');
-                                                                    /* This next bit of code does the same thing as the lowsrc attribute.  This would have
-                                                                       been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
-                                                                       http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
-                                                                    var $img = $emptyDropBox.find('img');
-                                                                    $img[0].src = CONSTANTS.THROBBER;
-                                                                    $img.css('padding-top', '20px');
-                                                                    var realImg = new Image();
-                                                                    realImg.src = this.image;
-                                                                    realImg.onload = function assign_real_caa_image () {
-                                                                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight)
-                                                                            .css('padding-top', '0px');
-                                                                        var xhrReq = $.ajax({
-                                                                            url: realImg.src,
-                                                                            success: function (request) {
-                                                                                $img.data('size', addCommas(request.length))
-                                                                                    .prop('src', realImg.src);
-                                                                            }
-                                                                          });
-                                                                    };
-                                                                    /* End lowsrc workaround. */
-                                                                    $.each(this.types, function assign_image_type (i) {
-                                                                        var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
-                                                                        $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
-                                                                    });
-                                                                    checkScroll($newCAARow.find('div.loadingDiv'));
-                                                                });
-                                                            }
-                                                        $newCAARow.find('.loadingDiv, .caaAdd').toggle();
-                                                        $newCAARow.find('.caaDiv').slideDown('slow');
-                                                        }
-                                           });
-                                });
-                            };
+                $.log('Attaching DOMNodeInserted event handler.', 1);
+                $releaseRow.on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
+                                                      $.log('DOMNodeInserted event handler triggered.', 1);
+                                                      $releaseRow.after($newCAARow);
+                                                  })
+                           .after($newCAARow);
+
+                $thisAddBtn.on('click', caaAddNewImageBox);
+
+                $thisCAABtn.on('click', { $newCAARow  : $newCAARow
+                                        , $thisAddBtn : $thisAddBtn
+                                        }, caaRowLoadHandler);
+            };
 
             // handle pre-existing release rows
             $(releaseSelector).each(addCAARow);
@@ -2546,7 +2565,7 @@ Native support:
                                                              .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
-}
+};
 
 function thirdParty($, CONSTANTS, getColor) {
     /* Despite the name, each function in thirdParty is by Brian Schweitzer unless otherwise noted. */
@@ -2607,9 +2626,10 @@ function thirdParty($, CONSTANTS, getColor) {
         log: function log(str, verbose) {
             'undefined' === typeof verbose && (verbose = false);
             (!verbose || CONSTANTS.DEBUG_VERBOSE) && CONSTANTS.DEBUGMODE && console.log(str);
+            return;
         },
         /* Polyfill input[type=number], if needed. */
-        polyfillInputNumber : function () {
+        polyfillInputNumber : function polyfillInputNumber () {
             var testEle = document.createElement('input');
             testEle.setAttribute('type','number');
             if (testEle.type === 'number') {
@@ -2628,18 +2648,18 @@ function thirdParty($, CONSTANTS, getColor) {
 
     // By Brian Schweitzer and Naftali Lubin
     // Appends an array of jQuery objects to a jQuery object
-    $.fn.appendAll = function (arrayToAdd) {
+    $.fn.appendAll = function jQuery_appendAll (arrayToAdd) {
         return this.append.apply(this, arrayToAdd);
     };
 
     // Sets the css visibility using a boolean value rather than a string value
-    $.fn.vis = function (i) {
+    $.fn.vis = function jQuery_vis (i) {
         return this.css('visibility', i ? 'visible'
                                         : 'hidden');
     };
 
     // Tests whether an element has a defined property value.
-    $.fn.hasProp = function (property) {
+    $.fn.hasProp = function jQuery_hasProp (property) {
         property = this.prop(property);
         return ('undefined' !== typeof property && property.length);
     };
@@ -2690,7 +2710,7 @@ function thirdParty($, CONSTANTS, getColor) {
             return;
         }
         /* Scripts are cached in localStorage; load them. */
-        requires.forEach(function (requiredItem) {
+        requires.forEach(function add_required_scripts (requiredItem) {
             makeScript();
             script.textContent = localStorage.getItem(requiredItem);
             head.appendChild(script);
