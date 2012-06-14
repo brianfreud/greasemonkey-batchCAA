@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1254
+// @version     0.01.1255
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1254'
+                , VERSION       : '0.1.1255'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1199,8 +1199,8 @@ var main = function main ($, CONSTANTS) {
                                           });
 
             /* Populate the DOM */
-            $('#sidebar').empty()
-                         .appendAll(
+            document.getElementById('sidebar').innerHTML = '';
+            $('#sidebar').appendAll(
                           [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
                           , $sizeContainer.appendAll(
                                            [ $imageMagnify.append(plusImage)
