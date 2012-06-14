@@ -1265,8 +1265,8 @@ var main = function main ($, CONSTANTS) {
         !function autoedit_checkbox_handler () {
             $.log('Adding handler for remembering preferences of the autoedit checkbox.');
             $('#caaAutoedit').on('click', function change_autoeditor_preference_handler (e) {
-                $.log('Autoeditor pref now set to: ' + $(this).is(':checked'));
-                localStorage.setItem('caaBatch_autoeditPref', $(this).is(':checked'));
+                $.log('Autoeditor pref now set to: ' + $.single(this).is(':checked'));
+                localStorage.setItem('caaBatch_autoeditPref', $.single(this).is(':checked'));
             });
         }();
 
@@ -1274,7 +1274,7 @@ var main = function main ($, CONSTANTS) {
         !function add_color_select_handler () {
             $.log('Adding handler for language selector.');
             $('#languageSelect').on('change', function change_language_preference_handler (e) {
-                localStorage.setItem('caaBatch_language', $(this).find(':selected').val());
+                localStorage.setItem('caaBatch_language', $.single(this).find(':selected').val());
                 $('#languageSelect').prop('disabled', true);
             });
         }();
@@ -1300,8 +1300,8 @@ var main = function main ($, CONSTANTS) {
         !function add_color_select_handler () {
             $.log('Adding handler for color picker.');
             $('#colorSelect').on('change', function change_color_selection_handler (e) {
-                var color = localStorage.getItem('caaBatch_colors_' + $(this).find(':selected').val());
-                $.log('Getting localStorage for ' + 'caaBatch_colors_' + $(this).find(':selected').val() + '.  Result: ' + color);
+                var color = localStorage.getItem('caaBatch_colors_' + $.single(this).find(':selected').val());
+                $.log('Getting localStorage for ' + 'caaBatch_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
                 myPicker.fromString(color);
             });
             /* Store new color value in localStorage. */
@@ -1333,17 +1333,18 @@ var main = function main ($, CONSTANTS) {
             $.log('Adding handlers for close buttons.');
             $('body').on('click', '.closeButton', function close_button_click_handler (e) {
                 $.log('Removing drop box/image editor');
-                $(this).parent().find('.dropBoxImage') /* Any image in the drop box */
-                                .appendTo($('#imageContainer'))
-                                .addClass('localImage')
-                                .removeClass('dropBoxImage');
+                $.single(this).parent()
+                              .find('.dropBoxImage') /* Any image in the drop box */
+                              .appendTo($('#imageContainer'))
+                              .addClass('localImage')
+                              .removeClass('dropBoxImage');
                 $('#CAAimageEditor').animate({ height  : 'toggle'
                                              , opacity : 'toggle'
                                              }, 'slow');
                 $('#CAAoverlay').fadeOut('fast');
-                $(this).parent() // -> drop boxes
-                       .add('#CAAimageEditor, #CAAoverlay') // -> image editor
-                       .remove();
+                $.single(this).parent() // -> drop boxes
+                              .add('#CAAimageEditor, #CAAoverlay') // -> image editor
+                              .remove();
             });
         }();
 
@@ -1394,7 +1395,7 @@ var main = function main ($, CONSTANTS) {
             $('thead').find('th')
                       .filter(':first, :eq(2)')
                       .each(function block_column_squishing () {
-                                $(this).css('width', ($(this).width() + 10) + 'px');
+                                $.single(this).css('width', ($.single(this).width() + 10) + 'px');
                             });
 
             classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
@@ -1670,7 +1671,7 @@ Native support:
         var addRemoteImage = function add_remote_image (e) {
             $.log('dblclick detected on comlink; creating file and thumbnail.');
             var $comlink = $(this)
-              , imageBase64 = $(this).text()
+              , imageBase64 = $comlink.text()
               , loadStage = ''
               , mime
               , thisImageFilename = 'image' + Date.now() + '.jpg'
@@ -1812,7 +1813,7 @@ Native support:
                                                       It will then trigger a dblclick event, which will then continue the process. */
                                                                        .on('dblclick', function processRobotsWebpage (e) {
                                                                            var $comlink   = $(this)
-                                                                             , remoteHTML = atob($(this).text())
+                                                                             , remoteHTML = atob($comlink(this).text())
                                                                              , $remotePage = $(remoteHTML)
                                                                              ;
 
@@ -1871,11 +1872,11 @@ Native support:
             $imageContainer.on({
                 dragenter: function dragEnter (e) {
                     $.log('imageContainer: dragenter.');
-                    $(this).addClass('over');
+                    $.single(this).addClass('over');
                 },
                 dragleave: function dragLeave (e) {
                     $.log('imageContainer: dragleave.');
-                    $(this).removeClass('over');
+                    $.single(this).removeClass('over');
                 },
                 dragover: function dragOver (e) {
                     $.log('imageContainer: dragover.', 1);
@@ -1883,7 +1884,7 @@ Native support:
                 },
                 drop: function drop (e) {
                     $.log('imageContainer: drop.');
-                    $(this).removeClass('over');
+                    $.single(this).removeClass('over');
                     e.preventDefault();
                     e = e.originalEvent || e;
 
@@ -2058,16 +2059,16 @@ Native support:
 
                 var $widthEle = $('.caaLoad:first').parents('td:first')
                   , $tableParent = $('.caaLoad:first').parents('table:first')
-                  , caaRequest = 'http://coverartarchive.org/release/' + $(this).data('entity')
+                  , caaRequest = 'http://coverartarchive.org/release/' + $.single(this).data('entity')
                   ;
 
                 if (!$tableParent.hasClass('tbl')) {
                     $widthEle = $tableParent.parents('td:first');
                 }
                 for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
-                       $(this).after($dropBox.clone(true));
+                       $.single(this).after($dropBox.clone(true));
                 }
-                $.log('Requesting CAA info for ' + $(this).data('entity'));
+                $.log('Requesting CAA info for ' + $.single(this).data('entity'));
                 $.ajax({ cache    : false
                        , context  : this
                        , url      : caaRequest
@@ -2183,7 +2184,7 @@ Native support:
                 $.log('CAA load all releases\' images button has been clicked.');
                 $('.caaLoad:visible').each(function caaAllBtn_click_each_release_button () {
                     $.log('Triggering a click on a CAA load images button.');
-                    $(this).trigger('click');
+                    $.single(this).trigger('click');
                 });
             });
         }();
@@ -2309,7 +2310,6 @@ Native support:
 
                 $.polyfillInputNumber();
 //TODO: Figure out why the number polyfill's change events aren't being detected in Firefox.
-//TODO: Figure out why the number polyfill controls are squished on the rotate and darkness controls.
 
                 var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
                   , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
@@ -2405,23 +2405,23 @@ Native support:
                 });
 
                 $('#CAAeditorRotateControl').on('change', function () {
-                    rotate($(this).val());
+                    rotate($.single(this).val());
                 });
 
                 $('#CAAeditorCropControlTop').on('change', function () {
-                    $('#CAAmaskTop').css('height', $(this).val());
+                    $('#CAAmaskTop').css('height', $.single(this).val());
                 });
 
                 $('#CAAeditorCropControlBottom').on('change', function () {
-                    $('#CAAmaskBottom').css('height', $(this).val());
+                    $('#CAAmaskBottom').css('height', $.single(this).val());
                 });
 
                 $('#CAAeditorCropControlLeft').on('change', function () {
-                    $('#CAAmaskLeft').css('width', $(this).val());
+                    $('#CAAmaskLeft').css('width', $.single(this).val());
                 });
 
                 $('#CAAeditorCropControlRight').on('change', function () {
-                    $('#CAAmaskRight').css('width', $(this).val());
+                    $('#CAAmaskRight').css('width', $.single(this).val());
                 });
 
                 $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
@@ -2461,10 +2461,10 @@ Native support:
     $('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
         if (!$('#caaOptionRemove').prop('checked')) {
             $.log('Setting new image for preview box.');
-            $('#previewImage').prop('src', $(this).prop('src'))
+            $('#previewImage').prop('src', $.single(this).prop('src'))
                               .prop('title', $.l('Click to edit this image'));
-            $('#previewResolution').text($(this).data('resolution'));
-            $('#previewFilesize').text($(this).data('size') + ' ' + $.l('bytes'));
+            $('#previewResolution').text($.single(this).data('resolution'));
+            $('#previewFilesize').text($.single(this).data('size') + ' ' + $.l('bytes'));
             $('#previewText').show();
         }
     });
@@ -2512,7 +2512,7 @@ Native support:
                                 if ($draggedImage !== null) {
                                     inChild = !$(e.target).hasClass('newCAAimage');
                                     $('figure').removeClass('over');
-                                    $(this).addClass('over');
+                                    $.single(this).addClass('over');
                                 }
                                 return false;
                             },
@@ -2522,7 +2522,7 @@ Native support:
                                 if ($draggedImage !== null) {
                                     /* https://bugs.webkit.org/show_bug.cgi?id=66547 */
                                     if (!inChild) {
-                                        $(this).removeClass('over');
+                                        $.single(this).removeClass('over');
                                     }
                                 }
                                 return false;
@@ -2531,10 +2531,10 @@ Native support:
                                 $.log('newCAAimage: drop');
                                 e.preventDefault();
                                 if ($draggedImage !== null) {
-                                    $(this).find('.dropBoxImage').replaceWith($draggedImage);
+                                    $.single(this).find('.dropBoxImage').replaceWith($draggedImage);
                                     $draggedImage.toggleClass('beingDragged dropBoxImage localImage')
                                                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-                                                                         .css('background-color', getEditColor($(this)));
+                                                                         .css('background-color', getEditColor($.single(this)));
                                     $('figure').removeClass('over');
                                     $draggedImage = null;
                                 }
@@ -2552,7 +2552,7 @@ Native support:
             $('#tblStyle1').prop('disabled',false);
         }
         $('div.caaDiv').each(function () {
-            checkScroll($(this));
+            checkScroll($.single(this));
         });
     };
 
@@ -2668,6 +2668,19 @@ function thirdParty($, CONSTANTS, getColor) {
 
     $.addScript('jQueryAnimateEnhanced');
     $.addScript('jQueryGetHiddenDimensions');
+
+    /* jQuery.single, by James Padolsey
+       http://james.padolsey.com/javascript/76-bytes-for-faster-jquery/
+    */
+    jQuery.single = (function(o){
+         var collection = jQuery([1]); // Fill with 1 item, to make sure length === 1
+         return function(element) {
+             // Give collection the element:
+            collection[0] = element;
+             // Return the collection:
+            return collection;
+         };
+    }());
 }
 
 !function main_loader(i) {
