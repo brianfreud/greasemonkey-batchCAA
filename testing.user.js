@@ -16,7 +16,7 @@
 // @include     http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
 // ==/UserScript==
-
+123/70 => 
 // Translations handled at https://www.transifex.net/projects/p/CAABatch/
 
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor */
@@ -46,6 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
+console.time("aaaa");
 
 var height = function get_client_height (id) {
     'use strict';
@@ -244,8 +245,8 @@ var hexToRGBA = function hexToRGBA (hex, opacity) {
 var shrink = ['scale', '(', CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('');
 
 /* Initialize the image editor's background opacity store, if needed. */
-if (localStorage.getItem('CAAeditor000') === null) {
-    localStorage.setItem('CAAeditor000', 75);
+if (localStorage.getItem('caaBatch_editorDarkness') === null) {
+    localStorage.setItem('caaBatch_editorDarkness', 75);
 }
 
 CONSTANTS.CSS = { '#ColorDefaultBtn':
@@ -414,10 +415,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#CAAoverlay':
                       {  background             : 'black'
                       ,  bottom                 : 0
-                      ,  filter                 : 'alpha(opacity=' + localStorage.getItem('CAAeditor000') + ')'
+                      ,  filter                 : 'alpha(opacity=' + localStorage.getItem('caaBatch_editorDarkness') + ')'
                       ,  left                   : 0
-                      , '-moz-opacity'          : localStorage.getItem('CAAeditor000') / 100
-                      ,       opacity           : localStorage.getItem('CAAeditor000') / 100
+                      , '-moz-opacity'          : localStorage.getItem('caaBatch_editorDarkness') / 100
+                      ,       opacity           : localStorage.getItem('caaBatch_editorDarkness') / 100
                       ,  position               : 'fixed'
                       ,  top                    : 0
                       ,  width                  : '100%'
@@ -2707,6 +2708,7 @@ function thirdParty($, CONSTANTS, getColor) {
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
             loadLocal(thirdParty);
+console.timeEnd("aaaa");
             loadLocal(main);
         };
         if ( requires.length === 1 &&
