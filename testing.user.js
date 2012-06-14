@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1250
+// @version     0.01.1251
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1250'
+                , VERSION       : '0.1.1251'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -2015,7 +2015,7 @@ Native support:
               var $newCAARow  = data.$newCAARow
                 , $thisAddBtn = data.$thisAddBtn
                 ;
-              
+
               $.each(response.images, function parseCAAResponse (i) {
                     $.log('Parsing CAA response: image #' + i);
                     if ($newCAARow.find('.newCAAimage').length === 0) {
