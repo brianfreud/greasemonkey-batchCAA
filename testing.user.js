@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1255
+// @version     0.01.1256
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1255'
+                , VERSION       : '0.1.1256'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -2673,7 +2673,7 @@ function thirdParty($, CONSTANTS, getColor) {
 
     // A faster .clone(); clones only the nodes, without regard to events.  deep = true == deep node copy.
     $.fn.quickClone = function jQuery_vis (deep) {
-        return this.map(function jQuery_quickClone (deep) {
+        return this.map(function jQuery_quickClone (elem, deep) {
             return this.cloneNode(deep || false);
         });
     };
