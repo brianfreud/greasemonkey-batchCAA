@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1256
+// @version     0.01.1268
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,7 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
-
+//TODO: Apply rotation, if any, after a flip is done in the image editor
 
 var height = function get_client_height (id) {
     'use strict';
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1256'
+                , VERSION       : '0.1.1268'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -585,7 +585,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 37) + 'px'
                       },
                   '#previewImage':
-                      {  display                : 'block'
+                      {  cursor                 : 'pointer'
+                      ,  display                : 'block'
                       ,  height                 : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
                       ,  margin                 : '0 auto'
                       , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
@@ -620,6 +621,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1.0'
                       ,  opacity                : '1.0'
+                      },
+                  '.dropBoxImage':
+                      {  cursor                 : '-moz-zoom-in'
+                      ,  cursor                 : '-webkit-zoom-in'
                       },
                   '.existingCAAimage':
                       { 'background-color'      : '#FFF'
@@ -2014,20 +2019,20 @@ Native support:
                     return;
                 }
 
-              var $newCAARow  = data.$newCAARow
-                , $thisAddBtn = data.$thisAddBtn
+              var $newCAARow     = data.$newCAARow
+                , $thisAddBtn    = data.$thisAddBtn
                 ;
 
               $.each(response.images, function parseCAAResponse (i) {
                     $.log('Parsing CAA response: image #' + i);
-                    if ($newCAARow.find('.newCAAimage').length === 0) {
-                        $thisAddBtn.trigger('click');
+                    if ($newCAARow.find('.newCAAimage').length < response.images.length) {
+                        caaAddNewImageBox($newCAARow.find('.caaDiv'));
                     }
                     var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                    $emptyDropBox.find('input').replaceWith($make('div').text(this.comment)).end()
+                    $emptyDropBox.removeClass('newCAAimage')
+                                 .find('input').replaceWith($make('div').text(this.comment)).end()
                                  .find('br, .closeButton').remove().end()
-                                 .find('select').prop('disabled', true).end()
-                                 .removeClass('newCAAimage');
+                                 .find('select').prop('disabled', true);
                     /* This next bit of code does the same thing as the lowsrc attribute.  This would have
                        been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
                        http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
@@ -2095,9 +2100,9 @@ Native support:
                        });
             };
 
-            var caaAddNewImageBox = function invoke_Add_image_space_button_click_handler () {
+            var caaAddNewImageBox = function invoke_Add_image_space_button_click_handler ($div) {
                 $.log('Add new CAA image space button triggered.');
-                var $imageDiv = $(this).next();
+                var $imageDiv = void 0 === $div ? $(this).next() : $div;
                 $imageDiv.append($dropBox.clone(true));
                 checkScroll($imageDiv);
             };
@@ -2158,8 +2163,8 @@ Native support:
                                                                        ])
                                                 .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
 
-                $thisForm.data(thisMBID, $newCAARow);
                 $thisAddBtn.on('click', caaAddNewImageBox);
+                $thisForm.data(thisMBID, $newCAARow);
                 $thisCAABtn.on('click', { $newCAARow  : $newCAARow
                                         , $thisAddBtn : $thisAddBtn
                                         }, caaRowLoadHandler);
