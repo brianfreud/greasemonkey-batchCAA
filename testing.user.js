@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1268
+// @version     0.01.1271
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1268'
+                , VERSION       : '0.1.1271'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1171,10 +1171,24 @@ var main = function main ($, CONSTANTS) {
               ;
 
             /* Populate the colors list */
-            Object.keys(CONSTANTS.COLORS).sort().map(function populate_colors_list (colorItem) {
-                var color       = CONSTANTS.COLORS[colorItem]
-                  ;
-                var $thisOption = $make('option', { 'class' : 'colorOption'
+            var colors      = Object.keys(CONSTANTS.COLORS)
+              , colorsMap   = [] 
+              ; 
+
+            colors.forEach(function (color, i) {
+                colorsMap.push({ index: i
+                               , value: $.l(color).toLowerCase()
+                               });
+            });
+
+            colorsMap.sort(function (a, b) {
+              return a.value > b.value ? 1 : -1;
+            });
+
+            colorsMap.map(function populate_colors_list (map) {
+                var colorItem   = colors[map.index]
+                  , color       = CONSTANTS.COLORS[colorItem]
+                  , $thisOption = $make('option', { 'class' : 'colorOption'
                                                   , value   : colorItem
                                                   }).data('default', color)
                                                     .text($.l(colorItem));
