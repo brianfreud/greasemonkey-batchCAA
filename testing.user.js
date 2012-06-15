@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1271
+// @version     0.01.1279
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1271'
+                , VERSION       : '0.1.1279'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -622,10 +622,6 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , '-moz-opacity'          : '1.0'
                       ,  opacity                : '1.0'
                       },
-                  '.dropBoxImage':
-                      {  cursor                 : '-moz-zoom-in'
-                      ,  cursor                 : '-webkit-zoom-in'
-                      },
                   '.existingCAAimage':
                       { 'background-color'      : '#FFF'
                       ,  border                 : '0 none'
@@ -1183,18 +1179,17 @@ var main = function main ($, CONSTANTS) {
 
             colorsMap.sort(function (a, b) {
               return a.value > b.value ? 1 : -1;
-            });
-
-            colorsMap.map(function populate_colors_list (map) {
+            }).map(function populate_colors_list (map) {
                 var colorItem   = colors[map.index]
                   , color       = CONSTANTS.COLORS[colorItem]
+                  , lsItemName  = 'caaBatch_colors_' + colorItem
                   , $thisOption = $make('option', { 'class' : 'colorOption'
                                                   , value   : colorItem
                                                   }).data('default', color)
                                                     .text($.l(colorItem));
-                if (localStorage.getItem('caaBatch_colors_' + colorItem) === null) {
-                    $.log('Initializing localStorage for ' + 'caaBatch_colors_' + colorItem + ' to ' + color);
-                    localStorage.setItem('caaBatch_colors_' + colorItem, color);
+                if (null === localStorage.getItem(lsItemName)) {
+                    $.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
+                    localStorage.setItem(lsItemName, color);
                 }
                 colorOptions.push($thisOption);
             });
@@ -1219,60 +1214,62 @@ var main = function main ($, CONSTANTS) {
 
             /* Populate the DOM */
             document.getElementById('sidebar').innerHTML = '';
-            $('#sidebar').appendAll(
-                          [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
-                          , $sizeContainer.appendAll(
-                                           [ $imageMagnify.append(plusImage)
-                                           , $imageShrink.append(minusImage)
-                                           ])
-                                    , $optionsControl.append(optionsImage)
-                                    , $imageContainer.append($optionsMenu.appendAll(
-                                                                          [ $optionsLegend
-                                                                          , $version
-                                                                          , $removeControl
-                                                                          , $removeLabel
-                                                                          , $make('br')
-                                                                          , $parseControl
-                                                                          , $parseLabel
-                                                                          , $make('br')
-                                                                          , $storageBtn
-                                                                          , $make('br')
-                                                                          , $langLabel.append($langList.appendAll($ARRlangs))
-                                                                          , $colorField.appendAll(
-                                                                                        [ $colorLegend
-                                                                                        , $colorSelect.appendAll(colorOptions)
-                                                                                        , $colorPicker
-                                                                                        , $colorDefault
-                                                                                        , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
-                                                                                        ])
-                                                                          , $optionsNote
-                                                                          ]))
-                                    , $make('hr').css('border-top', CONSTANTS.BORDERS)
-                                    , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
-                                    , $previewContainer.appendAll(
-                                                        [ $previewImage
-                                                        , $previewInfo.appendAll(
-                                                                       [ $dtResolution
-                                                                       , $ddResolution
-                                                                       , $dtFilesize
-                                                                       , $ddFilesize
-                                                                       ])
-                                                        ])
-                          ]);
+            $('#sidebar').detach(function () {
+                $(this).appendAll(
+                        [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
+                        , $sizeContainer.appendAll(
+                                         [ $imageMagnify.append(plusImage)
+                                         , $imageShrink.append(minusImage)
+                                         ])
+                                  , $optionsControl.append(optionsImage)
+                                  , $imageContainer.append($optionsMenu.appendAll(
+                                                                        [ $optionsLegend
+                                                                        , $version
+                                                                        , $removeControl
+                                                                        , $removeLabel
+                                                                        , $make('br')
+                                                                        , $parseControl
+                                                                        , $parseLabel
+                                                                        , $make('br')
+                                                                        , $storageBtn
+                                                                        , $make('br')
+                                                                        , $langLabel.append($langList.appendAll($ARRlangs))
+                                                                        , $colorField.appendAll(
+                                                                                      [ $colorLegend
+                                                                                      , $colorSelect.appendAll(colorOptions)
+                                                                                      , $colorPicker
+                                                                                      , $colorDefault
+                                                                                      , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
+                                                                                      ])
+                                                                        , $optionsNote
+                                                                        ]))
+                                  , $make('hr').css('border-top', CONSTANTS.BORDERS)
+                                  , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
+                                  , $previewContainer.appendAll(
+                                                      [ $previewImage
+                                                      , $previewInfo.appendAll(
+                                                                     [ $dtResolution
+                                                                     , $ddResolution
+                                                                     , $dtFilesize
+                                                                     , $ddFilesize
+                                                                     ])
+                                                      ])
+                        ]);
 
-            /* Autoeditor check */
-            var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
-                thisEditor = $('.account > a:first').text();
-            if (-1 !== $.inArray(thisEditor, autoeditorList)) {
-                $.log('The stored autoeditor preference is set to: ' + localStorage.getItem('caaBatch_autoeditPref'));
-                /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
-                   object, even though it *looks* like it is returning a string. */
-                var autoeditPref = (localStorage.getItem('caaBatch_autoeditPref') === "true");
-                $autoeditControl[0].checked = autoeditPref;
-                $autoeditControl.add($autoeditLabel)
-                                .add($make('br'))
-                                .insertBefore($parseControl);
-            }
+                /* Autoeditor check */
+                var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
+                    thisEditor = $('.account > a:first').text();
+                if (-1 !== $.inArray(thisEditor, autoeditorList)) {
+                    $.log('The stored autoeditor preference is set to: ' + localStorage.getItem('caaBatch_autoeditPref'));
+                    /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
+                       object, even though it *looks* like it is returning a string. */
+                    var autoeditPref = (localStorage.getItem('caaBatch_autoeditPref') === "true");
+                    $autoeditControl[0].checked = autoeditPref;
+                    $autoeditControl.add($autoeditLabel)
+                                    .add($make('br'))
+                                    .insertBefore($parseControl);
+                }
+            });
 
             // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
             $optionsControl.click(function optionsControl_click_handler() {
@@ -1400,6 +1397,8 @@ var main = function main ($, CONSTANTS) {
               , theseRules
               , classes = []
               ;
+
+            CONSTANTS.CSS['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
             $.log('Adding css for the CAA batch script.');
             $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function create_css_rules (key) {
@@ -1969,7 +1968,7 @@ Native support:
 
             /* The second selector here allows for the release links added by http://userscripts.org/scripts/show/93894 */
             var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
-              , columnCount
+              , columnCount     = 0
               , tableLocation
               , $thisForm       = $('form[action*="merge_queue"]')
               , $caaBtn         = $make('input', { 'class' : 'caaLoad'
@@ -2056,13 +2055,13 @@ Native support:
                     var realImg = new Image();
                     realImg.src = this.image;
                     realImg.onload = function assign_real_caa_image () {
-                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight)
-                            .css('padding-top', '0px');
+                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight);
                         var xhrReq = $.ajax({
                             url: realImg.src,
                             success: function (request) {
                                 $img.data('size', addCommas(request.length))
-                                    .prop('src', realImg.src);
+                                    .prop('src', realImg.src)
+                                    .css('padding-top', '0px');
                             }
                           });
                     };
@@ -2161,9 +2160,11 @@ Native support:
 
                 $releaseRow = $releaseAnchor.parents('tr:first');
 
-                var thisMBID    = re.mbid.exec($releaseAnchor.attr('href'))
+                var thisMBID    = re.mbid.exec($releaseAnchor.attr('href'));
 
-                void 0 === columnCount && (columnCount = $releaseRow.find('td').length);
+                if (0 === columnCount) {
+                    columnCount = $releaseRow.find('td').length;
+                }
 
                 $.log('New release found, attaching a CAA row.', 1);
                 var $thisAddBtn = $addBtn.quickClone().data('entity', thisMBID)
@@ -2192,7 +2193,9 @@ Native support:
             };
 
             // handle pre-existing release rows
-            $(releaseSelector).each(addCAARow);
+            $('#content').detach(function () {
+                $(this).find(releaseSelector).each(addCAARow);
+            });
 
             // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
             $.log('Adding release row event handler.');
@@ -2303,42 +2306,42 @@ Native support:
                   , $CAAoverlay         = $make('div',      { id : 'CAAoverlay' }).hide()
                   ;
 
-                $('body').prepend(
-                          $CAAimageEditor.appendAll(
-                                          [ $makeCloseButton
-                                          , $ieDiv.appendAll(
-                                                   [ $ieCanvasDiv.appendAll(
-                                                                  [ $makeMask('Left')
-                                                                  , $makeMask('Right')
-                                                                  , $makeMask('Top')
-                                                                  , $makeMask('Bottom')
-                                                                  , $ieCanvas
-                                                                  ])
-                                                   , $ieMenu.appendAll(
-                                                             [ $ieRotateField.appendAll(
-                                                                              [ $ieRotateLegend
-                                                                              , $ieRotateLabel.prepend($ieRotateControl)
-                                                                              ])
-                                                             , $ieFlipField.appendAll(
-                                                                            [ $ieFlipLegend
-                                                                            , $makeFlipCtrl('Vertical')
-                                                                            , $makeFlipCtrl('Horizontal')
-                                                                            ])
-                                                             , $ieCropField.appendAll(
-                                                                            [ $ieCropLegend
-                                                                            , $makeNumCtrl('Top')
-                                                                            , $makeNumCtrl('Bottom')
-                                                                            , $makeNumCtrl('Left')
-                                                                            , $makeNumCtrl('Right')
-                                                                            , $ieMaskColorLabel.prepend($ieMaskColorControl)
-                                                                            ])
-                                                             ])
-                                                   ])
-                                          ]))
-                         .prepend($CAAoverlay);
-
+                $('body').detach(function () {
+                    $(this).prepend(
+                              $CAAimageEditor.appendAll(
+                                              [ $makeCloseButton
+                                              , $ieDiv.appendAll(
+                                                       [ $ieCanvasDiv.appendAll(
+                                                                      [ $makeMask('Left')
+                                                                      , $makeMask('Right')
+                                                                      , $makeMask('Top')
+                                                                      , $makeMask('Bottom')
+                                                                      , $ieCanvas
+                                                                      ])
+                                                       , $ieMenu.appendAll(
+                                                                 [ $ieRotateField.appendAll(
+                                                                                  [ $ieRotateLegend
+                                                                                  , $ieRotateLabel.prepend($ieRotateControl)
+                                                                                  ])
+                                                                 , $ieFlipField.appendAll(
+                                                                                [ $ieFlipLegend
+                                                                                , $makeFlipCtrl('Vertical')
+                                                                                , $makeFlipCtrl('Horizontal')
+                                                                                ])
+                                                                 , $ieCropField.appendAll(
+                                                                                [ $ieCropLegend
+                                                                                , $makeNumCtrl('Top')
+                                                                                , $makeNumCtrl('Bottom')
+                                                                                , $makeNumCtrl('Left')
+                                                                                , $makeNumCtrl('Right')
+                                                                                , $ieMaskColorLabel.prepend($ieMaskColorControl)
+                                                                                ])
+                                                                 ])
+                                                       ])
+                                              ]))
+                             .prepend($CAAoverlay);
+                });
                 $.polyfillInputNumber();
-//TODO: Figure out why the number polyfill's change events aren't being detected in Firefox.
 
                 var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
                   , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
@@ -2720,6 +2723,45 @@ function thirdParty($, CONSTANTS, getColor) {
             return collection;
          };
     }());
+
+    /*!
+     * jQuery Detach+ - v0.1pre - 5/18/2011
+     *  https://gist.github.com/978520
+     * http://benalman.com/
+     *
+     * Copyright (c) 2011 "Cowboy" Ben Alman
+     * Dual licensed under the MIT and GPL licenses.
+     * http://benalman.com/about/license/
+     */
+     // https://gist.github.com/938767
+      var detach = $.detach = function (node, async, fn) {
+              var parent = node.parentNode;
+              var next = node.nextSibling;
+              if (!parent) {
+                  return;
+              }
+              parent.removeChild(node);
+              if (typeof async !== 'boolean') {
+                  fn = async;
+                  async = false;
+              }
+              if (fn && async) {
+                  fn.call(node, reattach);
+              } else if (fn) {
+                  fn.call(node);
+                  reattach();
+              }
+
+              function reattach() {
+                  parent.insertBefore(node, next);
+              }
+          };
+
+      $.fn.detach = function (async, fn) {
+          return this.each(function () {
+              detach(this, async, fn);
+          });
+      };
 }
 
 !function main_loader(i) {
