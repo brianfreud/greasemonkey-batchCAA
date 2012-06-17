@@ -1168,8 +1168,8 @@ var main = function main ($, CONSTANTS) {
 
             /* Populate the colors list */
             var colors    = Object.keys(CONSTANTS.COLORS)
-              , colorsMap = [] 
-              ; 
+              , colorsMap = []
+              ;
 
             colors.forEach(function prep_color_list_for_sorting (color, i) {
                 colorsMap.push({ index: i
@@ -1415,11 +1415,11 @@ var main = function main ($, CONSTANTS) {
                                             }).text('.localImage { width: ' + size + 'px; }'));
             });
 
-            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit 
+            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
                prevents those columns getting squished when the table-layout is set to fixed layout. */
             var $th = $(document.getElementsByTagName('th'));
             for (var i = 0; i < 3; i = i + 2) {
-                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''), 
+                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
                           ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''));
             }
 
@@ -2068,7 +2068,7 @@ Native support:
                       });
                       checkScroll($newCAARow.find('div.loadingDiv'));
                   };
-  
+
                 $.each(response.images, parseCAAResponse);
                 $newCAARow.find('.loadingDiv, .caaAdd').toggle();
                 $newCAARow.find('.caaDiv').slideDown('slow');
@@ -2122,7 +2122,7 @@ Native support:
                 var $releaseAnchor = $.single(this);
 
                 if ($releaseAnchor[0].nodeName === 'TABLE') { // Detect bitmap's script's expandos.
-                    /* DOMNodeInserted is triggered for each new element added to the table by bitmap's script.  
+                    /* DOMNodeInserted is triggered for each new element added to the table by bitmap's script.
                        This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
                        triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
                        kicks in when a RG is expanded, and only when that entire expando has been inserted. */
