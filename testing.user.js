@@ -843,14 +843,14 @@ var getUri = function getURI (e) {
         // +   bugfixed by: Pellentesque Malesuada
         // +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
         // +   improved by: Rafał Kukawski (http://kukawski.pl)
+        // +   improved by: Brian Schweitzer
         // *     example 1: base64_encode('Kevin van Zonneveld');
         // *     returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
         // mozilla has this native
         // - but breaks in 2.0.0.12!
         //}
-        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-        var o1, o2, o3, h1, h2, h3, h4, bits, i = 0,
-            ac = 0,
+        var b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split('');
+        var o1, o2, o3, h1, h2, h3, bits, i = 0,
             enc = "",
             tmp_arr = [];
 
@@ -867,14 +867,14 @@ var getUri = function getURI (e) {
             h1 = bits >> 18 & 0x3f;
             h2 = bits >> 12 & 0x3f;
             h3 = bits >> 6 & 0x3f;
-            h4 = bits & 0x3f;
+            bits &= 0x3f;
 
             // use hexets to index into b64, and append result to encoded string
-            tmp_arr[ac++] = b64.charAt(h1) + b64.charAt(h2) + b64.charAt(h3) + b64.charAt(h4);
+            tmp_arr.push([b64[h1], b64[h2], b64[h3], b64[bits]].join(''));
         } while (i < data.length);
         enc = tmp_arr.join('');
-        var r = data.length % 3;
-        return (r ? enc.slice(0, r - 3) : enc) + '==='.slice(r || 3);
+        o1 = data.length % 3;
+        return (o1 ? enc.slice(0, o1 - 3) : enc) + '==='.slice(o1 || 3);
     };
     // END (phpjs.org)
 
@@ -1167,8 +1167,8 @@ var main = function main ($, CONSTANTS) {
               ;
 
             /* Populate the colors list */
-            var colors      = Object.keys(CONSTANTS.COLORS)
-              , colorsMap   = [] 
+            var colors    = Object.keys(CONSTANTS.COLORS)
+              , colorsMap = [] 
               ; 
 
             colors.forEach(function (color, i) {
