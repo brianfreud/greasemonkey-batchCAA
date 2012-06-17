@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1291
+// @version     0.01.1294
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1291'
+                , VERSION       : '0.1.1294'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -920,7 +920,7 @@ var getUri = function getURI (e) {
 
 var getUriWorkaround = function getUriWorkaround (e) { // Works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
     'use strict';
-    setTimeout(function() {
+    setTimeout(function getUriWorkaround_internal () {
         getUri(e);
     }, 0);
 };
@@ -974,7 +974,7 @@ var main = function main ($, CONSTANTS) {
     var checkScroll = function checkScroll ($caaDiv) {
         $.log('Adjusting negative right margin.', 1);
         if ('undefined' === typeof $caaDiv.data('width')) {
-            $caaDiv.data('width', $caaDiv.width());
+            $caaDiv.data('width', $caaDiv.quickWidth(0));
         }
         var $dropboxes = $caaDiv.find('.CAAdropbox');
         var $dropbox   = $dropboxes.filter(':first')
@@ -1009,8 +1009,8 @@ var main = function main ($, CONSTANTS) {
     var tintImageRed = function tint_image_Red (image) {
         $.log('Tinting image');
         var $image = $(image);
-        return $image.wrap($make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.height() + 6) + 'px'
-                                                                           , width  : ($image.width() + 6) + 'px'
+        return $image.wrap($make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.quickHeight(0) + 6) + 'px'
+                                                                           , width  : ($image.quickWidth(0) + 6) + 'px'
                                                                            }))
                      .data('oldtitle', $image.prop('title'))
                      .prop('title', $.l('Remove image'))
@@ -1171,13 +1171,13 @@ var main = function main ($, CONSTANTS) {
               , colorsMap = [] 
               ; 
 
-            colors.forEach(function (color, i) {
+            colors.forEach(function prep_color_list_for_sorting (color, i) {
                 colorsMap.push({ index: i
                                , value: $.l(color).toLowerCase()
                                });
             });
 
-            colorsMap.sort(function (a, b) {
+            colorsMap.sort(function sort_color_list (a, b) {
               return a.value > b.value ? 1 : -1;
             }).map(function populate_colors_list (map) {
                 var colorItem   = colors[map.index]
@@ -1214,7 +1214,7 @@ var main = function main ($, CONSTANTS) {
 
             /* Populate the DOM */
             document.getElementById('sidebar').innerHTML = '';
-            $('#sidebar').detach(function () {
+            $('#sidebar').detach(function sidebar_internal_detach_handler () {
                 $(this).appendAll(
                         [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
                         , $sizeContainer.appendAll(
@@ -1403,10 +1403,10 @@ var main = function main ($, CONSTANTS) {
             $.log('Adding css for the CAA batch script.');
             $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function create_css_rules (key) {
                 theseRules = Object.keys(CSS[key]).map(function create_css_rules_internal (rule) {
-                    return ['\n    ', rule, ' : ', CSS[key][rule]].join('');
+                    return [rule, ':', CSS[key][rule]].join('');
                 }).join(';');
-                return [key, ' { ', theseRules, ';\n}'].join('');
-            }).join('\n')).appendTo('head');
+                return [key, '{', theseRules, ';}'].join('');
+            }).join('')).appendTo('head');
 
             $.log('Adding image preview css classes.');
             sizes.forEach(function create_css_style_elements (size) {
@@ -1415,15 +1415,13 @@ var main = function main ($, CONSTANTS) {
                                             }).text('.localImage { width: ' + size + 'px; }'));
             });
 
-            /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title or checkbox columns.  Without the next line,
-               those columns get squished when the table-layout is set to fixed layout. */
-            $('thead').find('th')
-                      .each(function () {
-                          $.single(this).filter(':first, :eq(2)')
-                                        .each(function block_column_squishing () {
-                                                  $.single(this).css('width', ($.single(this).width() + 10) + 'px');
-                                              });
-                      });
+            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit 
+               prevents those columns getting squished when the table-layout is set to fixed layout. */
+            var $th = $(document.getElementsByTagName('th'));
+            for (var i = 0; i < 3; i = i + 2) {
+                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''), 
+                          ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''));
+            }
 
             classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
 
@@ -1801,30 +1799,30 @@ Native support:
                    , context: this
                    , success: function yqlResponseHandler(data, textStatus, jqXHR) {
                                   var links = []
-                                    , processURI = function (uri) {
+                                    , processURI = function getRemotePage_processURI (uri) {
                                             imageTest.test(uri) && links.push(uri);
                                         }
-                                    , unique = function(uri, index) {
+                                    , unique = function getRemotePage_unique (uri, index) {
                                             return links.indexOf(uri) === index;
                                         }
-                                    , sendLinksToHandler = function (base) {
+                                    , sendLinksToHandler = function getRemotePage_sendLinksToHandler (base) {
                                             links.length && handleURIs({ base: base
                                                                        , text: links.filter(unique)
                                                                        });
                                         }
-                                    , handleBaseTag = function ($remotePage) {
+                                    , handleBaseTag = function getRemotePage_handleBaseTag ($remotePage) {
                                             var base = $remotePage.filter('base').attr('href') || '';
                                             $('base').prop('href', base);
                                             return base;
                                         }
-                                    , populateImageLinks = function ($remotePage) {
+                                    , populateImageLinks = function getRemotePage_populateImageLinks ($remotePage) {
                                             $remotePage.find('img')
-                                                       .each(function () {
+                                                       .each(function getRemotePage_populateImageLinks_img_handler () {
                                                                  processURI(this.src);
                                                              })
                                                        .end()
                                                        .find('a')
-                                                       .each(function () {
+                                                       .each(function getRemotePage_populateImageLinks_a_handler () {
                                                                  processURI(this.href);
                                                        });
                                         }
@@ -1864,7 +1862,7 @@ Native support:
                    });
         };
 
-        var handleURIs = function (uris) {
+        var handleURIs = function handleURIs (uris) {
             switch (!0) {
                 case (void 0 !== uris.file_list && !!uris.file_list.length): // local file(s)
                     $.log('imageContainer: drop ==> local file');
@@ -1878,7 +1876,7 @@ Native support:
                     $.log('imageContainer: drop ==> list of uris');
                     var type;
 
-                    uris.text.forEach(function (uri) {
+                    uris.text.forEach(function handleURIs_walkArray (uri) {
                         type = supportedImageType(uri);
                         $.log('imageContainer: ' + type + ' detected at ' + uri);
                         if (type) {
@@ -1996,7 +1994,7 @@ Native support:
                                                                       })
                                         ;
 
-                                      return $typeList.appendAll(types.map(function (type, i) {
+                                      return $typeList.appendAll(types.map(function makeCAATypeList_internal (type, i) {
                                           return $make('option', { value : i+1 }).text($.l('coverType:' + type));
                                       }));
                                   };
@@ -2032,46 +2030,46 @@ Native support:
                     return;
                 }
 
-              var $newCAARow     = data.$newCAARow
-                , $thisAddBtn    = data.$thisAddBtn
-                ;
-
-              $.each(response.images, function parseCAAResponse (i) {
-                    $.log('Parsing CAA response: image #' + i);
-                    if ($newCAARow.find('.newCAAimage').length < response.images.length) {
-                        caaAddNewImageBox($newCAARow.find('.caaDiv'));
-                    }
-                    var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-                    $emptyDropBox.removeClass('newCAAimage')
-                                 .find('input').replaceWith($make('div').text(this.comment)).end()
-                                 .find('br, .closeButton').remove().end()
-                                 .find('select').prop('disabled', true);
-                    /* This next bit of code does the same thing as the lowsrc attribute.  This would have
-                       been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
-                       http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
-                    var $img = $emptyDropBox.find('img');
-                    $img[0].src = CONSTANTS.THROBBER;
-                    $img.css('padding-top', '20px');
-                    var realImg = new Image();
-                    realImg.src = this.image;
-                    realImg.onload = function assign_real_caa_image () {
-                        $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight);
-                        var xhrReq = $.ajax({
-                            url: realImg.src,
-                            success: function (request) {
-                                $img.data('size', addCommas(request.length))
-                                    .prop('src', realImg.src)
-                                    .css('padding-top', '0px');
-                            }
-                          });
-                    };
-                    /* End lowsrc workaround. */
-                    $.each(this.types, function assign_image_type (i) {
-                        var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
-                        $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
-                    });
-                    checkScroll($newCAARow.find('div.loadingDiv'));
-                });
+                var $newCAARow       = data.$newCAARow
+                  , $thisAddBtn      = data.$thisAddBtn
+                  , parseCAAResponse = function parseCAAResponse (i) {
+                      $.log('Parsing CAA response: image #' + i);
+                      if ($newCAARow.find('.newCAAimage').length < response.images.length) {
+                          caaAddNewImageBox($newCAARow.find('.caaDiv'));
+                      }
+                      var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
+                      $emptyDropBox.removeClass('newCAAimage')
+                                   .find('input').replaceWith($make('div').text(this.comment)).end()
+                                   .find('br, .closeButton').remove().end()
+                                   .find('select').prop('disabled', true);
+                      /* This next bit of code does the same thing as the lowsrc attribute.  This would have
+                         been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
+                         http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
+                      var $img = $emptyDropBox.find('img');
+                      $img[0].src = CONSTANTS.THROBBER;
+                      $img.css('padding-top', '20px');
+                      var realImg = new Image();
+                      realImg.src = this.image;
+                      realImg.onload = function assign_real_caa_image () {
+                          $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight);
+                          var xhrReq = $.ajax({
+                              url: realImg.src,
+                              success: function lowsrc_workaround_success_handler (request) {
+                                  $img.data('size', addCommas(request.length))
+                                      .prop('src', realImg.src)
+                                      .css('padding-top', '0px');
+                              }
+                            });
+                      };
+                      /* End lowsrc workaround. */
+                      $.each(this.types, function assign_image_type (i) {
+                          var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
+                          $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
+                      });
+                      checkScroll($newCAARow.find('div.loadingDiv'));
+                  };
+  
+                $.each(response.images, parseCAAResponse);
                 $newCAARow.find('.loadingDiv, .caaAdd').toggle();
                 $newCAARow.find('.caaDiv').slideDown('slow');
             };
@@ -2092,7 +2090,7 @@ Native support:
                 if (!$tableParent.hasClass('tbl')) {
                     $widthEle = $tableParent.parents('td:first');
                 }
-                for (var i = 0, repeats = Math.max(3, Math.round($widthEle.width()/132) - 5); i < repeats; i++) {
+                for (var i = 0, repeats = Math.max(3, Math.round($widthEle.quickWidth(0)/132) - 5); i < repeats; i++) {
                        $.single(this).after($dropBox.clone(true));
                 }
                 $.log('Requesting CAA info for ' + $.single(this).data('entity'));
@@ -2115,9 +2113,9 @@ Native support:
 
             var caaAddNewImageBox = function invoke_Add_image_space_button_click_handler ($div) {
                 $.log('Add new CAA image space button triggered.');
-                var $imageDiv = void 0 === $div ? $(this).next() : $div;
-                $imageDiv.append($dropBox.clone(true));
-                checkScroll($imageDiv);
+                $div = $div.append ? $div : $(this).nextAll('.caaDiv');
+                $div.append($dropBox.clone(true));
+                checkScroll($div);
             };
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
@@ -2205,7 +2203,7 @@ Native support:
                   , type
                   , imageArray = JSON.parse(localStorage.getItem('caaBatch_imageCache'))
                   ;
-                null !== imageArray && imageArray.length && imageArray.forEach(function (url) {
+                null !== imageArray && imageArray.length && imageArray.forEach(function load_stored_images_internal (url) {
                     image = decodeURIComponent(url);
                     (type = supportedImageType(image)) && loadRemoteFile(image, type);
                 });
@@ -2214,18 +2212,18 @@ Native support:
         /* Create image editor. */
         !function create_image_editor_handler () {
             $.log('Adding handler for image editor.');
-            $('body').on('click', '#previewImage', function (e) {
+            $('body').on('click', '#previewImage', function image_editor_initial_handler (e) {
                 if ($('#previewImage').prop('src').length === 0) {
                     return;
                 }
 
-                var $makeMask = function (where) {
+                var $makeMask = function image_editor_create_mask (where) {
                     return $make('div', { 'class' : 'CAAmask'
                                         ,  id     : 'CAAmask' + where
                                         });
                 };
 
-                var $makeNumCtrl = function (where) {
+                var $makeNumCtrl = function image_editor_create_crop_controls (where) {
                     return $make('label', { 'class' : 'cropLabel'
                                           , id    : 'CAAeditorCropLabel' + where
                                           , title : $.l(where)
@@ -2240,7 +2238,7 @@ Native support:
                                                                     }));
 
                 };
-                var $makeFlipCtrl = function (direction) {
+                var $makeFlipCtrl = function image_editor_create_flip_controls (direction) {
                     var symbol = (direction === 'Vertical') ? '⇵' : '⇆';
 
                     return $make('input', { 'class' : 'flipControl'
@@ -2285,7 +2283,7 @@ Native support:
                   , $CAAoverlay         = $make('div',      { id : 'CAAoverlay' }).hide()
                   ;
 
-                $('body').detach(function () {
+                $('body').detach(function create_image_editor_internal_detach_handler () {
                     $(this).prepend(
                               $CAAimageEditor.appendAll(
                                               [ $makeCloseButton
@@ -2322,8 +2320,8 @@ Native support:
                 });
                 $.polyfillInputNumber();
 
-                var imageRatio     = $('#previewImage').width() / $('#previewImage').height()
-                  , canvasHeight   = Math.round($('#CAAimageEditor').height() * 0.9)
+                var imageRatio     = $('#previewImage').quickWidth(0) / $('#previewImage').quickHeight(0)
+                  , canvasHeight   = Math.round($('#CAAimageEditor').quickHeight(0) * 0.9)
                   , canvasWidth    = Math.round(canvasHeight * imageRatio)
                   , degreesRotated = 0
                   ;
@@ -2350,7 +2348,7 @@ Native support:
                   , backupCtx = backupCanvas.getContext("2d")
                   ;
 
-                img.onload = function () {
+                img.onload = function load_image_handler () {
                     /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
                     canvas.width = img.width;
                     canvas.height = img.height;
@@ -2368,7 +2366,7 @@ Native support:
 
                 img.src = $('#previewImage').prop('src');
 
-                var prepCanvas = function (callback) {
+                var prepCanvas = function prep_canvas_handler (callback) {
                     var centerH        = canvas.height/2
                       , centerW        = canvas.width/2
                       ;
@@ -2391,8 +2389,8 @@ Native support:
                     ctx.drawImage(backupCanvas, 0, 0);
                 };
 
-                var rotate = function (degrees) {
-                    var rotate = function () {
+                var rotate = function rotate_handler (degrees) {
+                    var rotate = function rotate_internal_handler  () {
                         ctx.rotate(-degreesRotated * Math.PI / 180);
                         ctx.rotate(degrees * Math.PI / 180);
                         degreesRotated = degrees;
@@ -2400,38 +2398,38 @@ Native support:
                     prepCanvas(rotate);
                 };
 
-                var flip = function (h, v) {
-                    var flip = function () {
+                var flip = function flip_handler  (h, v) {
+                    var flip = function flip_internal_handler () {
                         ctx.scale(h ? -1 : 1, v ? -1 : 1);
                     };
                     prepCanvas(flip);
                 };
 
-                $('#CAAeditorFlipVertical').on('click', function () {
+                $('#CAAeditorFlipVertical').on('click', function flip_vertical_click_event_handler () {
                     flip(0,1);
                 });
 
-                $('#CAAeditorFlipHorizontal').on('click', function () {
+                $('#CAAeditorFlipHorizontal').on('click', function flip_vertical_click_event_horizontal () {
                     flip(1,0);
                 });
 
-                $('#CAAeditorRotateControl').on('change', function () {
+                $('#CAAeditorRotateControl').on('change', function rotate_controls_change_event_handler () {
                     rotate($.single(this).val());
                 });
 
-                $('#CAAeditorCropControlTop').on('change', function () {
+                $('#CAAeditorCropControlTop').on('change', function crop_controls_change_event_handler_top () {
                     $('#CAAmaskTop').css('height', $.single(this).val());
                 });
 
-                $('#CAAeditorCropControlBottom').on('change', function () {
+                $('#CAAeditorCropControlBottom').on('change', function crop_controls_change_event_handler_bottom () {
                     $('#CAAmaskBottom').css('height', $.single(this).val());
                 });
 
-                $('#CAAeditorCropControlLeft').on('change', function () {
+                $('#CAAeditorCropControlLeft').on('change', function crop_controls_change_event_handler_left () {
                     $('#CAAmaskLeft').css('width', $.single(this).val());
                 });
 
-                $('#CAAeditorCropControlRight').on('change', function () {
+                $('#CAAeditorCropControlRight').on('change', function crop_controls_change_event_handler_right () {
                     $('#CAAmaskRight').css('width', $.single(this).val());
                 });
 
@@ -2451,7 +2449,7 @@ Native support:
                 iePicker.fromString($.getColor('MASK'));
 
                 /* Add functionality to the color picker to change the css rule for the crop mask. */
-                $('#CAAeditiorMaskColorControl').on('change', function (e) {
+                $('#CAAeditiorMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
                     $('#CAAeditiorMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
                     iePicker.fromString(this.value);
                 });
@@ -2559,10 +2557,10 @@ Native support:
         $.log('Screen resize detected, adjusting layout.');
         if ((window.outerHeight - window.innerHeight) > 100) {
             $('#tblStyle1').prop('disabled',true);
-            $('th:eq(2)').css('width', $('th:eq(2)').width() + 'px');
+            $('th:eq(2)').css('width', $('th:eq(2)').quickWidth(0) + 'px');
             $('#tblStyle1').prop('disabled',false);
         }
-        $('div.caaDiv').each(function () {
+        $('div.caaDiv').each(function window_resize_internal () {
             checkScroll($.single(this));
         });
     };
@@ -2690,12 +2688,20 @@ function thirdParty($, CONSTANTS, getColor) {
     $.addScript('jQueryAnimateEnhanced');
     $.addScript('jQueryGetHiddenDimensions');
 
+    $.fn.quickWidth = function (which) {
+        return parseFloat($.css(this[which || 0], 'width'));
+    };
+
+    $.fn.quickHeight = function (which) {
+        return parseFloat($.css(this[which || 0], 'height'));
+    };
+
     /* jQuery.single, by James Padolsey
        http://james.padolsey.com/javascript/76-bytes-for-faster-jquery/
     */
-    jQuery.single = (function(o){
+    jQuery.single = (function jQuery_single (o){
          var collection = jQuery([1]); // Fill with 1 item, to make sure length === 1
-         return function(element) {
+         return function jQuery_single_internal (element) {
              // Give collection the element:
             collection[0] = element;
              // Return the collection:
@@ -2713,7 +2719,7 @@ function thirdParty($, CONSTANTS, getColor) {
      * http://benalman.com/about/license/
      */
      // https://gist.github.com/938767
-      var detach = $.detach = function (node, async, fn) {
+      var detach = $.detach = function jQuery_detach (node, async, fn) {
               var parent = node.parentNode;
               var next = node.nextSibling;
               if (!parent) {
@@ -2736,7 +2742,7 @@ function thirdParty($, CONSTANTS, getColor) {
               }
           };
 
-      $.fn.detach = function (async, fn) {
+      $.fn.detach = function jQuery_prototype_detach (async, fn) {
           return this.each(function () {
               detach(this, async, fn);
           });
