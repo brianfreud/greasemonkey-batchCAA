@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1279
+// @version     0.01.1290
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1279'
+                , VERSION       : '0.1.1290'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1966,9 +1966,7 @@ Native support:
         !function init_add_caa_row_controls () {
             $.log('Adding CAA controls and event handlers.');
 
-            /* The second selector here allows for the release links added by http://userscripts.org/scripts/show/93894 */
-            var releaseSelector = 'a[resource^="[mbz:release/"], a[href^="/release/"]'
-              , columnCount     = 0
+            var columnCount     = 0
               , tableLocation
               , $thisForm       = $('form[action*="merge_queue"]')
               , $caaBtn         = $make('input', { 'class' : 'caaLoad'
@@ -2121,86 +2119,65 @@ Native support:
             };
 
             var addCAARow = function add_new_row_for_CAA_stuff (event) {
-                $.log('Release row handler triggered.');
-                var $releaseAnchor = $(this),
-                    $releaseRow;
+                var $releaseAnchor = $.single(this);
 
-                if (void 0 !== event && event.hasOwnProperty('originalEvent')) {
-                    $.log('Release row handler is running due to a mutation event.');
-                    $releaseRow = $(event.originalEvent.srcElement);
-                    $releaseAnchor = $releaseRow.find('a:first');
-                    if (event.originalEvent.srcElement.localName !== 'tr') {
-                        $.log('Aborting; mutation event was not triggered by a tr insertion.');
-                        return;
-                    } else if ($releaseAnchor.text() === 'edit') {
-                        $.log('Edit links from the "expand/collapse release groups" script found; removing the row.');
-                        $releaseRow.remove();
-                        return;
+                if ($releaseAnchor[0].nodeName === 'TABLE') { // Detect bitmap's script's expandos.
+                    /* DOMNodeInserted is triggered for each new element added to the table by bitmap's script.  
+                       This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
+                       triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
+                       kicks in when a RG is expanded, and only when that entire expando has been inserted. */
+                    var $editRow = $releaseAnchor.find('a[href^="/release/add?release-group"]').parent();
+                    if ($editRow.length) {
+                        $editRow.remove();
+                        $releaseAnchor.find('a')
+                                      .filter('[href^="/release/"]')
+                                      .each(addCAARow);
                     }
-                }
-
-                if (void 0 === $releaseAnchor.attr('href')) {
-                    $.log('Aborting; not a valid release tr.');
                     return;
                 }
 
-                if (void 0 === tableLocation) {
-                    if (!document.location.pathname.match(/\/artist\/\w{8}\-\w{4}\-\w{4}\-\w{4}\-\w{12}$/)) {
-                        /* Release, Label, and single RG pages. */
-                        tableLocation = 'table:first';
-                    } else { /* Artist RG listing pages */
-                        tableLocation = 'table:eq(1)';
-                    }
-                }
+                var tableLocation = tableLocation
+                  , $releaseRow   = $releaseAnchor.parents('tr:first')
+                  , thisMBID      = re.mbid.exec($releaseAnchor.attr('href'))
+                  ;
 
-                if (!$releaseAnchor.parents(tableLocation).hasClass('tbl')) {
-                    $.log('Aborting; tr describes a track, not a release.');
-                    return;
-                }
-
-                $releaseRow = $releaseAnchor.parents('tr:first');
-
-                var thisMBID    = re.mbid.exec($releaseAnchor.attr('href'));
-
-                if (0 === columnCount) {
-                    columnCount = $releaseRow.find('td').length;
-                }
+                0 === columnCount && (columnCount = $releaseRow[0].getElementsByTagName('td').length);
 
                 $.log('New release found, attaching a CAA row.', 1);
-                var $thisAddBtn = $addBtn.quickClone().data('entity', thisMBID)
-                  , $thisCAABtn = $caaBtn.quickClone().data('entity', thisMBID)
+                var $thisAddBtn     = $addBtn.quickClone()
+                  , $thisCAABtn     = $caaBtn.quickClone().data('entity', thisMBID)
                   , $thisLoadingDiv = $loadingDiv.quickClone(true)
-                  , $newCAARow  = $make('td', { 'class' : 'imageRow'
-                                              , colspan : columnCount
-                                              }).appendAll([ $thisAddBtn
-                                                                       , $thisLoadingDiv
-                                                                       , $make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
-                                                                       ])
-                                                .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
+                  , $newCAARow      = $make('td', { 'class' : 'imageRow'
+                                                  , colspan : columnCount
+                                                  }).appendAll([ $thisAddBtn
+                                                               , $thisLoadingDiv
+                                                               , $make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
+                                                               ])
+                                                    .wrap($make('tr', { 'class': $releaseRow.prop('class') }));
 
                 $thisAddBtn.on('click', caaAddNewImageBox);
-                $thisForm.data(thisMBID, $newCAARow);
                 $thisCAABtn.on('click', { $newCAARow  : $newCAARow
                                         , $thisAddBtn : $thisAddBtn
                                         }, caaRowLoadHandler);
-
-                $.log('Inserting image row and attaching DOMNodeInserted event handler.', 1);
-                $releaseRow.after($newCAARow)
-                           .on('DOMNodeInserted', function node_inserted_so_try_to_add_caa_row () {
-                                                      $.log('DOMNodeInserted event handler triggered.', 1);
-                                                      $releaseRow.after($newCAARow);
-                                                  });
+                $releaseRow.after($newCAARow);
+                return;
             };
 
             // handle pre-existing release rows
-            $('#content').detach(function () {
-                $(this).find(releaseSelector).each(addCAARow);
-            });
+            var addLoadButtons = function add_load_images_button_to_existing_release_rows () {
+                $(this).find('a')
+                       .filter('[resource^="[mbz:release/"]')
+                       .each(addCAARow);
+            };
+            $('#content').detach(addLoadButtons);
 
             // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
             $.log('Adding release row event handler.');
-            $thisForm.find('tbody:first')
-                     .on('DOMNodeInserted', 'table', addCAARow);
+            var handleInsertedReleaseRow = function handleInsertedReleaseRow () {
+                $.single(this).on('DOMNodeInserted', 'table', addCAARow);
+            };
+            $thisForm.find('tbody')
+                     .each(handleInsertedReleaseRow);
         }();
 
         !function init_add_caa_table_controls () {
