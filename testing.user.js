@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1290
+// @version     0.01.1291
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1290'
+                , VERSION       : '0.1.1291'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1418,10 +1418,12 @@ var main = function main ($, CONSTANTS) {
             /* http://musicbrainz.org/artist/{mbid} does not set a width for the Title or checkbox columns.  Without the next line,
                those columns get squished when the table-layout is set to fixed layout. */
             $('thead').find('th')
-                      .filter(':first, :eq(2)')
-                      .each(function block_column_squishing () {
-                                $.single(this).css('width', ($.single(this).width() + 10) + 'px');
-                            });
+                      .each(function () {
+                          $.single(this).filter(':first, :eq(2)')
+                                        .each(function block_column_squishing () {
+                                                  $.single(this).css('width', ($.single(this).width() + 10) + 'px');
+                                              });
+                      });
 
             classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
 
