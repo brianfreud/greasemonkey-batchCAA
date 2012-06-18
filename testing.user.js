@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1294
+// @version     0.01.1313
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -35,7 +35,6 @@ Opera: Not compatible, sorry.
 
 */
 
-//TODO: "About"
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for saving edited images
@@ -54,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1294'
+                , VERSION       : '0.1.1313'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -76,6 +75,110 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Track'
                                   , 'Other'
                                   ]
+                , CREDITS       : { 'Developer and programmer' : [ { name : 'Brian "BrianFreud" Schweitzer'
+                                                     , mb   : 'brianfreud'
+                                                     , urlN : 'userscripts.org/users/28107'
+                                                     }
+                                                   ]
+                                  , Icons        : [ { name : 'Mapto'
+                                                     , what : 'Magnifying glass icons'
+                                                     , urlN : 'commons.wikimedia.org/wiki/User:Mapto'
+                                                     , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
+                                                     }
+                                                   , { name : 'Inductiveload'
+                                                     , what : 'Magnifying glass icons'
+                                                     , urlN : 'commons.wikimedia.org/wiki/User:Inductiveload'
+                                                     , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
+                                                     }
+                                                   , { name : 'ablonevn'
+                                                     , what : 'Gear icon'
+                                                     , urlW : 'www.clker.com/clipart-169255.html'
+                                                     }
+                                                   , { name : 'El T'
+                                                     , what : 'Information icon'
+                                                     , urlN : 'en.wikipedia.org/wiki/User:El_T'
+                                                     , urlW : 'en.wikipedia.org/wiki/File:Information_icon.svg'
+                                                     }
+                                                   , { name : 'Timur Gafforov & Avraam Makhmudov'
+                                                     , what : 'Throbber image'
+                                                     , urlW : 'preloaders.net'
+                                                     }
+                                                   ]
+                                  , Plugins      : [ { name : 'Ben Barnett'
+                                                     , what : 'jquery.animate-enhanced v0.91'
+                                                     , urlN : 'benbarnett.net'
+                                                     , urlW : 'github.com/benbarnett/jQuery-Animate-Enhanced'
+                                                     }
+                                                   , { name : 'Ryan Wheale & Tim Banks'
+                                                     , what : 'jQuery.getHiddenDimensions'
+                                                     , urlN : 'www.foliotek.com/devblog/author/timlanit'
+                                                     , urlW : 'www.foliotek.com/devblog/getting-the-width-of-a-hidden-element-with-jquery-using-width'
+                                                     }
+                                                   , { name : 'Brian Schweitzer & Naftali Lubin'
+                                                     , what : 'jQuery.appendAll'
+                                                     }
+                                                   , { name : 'James Padolsey'
+                                                     , what : 'jQuery.single'
+                                                     , urlN : 'james.padolsey.com'
+                                                     , urlW : 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
+                                                     }
+                                                   , { name : '"Cowboy" Ben Alman'
+                                                     , what : 'jQuery Detach+ v0.1pre'
+                                                     , urlN : 'benalman.com'
+                                                     , urlW : 'gist.github.com/978520'
+                                                     }
+                                                   ]
+                                  , Polyfills    : [ { name : 'Eric Bidelman'
+                                                     , what : 'idb.filesystem.js v0.0.1'
+                                                     , urlW : 'github.com/ebidel/idb.filesystem.js'
+                                                     }
+                                                   , { name : 'Jan Odvarko'
+                                                     , what : 'jscolor'
+                                                     , urlW : 'jscolor.com'
+                                                     }
+                                                   , { name : 'Jonathan Stipe'
+                                                     , what : 'Number polyfill'
+                                                     , urlW : 'github.com/jonstipe/number-polyfill'
+                                                     }
+                                                   , { name : 'Sebastian Tschan'
+                                                     , what : 'JavaScript Canvas to Blob 2.0'
+                                                     , urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
+                                                     }
+                                                   ]
+                                  , Translations : [ { name : 'kepstin (Calvin Walton)'
+                                                     , what : 'Canadian English'
+                                                     , urlN : 'www.kepstin.ca'
+                                                     , mb   : 'kepstin'
+                                                     }]
+                                  , Tools        : [ { name : 'Jeff Schiller'
+                                                     , what : 'Scour'
+                                                     , urlW : 'www.codedread.com/scour'
+                                                     }
+                                                   , { name : 'Site Project ApS'
+                                                     , what : 'JavaScript string encoder'
+                                                     , urlW : 'www.htmlescape.net/stringescape_tool.html'
+                                                     }
+                                                   ]
+                                  , Libraries    : [ { name : 'Stoive (Steven Thurlow)'
+                                                     , what : 'dataURItoBlob'
+                                                     , urlN : 'github.com/stoive'
+                                                     , urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
+                                                     }
+                                                   , { name : 'Ben Leslie'
+                                                     , what : 'jsjpegmeta'
+                                                     , urlN : 'benno.id.au/'
+                                                     , urlW : 'code.google.com/p/jsjpegmeta/'
+                                                     }
+                                                   , { name : 'John Resig and the rest of the jQuery team'
+                                                     , what : 'jQuery 1.7.2'
+                                                     , urlW : 'jquery.com'
+                                                     }
+                                                   , { name : 'Brandon Aaron, Amir E. Aharoni, Khaled AlHourani, Mike Alsup, Robson Braga Araujo, Lim Chee Aun, Pierre-Henri Ausseil, Jesse Baird, Paul Bakaus, Adam Baratz, Phillip Barnes, Jorge Barreiro, Bruno Basto, Doug Blood, David Bolter, Kris Borchers, Mohamed Cherif Bouchelaghem, Ben Boyle, Milan Broum, Tobias Brunner, Brant Burnett, Alberto Fernández Capel, Sean Catchpole, Filippo Cavallarin, Douglas Cerna, Chi Cheng, Samuel Cormier-Iijima, Kevin Dalman, Gilmore Davidson, Jason Davies, Michael DellaNoce, Justin Domnitz, Alex Dovenmuehle, Thibault Duplessis, Aaron Eisenberger, Ashek Elahi, John Enters, Edward Faulkner, John Firebaugh, Ariel Flesler, Kyle Florence, Corey Frang, Tiago Freire, Martin Frost, Carl Fürstenberg, Bohdan Ganicky, Dmitri Gaskin, Guillaume Gautreau, Jamie Gegerson, Genie, Shahyar Ghobadpour, Giovanni Giacobbi, Scott González, Glenn Goodrich, Marc Grabanski, Philip Graham, William Griffiths, Florian Gutmann, Klaus Hartl, Dan Heberden, Peter Heiberg, Bertter Heide, Heiko Henning, Hans Hillen, Pavol Hluchý, Ben Hollis, Matt Hoskins, Gilles van den Hoven, Petr Hromadko, Jack Hsu, Trey Hunner, Matthew Hutton, Eric Hynds, Eneko Illarramendi, Paul Irish, Jacek Jędrzejewski, Scott Jehl, Mark Johnson, Marwan Al Jubeh, Michael P. Jung, Dylan Just, Tomy Kaira, Andrey Kapitcyn, Guntupalli Karunakar, Yehuda Katz, Kato Kazuyoshi, Chris Kelly, James Khoury, Harri Kilpiö, Karl Kirch, Lev Kitsis, Eyal Kobrigo, Ting Kuei, David Leal, Lukasz Lipinski, Jo Liss, Rob Loach, Garrison Locke, Lado Lomidze, Eduardo Lundgren, Justin MacCarthy, William Kevin Manire, George Marshall, Christopher McCulloh, Carson McDonald, Jay Merrifield, Dave Methvin, igor milla, Eddie Monge, Alberto Monteiro, Jason Moon, Gaëtan Muller, David Murdoch, Jasvir Nagra, Saji Nediyanchath, Douglas Neiner, Ryan Neufeld, Marc Neuwirth, Andrew Newcomb, Ryan Olton, Jay Oster, Jon Palmer, Todd Parker, Adam Parod, Shannon Pekary, Ivan Peters, David Petersen, Aaron Peterson, Stefan Petre, Dmitry Petrov, Joan Piedra, Tane Piper, Alex Polomoshnov, Andrew Powell, Aliaxandr Rahalevich, Stéphane Raimbault, Xavi Ramirez, Jean-Francois Remy, John Resig, Alex Rhea, Krzysztof Rosiński, Marian Rudzynski, Holger Rüprich, Simon Sattes, Sebastian Sauer, Max Schnur, Raymond Schwartz, Eike Send, Remy Sharp, Ian Simpson, Stojce Slavkovski, David De Sloovere, Micheil Smith, Martin Solli, David Soms, Adam Sontag, Marcos Sousa, Daniel Steigerwald, Benjamin Sterling, J. Ryan Stinnett, Dan Streetman, Chairat Sunthornwiphat, Kouhei Sutou, Timo Tijhof, Marcel Toele, Diego Tres, Israel Tsadok, Ca-Phun Ung, TJ VanToll, Josh Varner, Dominique Vincent, Jonathan Vingiano, Mario Visic, Maggie Costello Wachs, Rick Waldron, Wesley Walser, Michel Weimerskirch, Ralph Whitbeck, Shane Whittet, Kyle Wilkinson, Keith Wood, Richard Worth, Michael Wu, EungJun Yi, Jörn Zaefferer, & Ziling Zhao'
+                                                     , what : 'jQuery UI 1.8.19'
+                                                     , urlW : 'jqueryui.com'
+                                                     }
+                                                   ]
+                                  }
                 , IEDARKNESSLVL : 75
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [50, 100, 150, 300]
@@ -140,6 +243,14 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'coverType:Other'         : 'Other'
                                        , 'coverType:Spine'         : 'Spine'
                                        , 'coverType:Track'         : 'Track'
+                                       , 'About'                   : 'About'
+                                       , 'Developer and programmer': 'Developer and programmer'
+                                       , 'Icons'                   : 'Icons'
+                                       , 'Plugins'                 : 'Plugins'
+                                       , 'Polyfills'               : 'Polyfills'
+                                       , 'Translations'            : 'Translations'
+                                       , 'Tools'                   : 'Tools'
+                                       , 'Libraries'               : 'Libraries'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -222,6 +333,14 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Right'                   : '···· ····· · -·-'
                           , 'Crop mask color'         : '··· -·-· ···'
                           , MASK                      : '·-· -- -·'
+                          , 'About'                   : '···· ··-·-'
+                          , 'Developer and programmer': '--- - -··- -·-- --··'
+                          , 'Icons'                   : '--- - -··- -·-- --··'
+                          , 'Plugins'                 : '--- - -··- -·-- --··'
+                          , 'Polyfills'               : '--- - -··- -·-- --··'
+                          , 'Translations'            : '--- - -··- -·-- --··'
+                          , 'Tools'                   : '--- - -··- -·-- --··'
+                          , 'Libraries'               : '--- - -··- -·-- --··'
                           };
 }
 
@@ -361,17 +480,24 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  margin                 : '10px 10px -27px 6px'
                       ,  padding                : '6px'
                       },
-                  '#optionsHeader':
+                  '#optionsHeader, #aboutHeader':
                       {  display                : 'inline-block'
                       , 'float'                 : 'right'
-                      , 'margin-right'          : '-24px'
-                      , 'margin-top'            : '-3px'
-                      ,  filter                 : 'alpha(opacity=30)'
-                      , '-moz-opacity'          : '0.3'
-                      ,  opacity                : '0.3'
+                      ,  filter                 : 'alpha(opacity=40)'
+                      , '-moz-opacity'          : '0.4'
+                      ,  opacity                : '0.4'
                       ,  width                  : '40%'
                       },
-                  '#optionsMenu':
+                  '#optionsHeader':
+                      { 'margin-right'          : '-24px'
+                      , 'margin-top'            : '-3px'
+                      },
+                  '#aboutHeader':
+                      {  height                 : '23px'
+                      , 'margin-top'            : '-1px'
+                      ,  width                  : '23px'
+                      },
+                  '#optionsMenu, #aboutMenu':
                       {  border                 : '1px solid #D3D3D3'
                       ,    '-moz-border-radius' : '8px'
                       , '-webkit-border-radius' : '8px'
@@ -389,9 +515,6 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   '#optionsMenu > label, #optionsMenu > label > select':
                       { 'margin-left'           : '5px'
                       , 'margin-top'            : '5px'
-                      },
-                  '#optionsMenu > summary':
-                      { 'line-height'           : 2
                       },
                   '#optionsNote':
                       { 'font-size'             : '85%'
@@ -634,13 +757,15 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'overflow-x'            : 'auto'
                       , 'padding-bottom'        : '1em!important'
                       },
-                  '.imageSizeControl, #optionsHeader':
+                  '.imageSizeControl, #optionsHeader, #aboutHeader':
                       {  cursor                 : 'pointer'
                       , 'float'                 : 'right'
-                      ,  height                 : '26px'
+                      },
+                  '.imageSizeControl, #optionsHeader':
+                      {  height                 : '26px'
                       ,  width                  : '26px'
                       },
-                  '.imageSizeControl:hover, #optionsHeader:hover':
+                  '.imageSizeControl:hover, #optionsHeader:hover, #aboutHeader:hover':
                       {  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
                       ,  opacity                : 1
@@ -744,6 +869,15 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   'table.tbl .count':
                       {  width                  : '6em!important'
+                      },
+                  'h4':
+                      { 'font-size'             : '115%'
+                      },
+                  '#aboutMenu * h5':
+                      { 'font-size'             : '100%'
+                      },
+                  '#aboutMenu * dd':
+                      { 'padding-bottom'        : '5px'
                       },
                   /* css for the number polyfill */
                   'div.number-spin-btn-container':
@@ -1055,6 +1189,7 @@ var main = function main ($, CONSTANTS) {
               , baseImage        = localStorage.getItem('magnifyingGlassBase')
               , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
+              , aboutImage       = localStorage.getItem('infoIcon')
               , $autoeditControl = $make('input',    { id        : 'caaAutoedit'
                                                      , type      : 'checkbox'
                                                      , title     : $.l('Submit as autoedits')
@@ -1123,6 +1258,11 @@ var main = function main ($, CONSTANTS) {
                                                      , size      : 3
                                                      , title     : $.l('Changed language note')
                                                      })
+              , $aboutControl    = $make('div',      { id        : 'aboutHeader'
+                                                     , title     : $.l('About')
+                                                     })
+              , $aboutMenu       = $make('fieldset', { id        : 'aboutMenu' })
+                                                     .hide()
               , $optionsControl  = $make('div',      { id        : 'optionsHeader'
                                                      , title     : $.l('Options')
                                                      })
@@ -1194,6 +1334,37 @@ var main = function main ($, CONSTANTS) {
                 colorOptions.push($thisOption);
             });
 
+
+            var role
+              , $creditList = $make('div')
+              , $who        = $make('span')
+              , $what       = $make('dt')
+              , $pre        = $make('span').text(' [ ')
+              , $post       = $make('span').text(' ]')
+              , $thisWho
+              , $thisWhat
+              , $thisMB
+              , credits
+              ;
+            Object.keys(CONSTANTS.CREDITS).forEach(function (role) {
+                credits = [];
+                CONSTANTS.CREDITS[role].forEach(function (credit) {
+                    $thisWho  = $who.quickClone().text(credit.name);
+                    $thisWhat = $what.quickClone().text(credit.what);
+                    void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
+                    void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
+                    if (void 0 !== credit.mb) {
+                        $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
+                        credits.push($thisWhat, $make('dd').append($thisWho, $pre.quickClone(), $thisMB, $post.quickClone()));
+                    } else {
+                        credits.push($thisWhat, $make('dd').append($thisWho));
+                    }
+                });
+                $creditList.appendAll([ $make('h5').text($.l(role))
+                                      , $make('dl').appendAll(credits)
+                                      ]);
+            });
+
             /* Populate the languages list */
             var languages = [];
 
@@ -1217,43 +1388,54 @@ var main = function main ($, CONSTANTS) {
             $('#sidebar').detach(function sidebar_internal_detach_handler () {
                 $(this).appendAll(
                         [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
+                        , $aboutControl.append(
+                                        aboutImage)
                         , $sizeContainer.appendAll(
                                          [ $imageMagnify.append(plusImage)
                                          , $imageShrink.append(minusImage)
                                          ])
-                                  , $optionsControl.append(optionsImage)
-                                  , $imageContainer.append($optionsMenu.appendAll(
-                                                                        [ $optionsLegend
-                                                                        , $version
-                                                                        , $removeControl
-                                                                        , $removeLabel
-                                                                        , $make('br')
-                                                                        , $parseControl
-                                                                        , $parseLabel
-                                                                        , $make('br')
-                                                                        , $storageBtn
-                                                                        , $make('br')
-                                                                        , $langLabel.append($langList.appendAll($ARRlangs))
-                                                                        , $colorField.appendAll(
-                                                                                      [ $colorLegend
-                                                                                      , $colorSelect.appendAll(colorOptions)
-                                                                                      , $colorPicker
-                                                                                      , $colorDefault
-                                                                                      , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
-                                                                                      ])
-                                                                        , $optionsNote
-                                                                        ]))
-                                  , $make('hr').css('border-top', CONSTANTS.BORDERS)
-                                  , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
-                                  , $previewContainer.appendAll(
-                                                      [ $previewImage
-                                                      , $previewInfo.appendAll(
-                                                                     [ $dtResolution
-                                                                     , $ddResolution
-                                                                     , $dtFilesize
-                                                                     , $ddFilesize
-                                                                     ])
-                                                      ])
+                        , $optionsControl.append(
+                                          optionsImage)
+                        , $imageContainer.appendAll(
+                                          [ $aboutMenu.appendAll(
+                                                       [ $make('h4').text('Cover Art Archive Bulk Image Editor')
+                                                       , $version.quickClone().prepend('Caabie ')
+                                                       , $creditList
+                                                       ])
+                                          , $optionsMenu.appendAll(
+                                                         [ $optionsLegend
+                                                         , $version
+                                                         , $removeControl
+                                                         , $removeLabel
+                                                         , $make('br')
+                                                         , $parseControl
+                                                         , $parseLabel
+                                                         , $make('br')
+                                                         , $storageBtn
+                                                         , $make('br')
+                                                         , $langLabel.append($langList.appendAll(
+                                                                                       $ARRlangs))
+                                                         , $colorField.appendAll(
+                                                                       [ $colorLegend
+                                                                       , $colorSelect.appendAll(colorOptions)
+                                                                       , $colorPicker
+                                                                       , $colorDefault
+                                                                       , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
+                                                                       ])
+                                                         , $optionsNote
+                                                         ])
+                                          ])
+                        , $make('hr').css('border-top', CONSTANTS.BORDERS)
+                        , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
+                        , $previewContainer.appendAll(
+                                            [ $previewImage
+                                            , $previewInfo.appendAll(
+                                                           [ $dtResolution
+                                                           , $ddResolution
+                                                           , $dtFilesize
+                                                           , $ddFilesize
+                                                           ])
+                                            ])
                         ]);
 
                 /* Autoeditor check */
@@ -1274,6 +1456,9 @@ var main = function main ($, CONSTANTS) {
             // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
             $optionsControl.click(function optionsControl_click_handler() {
                 $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
+            });
+            $aboutControl.click(function aboutControl_click_handler() {
+                $.browser.mozilla ? $aboutMenu.toggle() : $aboutMenu.slideToggle();
             });
         }();
 
@@ -1623,7 +1808,7 @@ Native support:
                     reader = new FileReader();
                 var ctx = canvas.getContext("2d");
 
-                reader.onload = function (e) {
+                reader.onload = function convertImage_reader_onload_handler (e) {
                     var img = new Image();
                     var useCanvasData = function useCanvasData () {
                         $.log('Appending temporary canvas item to the body.');
@@ -1639,7 +1824,7 @@ Native support:
 
                     if (type === 'webp' && $.inArray(type, supportedImageFormats) === -1) {
                         // WebP-support test
-                        img.onload = img.onerror = function () {
+                        img.onload = img.onerror = function convertImage_webp_test_handler () {
                             if (img.height === 2) {
                                 supportedImageFormats.push('webp');
                             }
@@ -1649,7 +1834,7 @@ Native support:
 
                     // Convert image if its image format is supported via either polyfill or native
                     if ($.inArray(type, supportedImageFormats) + 1) {
-                        img.onload = function () {
+                        img.onload = function convertImage_image_converter () {
                             canvas.width = img.width;
                             canvas.height = img.height;
                             ctx.drawImage(img, 0, 0);
@@ -1737,7 +1922,7 @@ Native support:
             var imageFile = $.dataURItoBlob(imageBase64, mime);
             /* Create a new file in the temp local file system. */
             loadStage = 'getFile';
-            localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function (thisFile) {
+            localFS.root.getFile(thisImageFilename, { create: true, exclusive: true }, function localFS_create_new_file (thisFile) {
                 /* Write to the new file. */
                 loadStage = 'createWriter';
                 thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
@@ -1750,7 +1935,7 @@ Native support:
                         $.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
                         if (fileWriter.position) {
                             $.log('Adding remote image to the drop zone.');
-                            thisFile.file(function (file) {
+                            thisFile.file(function fileWriter_onwriteend_internal (file) {
                                 if (imageType !== 'jpg') {
                                     file = convertImage(file, imageType, uri);
                                     addImageToDropbox(file, 'converted remote ' + imageType, uri);
@@ -1787,7 +1972,7 @@ Native support:
             return;
         };
 
-        var getRemotePage = function (uri) {
+        var getRemotePage = function getRemotePage (uri) {
             $.log('Loading ' + uri);
             var imageTest = re.image;
 
@@ -2586,6 +2771,8 @@ function thirdParty($, CONSTANTS, getColor) {
         document.head = document.getElementsByTagName('head')[0];
     }
 
+    $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
+
     jQuery.extend({
         /* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
         addScript: function addScript (scriptSource) {
@@ -2658,6 +2845,9 @@ function thirdParty($, CONSTANTS, getColor) {
         }
     });
 
+    $.addScript('jQueryAnimateEnhanced');
+    $.addScript('jQueryGetHiddenDimensions');
+
     // By Brian Schweitzer and Naftali Lubin
     // Appends an array of jQuery objects to a jQuery object
     $.fn.appendAll = function jQuery_appendAll (arrayToAdd) {
@@ -2683,16 +2873,13 @@ function thirdParty($, CONSTANTS, getColor) {
         return ('undefined' !== typeof property && property.length);
     };
 
-    $.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
-
-    $.addScript('jQueryAnimateEnhanced');
-    $.addScript('jQueryGetHiddenDimensions');
-
-    $.fn.quickWidth = function (which) {
+    /* Get the width of an element.  Faster than .width(). */
+    $.fn.quickWidth = function jQuery_quickWidth (which) {
         return parseFloat($.css(this[which || 0], 'width'));
     };
 
-    $.fn.quickHeight = function (which) {
+    /* Get the height of an element.  Faster than .height(). */
+    $.fn.quickHeight = function jQuery_quickHeight (which) {
         return parseFloat($.css(this[which || 0], 'height'));
     };
 
@@ -2743,7 +2930,7 @@ function thirdParty($, CONSTANTS, getColor) {
           };
 
       $.fn.detach = function jQuery_prototype_detach (async, fn) {
-          return this.each(function () {
+          return this.each(function jQuery_detach () {
               detach(this, async, fn);
           });
       };

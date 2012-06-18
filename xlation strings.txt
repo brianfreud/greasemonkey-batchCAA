@@ -61,3 +61,11 @@ Left
 Right
 Mask color
 Default crop mask color
+About
+Developer and programmer
+Icons
+Plugins
+Polyfills
+Translations
+Tools
+Libraries
