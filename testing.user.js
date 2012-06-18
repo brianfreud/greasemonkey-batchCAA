@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1313
+// @version     0.01.1315
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -53,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1313'
+                , VERSION       : '0.1.1315'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -75,26 +75,26 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Track'
                                   , 'Other'
                                   ]
-                , CREDITS       : { 'Developer and programmer' : [ { name : 'Brian "BrianFreud" Schweitzer'
+                , CREDITS       : { 'Developer and programmer' : [ { name : 'Brian Schweitzer (“BrianFreud”)'
                                                      , mb   : 'brianfreud'
                                                      , urlN : 'userscripts.org/users/28107'
                                                      }
                                                    ]
-                                  , Icons        : [ { name : 'Mapto'
+                                  , Icons        : [ { name : '“Mapto”'
                                                      , what : 'Magnifying glass icons'
                                                      , urlN : 'commons.wikimedia.org/wiki/User:Mapto'
                                                      , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
                                                      }
-                                                   , { name : 'Inductiveload'
+                                                   , { name : '“Inductiveload”'
                                                      , what : 'Magnifying glass icons'
                                                      , urlN : 'commons.wikimedia.org/wiki/User:Inductiveload'
                                                      , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
                                                      }
-                                                   , { name : 'ablonevn'
+                                                   , { name : '“ablonevn”'
                                                      , what : 'Gear icon'
                                                      , urlW : 'www.clker.com/clipart-169255.html'
                                                      }
-                                                   , { name : 'El T'
+                                                   , { name : '“El T”'
                                                      , what : 'Information icon'
                                                      , urlN : 'en.wikipedia.org/wiki/User:El_T'
                                                      , urlW : 'en.wikipedia.org/wiki/File:Information_icon.svg'
@@ -105,7 +105,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      }
                                                    ]
                                   , Plugins      : [ { name : 'Ben Barnett'
-                                                     , what : 'jquery.animate-enhanced v0.91'
+                                                     , what : 'jQuery.animate-enhanced v0.91'
                                                      , urlN : 'benbarnett.net'
                                                      , urlW : 'github.com/benbarnett/jQuery-Animate-Enhanced'
                                                      }
@@ -122,14 +122,15 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlN : 'james.padolsey.com'
                                                      , urlW : 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
                                                      }
-                                                   , { name : '"Cowboy" Ben Alman'
-                                                     , what : 'jQuery Detach+ v0.1pre'
+                                                   , { name : '“Cowboy” Ben Alman'
+                                                     , what : 'jQuery.detach+ v0.1pre'
                                                      , urlN : 'benalman.com'
                                                      , urlW : 'gist.github.com/978520'
                                                      }
                                                    ]
                                   , Polyfills    : [ { name : 'Eric Bidelman'
                                                      , what : 'idb.filesystem.js v0.0.1'
+                                                     , urlN : 'ericbidelman.tumblr.com'
                                                      , urlW : 'github.com/ebidel/idb.filesystem.js'
                                                      }
                                                    , { name : 'Jan Odvarko'
@@ -137,15 +138,16 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlW : 'jscolor.com'
                                                      }
                                                    , { name : 'Jonathan Stipe'
-                                                     , what : 'Number polyfill'
+                                                     , what : 'number polyfill'
                                                      , urlW : 'github.com/jonstipe/number-polyfill'
                                                      }
-                                                   , { name : 'Sebastian Tschan'
-                                                     , what : 'JavaScript Canvas to Blob 2.0'
+                                                   , { name : 'Sebastian Tschan (“blueimp”)'
+                                                     , what : 'javaScript canvas to blob 2.0'
+                                                     , urlN : 'blueimp.net'
                                                      , urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
                                                      }
                                                    ]
-                                  , Translations : [ { name : 'kepstin (Calvin Walton)'
+                                  , Translations : [ { name : 'Calvin Walton (“kepstin”)'
                                                      , what : 'Canadian English'
                                                      , urlN : 'www.kepstin.ca'
                                                      , mb   : 'kepstin'
@@ -159,7 +161,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlW : 'www.htmlescape.net/stringescape_tool.html'
                                                      }
                                                    ]
-                                  , Libraries    : [ { name : 'Stoive (Steven Thurlow)'
+                                  , Libraries    : [ { name : 'Steven Thurlow (“Stoive”)'
                                                      , what : 'dataURItoBlob'
                                                      , urlN : 'github.com/stoive'
                                                      , urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
@@ -682,6 +684,10 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , '-moz-opacity'          : '0.35'
                       ,  opacity                : '.35'
                       ,  padding                : '3px 8px'
+                      },
+                  '.caaMBCredit':
+                      { 'font-size'             : '85%'
+                      , 'white-space'           : 'nowrap'
                       },
                   '.newCAAimage':
                       { 'background-color'      : getColor('CAABOX')
@@ -1334,13 +1340,13 @@ var main = function main ($, CONSTANTS) {
                 colorOptions.push($thisOption);
             });
 
-
+            /* Populate the credits list */
             var role
               , $creditList = $make('div')
               , $who        = $make('span')
               , $what       = $make('dt')
-              , $pre        = $make('span').text(' [ ')
-              , $post       = $make('span').text(' ]')
+              , $pre        = $make('span').html(' [ ')
+              , $post       = $make('span').html(' ]')
               , $thisWho
               , $thisWhat
               , $thisMB
@@ -1348,14 +1354,17 @@ var main = function main ($, CONSTANTS) {
               ;
             Object.keys(CONSTANTS.CREDITS).forEach(function (role) {
                 credits = [];
-                CONSTANTS.CREDITS[role].forEach(function (credit) {
+                CONSTANTS.CREDITS[role].sort(function sort_credits_list (a, b) {
+                        return a.what > b.what ? 1 : -1;
+                    }).forEach(function (credit) {
                     $thisWho  = $who.quickClone().text(credit.name);
                     $thisWhat = $what.quickClone().text(credit.what);
                     void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
                     void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
                     if (void 0 !== credit.mb) {
                         $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
-                        credits.push($thisWhat, $make('dd').append($thisWho, $pre.quickClone(), $thisMB, $post.quickClone()));
+                        $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([$pre.quickClone(), $thisMB, $post.quickClone()]);
+                        credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
                     } else {
                         credits.push($thisWhat, $make('dd').append($thisWho));
                     }
