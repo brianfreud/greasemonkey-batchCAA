@@ -75,7 +75,8 @@ var CONSTANTS = { DEBUGMODE     : true
                                   , 'Track'
                                   , 'Other'
                                   ]
-                , CREDITS       : { 'Developer and programmer' : [ { name : 'Brian Schweitzer (“BrianFreud”)'
+                , CREDITS       : { 'Developer and programmer' :
+                                                   [ { name : 'Brian Schweitzer (“BrianFreud”)'
                                                      , mb   : 'brianfreud'
                                                      , urlN : 'userscripts.org/users/28107'
                                                      }
@@ -482,7 +483,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  margin                 : '10px 10px -27px 6px'
                       ,  padding                : '6px'
                       },
-                  '#optionsHeader, #aboutHeader':
+                  '#optionsHeader, #aboutControl':
                       {  display                : 'inline-block'
                       , 'float'                 : 'right'
                       ,  filter                 : 'alpha(opacity=40)'
@@ -494,7 +495,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'margin-right'          : '-24px'
                       , 'margin-top'            : '-3px'
                       },
-                  '#aboutHeader':
+                  '#aboutControl':
                       {  height                 : '23px'
                       , 'margin-top'            : '-1px'
                       ,  width                  : '23px'
@@ -763,7 +764,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       { 'overflow-x'            : 'auto'
                       , 'padding-bottom'        : '1em!important'
                       },
-                  '.imageSizeControl, #optionsHeader, #aboutHeader':
+                  '.imageSizeControl, #optionsHeader, #aboutControl':
                       {  cursor                 : 'pointer'
                       , 'float'                 : 'right'
                       },
@@ -771,7 +772,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       {  height                 : '26px'
                       ,  width                  : '26px'
                       },
-                  '.imageSizeControl:hover, #optionsHeader:hover, #aboutHeader:hover':
+                  '.imageSizeControl:hover, #optionsHeader:hover, #aboutControl:hover':
                       {  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
                       ,  opacity                : 1
@@ -792,8 +793,13 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'float'                 : 'left'
                       , 'font-weight'           : '700'
                       },
-                  '.previewDT::after':
-                      {  content                : '": "'
+                  '.previewDT::after, #aboutMenu * dt::after':
+                      {  color                  : '#000' 
+                      ,  content                : '": "'
+                      },
+                  '#aboutMenu * dt::before':
+                      {  color                  : '#000' 
+                      ,  content                : '" • "'
                       },
                   '.tintImage, .imageSizeControl':
                       {  filter                 : 'alpha(opacity=40)'
@@ -884,6 +890,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       },
                   '#aboutMenu * dd':
                       { 'padding-bottom'        : '5px'
+                      },
+                  '#aboutHeader':
+                      { 'margin-top'            : '0'
                       },
                   /* css for the number polyfill */
                   'div.number-spin-btn-container':
@@ -1264,9 +1273,13 @@ var main = function main ($, CONSTANTS) {
                                                      , size      : 3
                                                      , title     : $.l('Changed language note')
                                                      })
-              , $aboutControl    = $make('div',      { id        : 'aboutHeader'
+              , $aboutControl    = $make('div',      { id        : 'aboutControl'
                                                      , title     : $.l('About')
                                                      })
+              , $aboutLegend     = $make('legend',   { id        : 'aboutLegend' })
+                                                     .text($.l('About'))
+              , $aboutHeader     = $make('h4',       { id        : 'aboutHeader' })
+                                                     .text('Cover Art Archive Bulk Image Editor')
               , $aboutMenu       = $make('fieldset', { id        : 'aboutMenu' })
                                                      .hide()
               , $optionsControl  = $make('div',      { id        : 'optionsHeader'
@@ -1364,9 +1377,15 @@ var main = function main ($, CONSTANTS) {
                     if (void 0 !== credit.mb) {
                         $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
                         $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([$pre.quickClone(), $thisMB, $post.quickClone()]);
-                        credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
-                    } else {
+                        if (void 0 !== credit.what) {
+                            credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
+                        } else {
+                            credits.push($make('dd').append($thisWho, $thisMB));
+                        }
+                    } else if (void 0 !== credit.what) {
                         credits.push($thisWhat, $make('dd').append($thisWho));
+                    } else {
+                        credits.push($make('dd').append($thisWho));
                     }
                 });
                 $creditList.appendAll([ $make('h5').text($.l(role))
@@ -1407,7 +1426,8 @@ var main = function main ($, CONSTANTS) {
                                           optionsImage)
                         , $imageContainer.appendAll(
                                           [ $aboutMenu.appendAll(
-                                                       [ $make('h4').text('Cover Art Archive Bulk Image Editor')
+                                                       [ $aboutLegend
+                                                       , $aboutHeader
                                                        , $version.quickClone().prepend('Caabie ')
                                                        , $creditList
                                                        ])
