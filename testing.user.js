@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1315
+// @version     0.01.1317
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -53,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1315'
+                , VERSION       : '0.1.1317'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -81,6 +81,11 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlN : 'userscripts.org/users/28107'
                                                      }
                                                    ]
+                                  , Translations : [ { name : 'Calvin Walton (“kepstin”)'
+                                                     , what : 'Canadian English'
+                                                     , urlN : 'www.kepstin.ca'
+                                                     , mb   : 'kepstin'
+                                                     }]
                                   , Icons        : [ { name : '“Mapto”'
                                                      , what : 'Magnifying glass icons'
                                                      , urlN : 'commons.wikimedia.org/wiki/User:Mapto'
@@ -148,11 +153,6 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
                                                      }
                                                    ]
-                                  , Translations : [ { name : 'Calvin Walton (“kepstin”)'
-                                                     , what : 'Canadian English'
-                                                     , urlN : 'www.kepstin.ca'
-                                                     , mb   : 'kepstin'
-                                                     }]
                                   , Tools        : [ { name : 'Jeff Schiller'
                                                      , what : 'Scour'
                                                      , urlW : 'www.codedread.com/scour'
@@ -728,6 +728,9 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  position               : 'fixed'
                       ,  right                  : '20px'
                       ,  width                  : CONSTANTS.SIDEBARWIDTH + 'px'
+                      },
+                  '.CAAcreditWho':
+                      { 'text-indent'           : '-2em'
                       },
                   '.closeButton':
                       { 'background-color'      : '#FFD0DB'
@@ -1356,7 +1359,7 @@ var main = function main ($, CONSTANTS) {
             /* Populate the credits list */
             var role
               , $creditList = $make('div')
-              , $who        = $make('span')
+              , $who        = $make('div', { 'class': 'CAAcreditWho' })
               , $what       = $make('dt')
               , $pre        = $make('span').html(' [ ')
               , $post       = $make('span').html(' ]')
@@ -1365,28 +1368,28 @@ var main = function main ($, CONSTANTS) {
               , $thisMB
               , credits
               ;
-            Object.keys(CONSTANTS.CREDITS).forEach(function (role) {
+            Object.keys(CONSTANTS.CREDITS).forEach(function populate_credits_list_per_role (role) {
                 credits = [];
                 CONSTANTS.CREDITS[role].sort(function sort_credits_list (a, b) {
                         return a.what > b.what ? 1 : -1;
-                    }).forEach(function (credit) {
-                    $thisWho  = $who.quickClone().text(credit.name);
-                    $thisWhat = $what.quickClone().text(credit.what);
-                    void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
-                    void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
-                    if (void 0 !== credit.mb) {
-                        $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
-                        $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([$pre.quickClone(), $thisMB, $post.quickClone()]);
-                        if (void 0 !== credit.what) {
-                            credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
+                    }).forEach(function populate_role_list_per_credit (credit) {
+                        $thisWho  = $who.quickClone().text(credit.name);
+                        $thisWhat = $what.quickClone().text(credit.what);
+                        void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
+                        void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
+                        if (void 0 !== credit.mb) {
+                            $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
+                            $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([$pre.quickClone(), $thisMB, $post.quickClone()]);
+                            if (void 0 !== credit.what) {
+                                credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
+                            } else {
+                                credits.push($make('dd').append($thisWho, $thisMB));
+                            }
+                        } else if (void 0 !== credit.what) {
+                            credits.push($thisWhat, $make('dd').append($thisWho));
                         } else {
-                            credits.push($make('dd').append($thisWho, $thisMB));
+                            credits.push($make('dd').append($thisWho));
                         }
-                    } else if (void 0 !== credit.what) {
-                        credits.push($thisWhat, $make('dd').append($thisWho));
-                    } else {
-                        credits.push($make('dd').append($thisWho));
-                    }
                 });
                 $creditList.appendAll([ $make('h5').text($.l(role))
                                       , $make('dl').appendAll(credits)
