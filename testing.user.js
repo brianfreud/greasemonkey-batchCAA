@@ -162,7 +162,17 @@ var CONSTANTS = { DEBUGMODE     : true
                                                      , urlW : 'www.htmlescape.net/stringescape_tool.html'
                                                      }
                                                    ]
-                                  , Libraries    : [ { name : 'Steven Thurlow (“Stoive”)'
+                                  , Libraries    : [ { name : 'Tim Smart'
+                                                     , what : 'data_string function'
+                                                     , urlN : 'github.com/Tim-Smart'
+                                                     , urlW : 'pastebin.ca/1425789'
+                                                     }
+                                                   , { name : 'Tyler Akins, Bayron Guevara, Thunder.m, Kevin van Zonneveld, Pellentesque Malesuada, Rafał Kukawski & Brian Schweitzer'
+                                                     , what : 'base64_encode function from PHPJS'
+                                                     , urlN : 'rumkin.com'
+                                                     , urlW : 'phpjs.org/functions/base64_encode'
+                                                     }
+                                                   , { name : 'Steven Thurlow (“Stoive”)'
                                                      , what : 'dataURItoBlob'
                                                      , urlN : 'github.com/stoive'
                                                      , urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
@@ -214,8 +224,8 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Images'                  : 'Images'
                                        , 'Language'                : 'Language'
                                        , 'Left'                    : 'Left'
-                                       , 'Load CAA images for all' : 'Load images from the Cover Art Archive for all releases'
-                                       , 'Load CAA images'         : 'Load images from the Cover Art Archive for this release'
+                                       , 'Load CAA images for all' : 'Load image data for all releases'
+                                       , 'Load CAA images'         : 'Load image data for this release'
                                        , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
                                        , 'Load text all releases'  : 'Loads images for all displayed releases.'
                                        , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
@@ -1326,22 +1336,25 @@ var main = function main ($, CONSTANTS) {
               , $sizeContainer   = $make('div',      { id        : 'imageSizeControlsMenu' })
               , $version         = $make('span',     { id        : 'caaVersion' })
                                                     .text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
+              , $creditList      = $make('div')
               ;
 
             /* Populate the colors list */
-            var colors    = Object.keys(CONSTANTS.COLORS)
-              , colorsMap = []
+            var colors        = Object.keys(CONSTANTS.COLORS)
+              , colorsMap     = []
               ;
 
-            colors.forEach(function prep_color_list_for_sorting (color, i) {
+            var prepColorList = function prep_color_list_for_sorting (color, i) {
                 colorsMap.push({ index: i
                                , value: $.l(color).toLowerCase()
                                });
-            });
+            };
 
-            colorsMap.sort(function sort_color_list (a, b) {
-              return a.value > b.value ? 1 : -1;
-            }).map(function populate_colors_list (map) {
+            var sortColors = function sort_color_list (a, b) {
+                return a.value > b.value ? 1 : -1;
+            };
+
+            var populateColorList = function populate_colors_list (map) {
                 var colorItem   = colors[map.index]
                   , color       = CONSTANTS.COLORS[colorItem]
                   , lsItemName  = 'caaBatch_colors_' + colorItem
@@ -1354,47 +1367,61 @@ var main = function main ($, CONSTANTS) {
                     localStorage.setItem(lsItemName, color);
                 }
                 colorOptions.push($thisOption);
-            });
+            };
+
+            colors.forEach(prepColorList);
+
+            colorsMap.sort(sortColors).map(populateColorList);
 
             /* Populate the credits list */
-            var role
-              , $creditList = $make('div')
-              , $who        = $make('div', { 'class': 'CAAcreditWho' })
-              , $what       = $make('dt')
-              , $pre        = $make('span').html(' [ ')
-              , $post       = $make('span').html(' ]')
-              , $thisWho
-              , $thisWhat
-              , $thisMB
-              , credits
-              ;
-            Object.keys(CONSTANTS.CREDITS).forEach(function populate_credits_list_per_role (role) {
-                credits = [];
-                CONSTANTS.CREDITS[role].sort(function sort_credits_list (a, b) {
-                        return a.what > b.what ? 1 : -1;
-                    }).forEach(function populate_role_list_per_credit (credit) {
-                        $thisWho  = $who.quickClone().text(credit.name);
-                        $thisWhat = $what.quickClone().text(credit.what);
-                        void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
-                        void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
-                        if (void 0 !== credit.mb) {
-                            $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
-                            $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([$pre.quickClone(), $thisMB, $post.quickClone()]);
-                            if (void 0 !== credit.what) {
-                                credits.push($thisWhat, $make('dd').append($thisWho, $thisMB));
-                            } else {
-                                credits.push($make('dd').append($thisWho, $thisMB));
-                            }
-                        } else if (void 0 !== credit.what) {
-                            credits.push($thisWhat, $make('dd').append($thisWho));
-                        } else {
-                            credits.push($make('dd').append($thisWho));
-                        }
-                });
-                $creditList.appendAll([ $make('h5').text($.l(role))
-                                      , $make('dl').appendAll(credits)
-                                      ]);
-            });
+            !function populateCreditsList () {
+                var role
+                  , $who        = $make('div', { 'class': 'CAAcreditWho' })
+                  , $what       = $make('dt')
+                  , $pre        = $make('span').html(' [ ')
+                  , $post       = $make('span').html(' ]')
+                  , $thisWho
+                  , $thisWhat
+                  , $thisMB
+                  , credits
+                  ;
+
+                var sortCredits = function sort_credits_list (a, b) {
+                    return a.what > b.what ? 1 : -1;
+                };
+    
+                var populateRoleListPerCredit = function populate_role_list_per_credit (credit) {
+                    $thisWho  = $who.quickClone().text(credit.name);
+                    $thisWhat = $what.quickClone().text(credit.what);
+                    void 0 !== credit.urlN && ($thisWho = $make('a', { href : 'http://' + credit.urlN }).append($thisWho));
+                    void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
+                    var $dd = $make('dd').append($thisWho);
+                    if (void 0 !== credit.mb) {
+                        $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
+                        $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([ $pre.quickClone()
+                                                                                      , $thisMB
+                                                                                      , $post.quickClone()
+                                                                                      ]);
+                        $dd.append($thisMB);
+                        void 0 !== credit.what ? credits.push($thisWhat, $dd) : credits.push($dd);
+                    } else if (void 0 !== credit.what) {
+                        credits.push($thisWhat, $dd);
+                    } else {
+                        credits.push($dd);
+                    }
+                };
+    
+                var populateCreditListPerRole = function populate_credits_list_per_role (role) {
+                    credits = [];
+                    CONSTANTS.CREDITS[role].sort(sortCredits).forEach(populateRoleListPerCredit);
+                    $creditList.appendAll([ $make('h5').text($.l(role))
+                                          , $make('dl').appendAll(credits)
+                                          ]);
+                };
+
+                Object.keys(CONSTANTS.CREDITS)
+                      .forEach(populateCreditListPerRole);
+            }();
 
             /* Populate the languages list */
             var languages = [];
