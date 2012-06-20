@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1335
+// @version     0.01.1336
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -44,7 +44,7 @@ Opera: Not compatible, sorry.
 //TODO: Add support for positioning/repositioning CAA images
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
-//TODO: Fix webp support for Firefox
+//TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
 
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1335'
+                , VERSION       : '0.1.1336'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1192,6 +1192,17 @@ var main = function main ($, CONSTANTS) {
         $.addScript('idbFileSystem');
     }
 
+    function antiSquish () {
+        /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
+           prevents those columns getting squished when the table-layout is set to fixed layout. */
+        $('.CAAantiSquish').remove();
+        for (var $th = $(document.getElementsByTagName('th')), i = 0; 3 > i; i += 2) {
+            $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
+                      ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''), { 'class' : 'CAAantiSquish' });
+        }
+    };
+    antiSquish();
+
     var init = function init () {
         /* This creates a temporary local file system to use to store remote image files. */
         var localFS;
@@ -1638,16 +1649,6 @@ var main = function main ($, CONSTANTS) {
                                     $(e.target).parent()
                                                .remove();
                                 });
-        }();
-
-        !function antiSquish () {
-            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
-               prevents those columns getting squished when the table-layout is set to fixed layout. */
-            $('.CAAantiSquish').remove();
-            for (var $th = $(document.getElementsByTagName('th')), i = 0; 3 > i; i += 2) {
-                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
-                          ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''), { 'class' : 'CAAantiSquish' });
-            }
         }();
 
         !function init_add_css () {
