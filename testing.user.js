@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1334
+// @version     0.01.1335
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1334'
+                , VERSION       : '0.1.1335'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -507,7 +507,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '40%'
                       },
                   '#optionsHeader':
-                      { 'margin-right'          : '-24px'
+                      { 'margin-right'          : '-50px'
                       , 'margin-top'            : '-3px'
                       },
                   '#aboutControl':
