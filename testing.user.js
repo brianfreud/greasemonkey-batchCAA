@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1338
+// @version     0.01.1341
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -37,9 +37,7 @@ Opera: Not compatible, sorry.
 
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
-//TODO: Add support for saving edited images
-//TODO: Add support for cancelling image editor
-//TODO: Add support for editing existing CAA image data
+//TODO: Add support for editing MB's existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Add support for positioning/repositioning CAA images
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
@@ -54,7 +52,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1338'
+                , VERSION       : '0.1.1341'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -1622,7 +1620,7 @@ var main = function main ($, CONSTANTS) {
         /* Add functionality to close buttons. */
         !function add_close_button_handler () {
             $.log('Adding handlers for close buttons.');
-            $('body').on('click', '.closeButton', function close_button_click_handler (e) {
+            $('body').on('click', '.closeButton, #CAAeditiorCancelBtn', function close_button_click_handler (e) {
                 $.log('Removing drop box/image editor');
                 $.single(this).parent()
                               .find('.dropBoxImage') /* Any image in the drop box */
@@ -2705,6 +2703,17 @@ Native support:
 
                 $('#CAAeditorCropControlRight').on('change', function crop_controls_change_event_handler_right () {
                     $('#CAAmaskRight').css('width', $.single(this).val());
+                });
+
+                $('#CAAeditiorSaveImageBtn').on('click', function image_editor_save_button_click_handler () {
+//TODO: Apply cropping to saved images
+                    addImageToDropbox(
+                                     $.dataURItoBlob(
+                                                    document.getElementById("CAAeditorCanvas").toDataURL("image/jpeg"), 'jpeg'
+                                                    ),
+                                     'edited image', ''
+                                     );
+                    $('#CAAeditiorCancelBtn').close();
                 });
 
                 $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
