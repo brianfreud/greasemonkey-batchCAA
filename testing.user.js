@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1336
+// @version     0.01.1338
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -54,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1336'
+                , VERSION       : '0.1.1338'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -269,6 +269,9 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Translations'            : 'Translations'
                                        , 'Tools'                   : 'Tools'
                                        , 'Libraries'               : 'Libraries'
+                                       , 'Save'                    : 'Save'
+                                       , 'Save changes'            : 'Save changes'
+                                       , 'Cancel'                  : 'Cancel'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -359,6 +362,9 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Translations'            : '--- - -··- -·-- --··'
                           , 'Tools'                   : '--- - -··- -·-- --··'
                           , 'Libraries'               : '--- - -··- -·-- --··'
+                          , 'Save'                    : '- ·· ·-· -'
+                          , 'Save changes'            : '- ·· ··· ·-· -'
+                          , 'Cancel'                  : '·· ···· ···'
                           };
 }
 
@@ -386,8 +392,8 @@ if (localStorage.getItem('caaBatch_editorDarkness') === null) {
     localStorage.setItem('caaBatch_editorDarkness', 75);
 }
 
-CONSTANTS.CSS = { '#ColorDefaultBtn':
-                      { 'background-color'      : '#D3D3D3'
+CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
+                      { 'background-color'      : '#DDD'
                       },
                   '#caaVersion':
                       { 'float'                 : 'right'
@@ -507,7 +513,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  width                  : '40%'
                       },
                   '#optionsHeader':
-                      { 'margin-right'          : '-50px'
+                      { 'margin-right'          : '-26px'
                       , 'margin-top'            : '-3px'
                       },
                   '#aboutControl':
@@ -855,8 +861,8 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                   'figure':
                       {  border                 : CONSTANTS.BORDERS
                       },
-                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn':
-                      {  border                 : '1px outset #D3D3D3'
+                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
+                      {  border                 : '1px outset #EEE'
                       ,    '-moz-border-radius' : '6px'
                       , '-webkit-border-radius' : '6px'
                       ,         'border-radius' : '6px'
@@ -882,11 +888,11 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  color                  : '#000'
                       , 'text-decoration'       : 'line-through'
                       },
-                  '#colorPicker, #ColorDefaultBtn':
+                  '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
                       { 'float'                 : 'right'
                       ,  width                  : '79px'
                       },
-                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active':
+                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active':
                       {  border                 : '1px inset #D3D3D3'
                       ,  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
@@ -1931,7 +1937,7 @@ Native support:
                    , file
                    , name
                    , type
-                   , i = len; i-- >= 0;) {
+                   , i = len; i-- > 0;) {
                 file = files[i];
                 name = file.name;
                 type = supportedImageType(name);
@@ -2534,6 +2540,17 @@ Native support:
                                                             , value : $.getColor('MASK')
                                                             })
                   , $CAAoverlay         = $make('div',      { id : 'CAAoverlay' }).hide()
+                  , $ieButtonsField     = $make('fieldset', { id : 'CAAeditorBtnField' })
+                  , $saveButton         = $make('input',    { id        : 'CAAeditiorSaveImageBtn'
+                                                            , title     : $.l('Save changes')
+                                                            , type      : 'button'
+                                                            , value     : $.l('Save')
+                                                            })
+                  , $cancelButton       = $make('input',    { id        : 'CAAeditiorCancelBtn'
+                                                            , title     : $.l('Cancel')
+                                                            , type      : 'button'
+                                                            , value     : $.l('Cancel')
+                                                            })
                   ;
 
                 $('body').detach(function create_image_editor_internal_detach_handler () {
@@ -2566,6 +2583,10 @@ Native support:
                                                                                 , $makeNumCtrl('Right')
                                                                                 , $ieMaskColorLabel.prepend($ieMaskColorControl)
                                                                                 ])
+                                                                 , $ieButtonsField.appendAll(
+                                                                                   [ $saveButton
+                                                                                   , $cancelButton
+                                                                                   ])
                                                                  ])
                                                        ])
                                               ]))
