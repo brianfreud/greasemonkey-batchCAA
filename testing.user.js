@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1341
+// @version     0.01.1344
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,7 +45,6 @@ Opera: Not compatible, sorry.
 //TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
-//TODO: Figure out why background color on rotated images is black, not white.
 
 var height = function get_client_height (id) {
     'use strict';
@@ -53,7 +52,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1341'
+                , VERSION       : '0.1.1344'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -2708,12 +2707,25 @@ Native support:
 
                 $('#CAAeditiorSaveImageBtn').on('click', function image_editor_save_button_click_handler () {
 //TODO: Apply cropping to saved images
+                    var canvas = document.getElementById("CAAeditorCanvas")
+                      , ctx = canvas.getContext("2d")
+                      ;
+
+                    /* Fill background of canvas with solid white box.  Without this, the default is a solid black background. */
+                    ctx.setTransform(1, 0, 0, 1, 0, 0);
+                    ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
+                    ctx.fillStyle = '#FFF';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    /* Save the image. */
                     addImageToDropbox(
                                      $.dataURItoBlob(
-                                                    document.getElementById("CAAeditorCanvas").toDataURL("image/jpeg"), 'jpeg'
+                                                    canvas.toDataURL("image/jpeg"), 'jpeg'
                                                     ),
                                      'edited image', ''
                                      );
+
+                    /* Close the image editor. */
                     $('#CAAeditiorCancelBtn').trigger('click');
                 });
 
