@@ -45,6 +45,7 @@ Opera: Not compatible, sorry.
 //TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
+//TODO: Figure out why background color on rotated images is black, not white.
 
 var height = function get_client_height (id) {
     'use strict';
@@ -2713,7 +2714,7 @@ Native support:
                                                     ),
                                      'edited image', ''
                                      );
-                    $('#CAAeditiorCancelBtn').close();
+                    $('#CAAeditiorCancelBtn').trigger('click');
                 });
 
                 $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
