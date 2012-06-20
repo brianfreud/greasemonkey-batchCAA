@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1317
+// @version     0.01.1334
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -46,6 +46,7 @@ Opera: Not compatible, sorry.
 //TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Fix webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
+//TODO: Resize Images/Preview area on screen resize
 
 var height = function get_client_height (id) {
     'use strict';
@@ -53,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1317'
+                , VERSION       : '0.1.1334'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -160,6 +161,10 @@ var CONSTANTS = { DEBUGMODE     : true
                                                    , { name : 'Site Project ApS'
                                                      , what : 'JavaScript string encoder'
                                                      , urlW : 'www.htmlescape.net/stringescape_tool.html'
+                                                     }
+                                                   , { name : 'Yahoo!'
+                                                     , what : 'Yahoo! Query Language'
+                                                     , urlW : 'developer.yahoo.com/yql/'
                                                      }
                                                    ]
                                   , Libraries    : [ { name : 'Tim Smart'
@@ -600,7 +605,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       {    '-moz-border-radius' : '6px'
                       , '-webkit-border-radius' : '6px'
                       ,         'border-radius' : '6px'
-                      , 'float'                 : 'left'
+                      ,  display                : 'inline-block'
                       ,  margin                 : '6px'
                       , 'min-height'            : '126px'
                       ,  padding                : '3px'
@@ -681,7 +686,11 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       ,  opacity                : '.9'
                       },
                   '.caaDiv':
-                      { 'padding-left'          : '25px'
+                      {  display                : 'inline-block'
+                      , 'overflow-x'            : 'auto!important'
+                      , 'padding-left'          : '25px'
+                      , 'white-space'           : 'nowrap'
+                      ,  width                  : '100%'
                       },
                   '.caaLoad, .caaAll':
                       { 'background-color'      : getColor('CAABUTTONS') + '!important'
@@ -774,8 +783,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn':
                       , 'image-rendering'       : 'optimizeQuality'
                       },
                   '.imageRow':
-                      { 'overflow-x'            : 'auto'
-                      , 'padding-bottom'        : '1em!important'
+                      { 'padding-bottom'        : '1em!important'
                       },
                   '.imageSizeControl, #optionsHeader, #aboutControl':
                       {  cursor                 : 'pointer'
@@ -1135,16 +1143,15 @@ var main = function main ($, CONSTANTS) {
     /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
     var checkScroll = function checkScroll ($caaDiv) {
         $.log('Adjusting negative right margin.', 1);
-        if ('undefined' === typeof $caaDiv.data('width')) {
-            $caaDiv.data('width', $caaDiv.quickWidth(0));
-        }
-        var $dropboxes = $caaDiv.find('.CAAdropbox');
-        var $dropbox   = $dropboxes.filter(':first')
-          , dbCount    = $dropboxes.length;
-        var dbWidth    = $dropbox.outerWidth(true);
-        var divWidth   = $('.CAAdropbox').length * dbWidth;
-        $.log('Calculated width: ' + ($caaDiv.data('width') - divWidth), 1);
+        void 0 === $caaDiv.data('width') && $caaDiv.data('width', $caaDiv.quickWidth(0));
+        var $parents   = $caaDiv.parents()
+          , $dropboxes = $caaDiv.find('.CAAdropbox')
+          , divWidth   = $dropboxes.length * $dropboxes.filter(':first').outerWidth(true)
+          ;
+
         $caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
+        $parents.filter('td.imageRow').css('width', $parents.filter('.tbl:first').outerWidth(true) + 'px');
+
     };
 
     /* Converts a number into a comma-separated number. */
@@ -1633,6 +1640,16 @@ var main = function main ($, CONSTANTS) {
                                 });
         }();
 
+        !function antiSquish () {
+            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
+               prevents those columns getting squished when the table-layout is set to fixed layout. */
+            $('.CAAantiSquish').remove();
+            for (var $th = $(document.getElementsByTagName('th')), i = 0; 3 > i; i += 2) {
+                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
+                          ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''), { 'class' : 'CAAantiSquish' });
+            }
+        }();
+
         !function init_add_css () {
             $.log('Adding css rules');
 
@@ -1659,21 +1676,13 @@ var main = function main ($, CONSTANTS) {
                                             }).text('.localImage { width: ' + size + 'px; }'));
             });
 
-            /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
-               prevents those columns getting squished when the table-layout is set to fixed layout. */
-            var $th = $(document.getElementsByTagName('th'));
-            for (var i = 0; i < 3; i = i + 2) {
-                $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
-                          ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''));
-            }
-
             classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
 
             $('head').appendAll(classes);
 
             $.log('Adding image preview methods.');
             var useSheets = function use_stylesheets (tiny, small, medium, big) {
-                for (var i = 0; 4 > i; i++) {
+                for (var i = 3; i >= 0; i--) {
                     $('#style' + sizes[i]).prop('disabled', !arguments[i]);
                 }
             };
@@ -1751,10 +1760,11 @@ var main = function main ($, CONSTANTS) {
             binaryReader.onloadend = function get_exif_for_dropped_image(event) {
                 $.log('Running addImageToDropbox -> binaryReader.onloadend');
                 var jpeg = new JpegMeta.JpegFile(this.result, file.name);
-                $img.data('resolution', jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value);
-                $img.data('depth', jpeg.general.depth.value);
-                $img.data('size', addCommas(file.size || file.fileSize));
-                $img.data('name', file.name || file.fileName || uri);
+                $img.data({ depth      : jpeg.general.depth.value
+                          , name       : file.name || file.fileName || uri
+                          , resolution : jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value
+                          , size       : addCommas(file.size || file.fileSize)
+                          });
                 var logStr = 'Loaded new image: ' + $img.data('name') +
                              '.  Image has a resolution of ' + $img.data('resolution') + ', '
                              + $img.data('depth') + '-bit color depth, ' +
@@ -1762,8 +1772,10 @@ var main = function main ($, CONSTANTS) {
                 $.log(logStr);
             };
 
-            dataURLreader.readAsDataURL(file);
-            binaryReader.readAsBinaryString(file);
+            setTimeout(function () {
+                dataURLreader.readAsDataURL(file);
+                binaryReader.readAsBinaryString(file);
+                }, 1);
             return;
         };
 
@@ -1912,28 +1924,24 @@ Native support:
             };
 
          var loadLocalFile = function load_local_file (e) {
-            var debugMsg = ''
-              , file
-              , name
-              , type
-              , files = (e.files || e.dataTransfer.files || e.file_list);
-            for (var i = 0, len = files.length; i < len; i++) {
+            for (var debugMsg = ''
+                   , files = (e.files || e.dataTransfer.files || e.file_list)
+                   , len = files.length
+                   , file
+                   , name
+                   , type
+                   , i = len; i-- >= 0;) {
                 file = files[i];
                 name = file.name;
                 type = supportedImageType(name);
-                if (CONSTANTS.DEBUGMODE) {
-                    debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join('');
-                }
+                CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
                 if (!type) {
                     $.log(debugMsg + ', unusable file type detected');
                     continue;
                 }
                 $.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
-                if (type !== 'jpg') {
-                    file = convertImage(file, type, name);
-                } else {
-                    addImageToDropbox(file, 'local');
-                }
+                "jpg" === type ? addImageToDropbox(file, "local")
+                               : convertImage(file, type, name);
             }
         };
 
@@ -1996,7 +2004,7 @@ Native support:
                             $.log('Adding remote image to the drop zone.');
                             thisFile.file(function fileWriter_onwriteend_internal (file) {
                                 if (imageType !== 'jpg') {
-                                    file = convertImage(file, imageType, uri);
+                                    convertImage(file, imageType, uri);
                                     addImageToDropbox(file, 'converted remote ' + imageType, uri);
                                 } else {
                                     addImageToDropbox(file, 'Remote', uri);
@@ -2334,7 +2342,7 @@ Native support:
                 if (!$tableParent.hasClass('tbl')) {
                     $widthEle = $tableParent.parents('td:first');
                 }
-                for (var i = 0, repeats = Math.max(3, Math.round($widthEle.quickWidth(0)/132) - 5); i < repeats; i++) {
+                for (var i = Math.max(3, Math.round($widthEle.quickWidth(0)/132) - 5); i > 0; i--) {
                        $.single(this).after($dropBox.clone(true));
                 }
                 $.log('Requesting CAA info for ' + $.single(this).data('entity'));
@@ -2801,7 +2809,7 @@ Native support:
         $.log('Screen resize detected, adjusting layout.');
         if ((window.outerHeight - window.innerHeight) > 100) {
             $('#tblStyle1').prop('disabled',true);
-            $('th:eq(2)').css('width', $('th:eq(2)').quickWidth(0) + 'px');
+            antiSquish();
             $('#tblStyle1').prop('disabled',false);
         }
         $('div.caaDiv').each(function window_resize_internal () {
@@ -2841,8 +2849,10 @@ function thirdParty($, CONSTANTS, getColor) {
             document.head.appendChild(script);
         },
         // Creates and adds a new css rule
-        addRule: function addRule(selector, rule) {
-            $('<style type="text/css">').text(selector + rule).appendTo('head');
+        addRule: function addRule(selector, rule, props) {
+            var $rule = $('<style type="text/css">').text(selector + rule);
+            void 0 !== props && $rule.prop(props);
+            $rule.appendTo('head');
         },
         // Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
         dataURItoBlob: function dataURItoBlob(dataURI, mime) {
