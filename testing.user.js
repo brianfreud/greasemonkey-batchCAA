@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1368
+// @version     0.01.1391
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -53,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1368'
+                , VERSION       : '0.1.1391'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -273,6 +273,7 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Cancel'                  : 'Cancel'
                                        , 'Error'                   : 'Error'
                                        , 'Error too much cropping' : 'Cropping this much would remove the entire image!'
+                                       , 'Apply'                   : 'Apply'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -395,7 +396,7 @@ if (localStorage.getItem('caaBatch_editorDarkness') === null) {
     localStorage.setItem('caaBatch_editorDarkness', 75);
 }
 
-CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
+CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
                       { 'background-color'      : '#DDD'
                       },
                   '#caaVersion':
@@ -864,7 +865,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelB
                   'figure':
                       {  border                 : CONSTANTS.BORDERS
                       },
-                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
+                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
                       {  border                 : '1px outset #EEE'
                       ,    '-moz-border-radius' : '6px'
                       , '-webkit-border-radius' : '6px'
@@ -891,11 +892,11 @@ CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelB
                       ,  color                  : '#000'
                       , 'text-decoration'       : 'line-through'
                       },
-                  '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn':
+                  '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
                       { 'float'                 : 'right'
                       ,  width                  : '79px'
                       },
-                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active':
+                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active, #CAAeditiorApplyCropBtn:active':
                       {  border                 : '1px inset #D3D3D3'
                       ,  filter                 : 'alpha(opacity=100)'
                       , '-moz-opacity'          : '1'
@@ -2548,6 +2549,11 @@ Native support:
                   , $ieFlipLegend       = $make('legend',   { id : 'CAAeditorFlipLegend' }).text($.l('Flip image'))
                   , $ieCropField        = $make('fieldset', { id : 'CAAeditorCropField' })
                   , $ieCropLegend       = $make('legend',   { id : 'CAAeditorCropLegend' }).text($.l('Crop image'))
+                  , $applyCropButton    = $make('input',    { id        : 'CAAeditiorApplyCropBtn'
+                                                            , title     : $.l('Apply')
+                                                            , type      : 'button'
+                                                            , value     : $.l('Apply')
+                                                            })
                   , $ieMaskColorLabel   = $make('label',    { 'class' : 'cropLabel'
                                                             , id : 'CAAeditiorMaskColorLabel'
                                                             , title : $.l('Crop mask color')
@@ -2600,6 +2606,7 @@ Native support:
                                                                                 , $makeNumCtrl('Left')
                                                                                 , $makeNumCtrl('Right')
                                                                                 , $ieMaskColorLabel.prepend($ieMaskColorControl)
+                                                                                , $applyCropButton
                                                                                 ])
                                                                  , $ieButtonsField.appendAll(
                                                                                    [ $saveButton
@@ -2652,8 +2659,8 @@ Native support:
 
                 img.onload = function load_image_handler () {
                     /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
-                    canvas.width = crop.height = img.width;
-                    canvas.height = crop.width = img.height;
+                    canvas.width  = crop.width  = img.width;
+                    canvas.height = crop.height = img.height;
 
                     /* Set the max for the crop input[tye=number] controls.  The max will vary depending on if the image is smaller
                        or larger than the canvas. */
@@ -2698,6 +2705,7 @@ Native support:
 
                     /* Draw the image into the canvas */
                     ctx.drawImage(backupCanvas, 0, 0);
+                    return;
                 };
 
                 var rotate = function rotate_handler (degrees) {
@@ -2707,6 +2715,7 @@ Native support:
                         degreesRotated = degrees;
                     };
                     prepCanvas(rotate);
+                    return;
                 };
 
                 var flip = function flip_handler  (h, v) {
@@ -2714,6 +2723,7 @@ Native support:
                         ctx.scale(h ? -1 : 1, v ? -1 : 1);
                     };
                     prepCanvas(flip);
+                    return;
                 };
 
                 var cropMask = function handle_crop_mask_change (where) {
@@ -2759,6 +2769,43 @@ Native support:
                     $canvas = $('#CAAeditorCanvas');
                     ratio = $canvas[direction]()/limit;
                     $('#CAAmask' + where).css(direction, Math.round(value * ratio));
+                    return;
+                };
+
+                var applyCrop = function handle_apply_crop_click () {
+                    var canvas  = document.getElementById("CAAeditorCanvas")
+                      , $canvas = $.single(canvas)
+                      , copy    = document.createElement("canvas")
+                      , ctx     = canvas.getContext('2d')
+                      ;
+
+                    copy.height = canvas.height;
+                    copy.width = canvas.width;
+                    copy.getContext('2d').drawImage(canvas, 0, 0);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+// TODO: Test against images which are higher pixel count than the canvas.
+                    crop.height = crop.height - crop.Top - crop.Bottom;
+                    crop.width  = crop.width - crop.Left - crop.Right;
+                    canvas.height = crop.height >> 0;
+                    canvas.width = crop.width >> 0;
+                    $canvas.add('#CAAeditorCanvasDiv')
+                           .css('height', $canvas.quickWidth(0) / crop.width * crop.height + 'px')
+                           .css('width', $canvas.quickHeight(0) / crop.height * crop.width + 'px');
+// TODO: Handle the case where this can create a canvas that is taller than the image editor div.
+                    ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
+                    return;
+                };
+
+                var resetCrop = function handle_apply_crop_click () {
+                    $('#CAAmaskTop, #CAAmaskBottom').css('height', 0);
+                    $('#CAAmaskLeft, #CAAmaskRight').css('width', 0);
+                    $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom, #CAAeditorCropControlLeft, #CAAeditorCropControlRight').val(0);
+                    crop.Left = crop.Right = crop.Top = crop.Bottom = 0;
+                    crop.width = canvas.width;
+                    crop.height = canvas.height;
+                    return;
                 };
 
                 $('#CAAeditorFlipVertical').on('click', function flip_vertical_click_event_handler () {
@@ -2787,6 +2834,13 @@ Native support:
 
                 $('#CAAeditorCropControlRight').on('change', function crop_controls_change_event_handler_right () {
                     cropMask('Right');
+                });
+
+                $('#CAAeditiorApplyCropBtn').on('click', function crop_controls_apply_crop_click_event_handler () {
+                    var canvas = document.getElementById("CAAeditorCanvas");
+
+                    applyCrop();
+                    resetCrop();
                 });
 
                 $('#CAAeditiorSaveImageBtn').on('click', function image_editor_save_button_click_handler () {
