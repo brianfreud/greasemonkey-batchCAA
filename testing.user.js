@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1367
+// @version     0.01.1368
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -53,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1367'
+                , VERSION       : '0.1.1368'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -2658,8 +2658,8 @@ Native support:
                     /* Set the max for the crop input[tye=number] controls.  The max will vary depending on if the image is smaller
                        or larger than the canvas. */
                     var getMax = function (direction) {
-                        return img[direction] >= $(canvas)[direction] ? c[direction]
-                                                                      : img[direction];
+                        return img[direction] >= c[direction] ? c[direction]
+                                                              : img[direction];
                     };
                     $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', getMax('height'));
                     $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', getMax('width'));
