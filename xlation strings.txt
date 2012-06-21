@@ -69,3 +69,5 @@ Polyfills
 Translations
 Tools
 Libraries
+Error
+Cropping this much would remove the entire image!

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1344
+// @version     0.01.1367
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,6 +45,7 @@ Opera: Not compatible, sorry.
 //TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
+//TODO: Add "Apply" cropping button to image editor
 
 var height = function get_client_height (id) {
     'use strict';
@@ -52,7 +53,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1344'
+                , VERSION       : '0.1.1367'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -270,6 +271,8 @@ var CONSTANTS = { DEBUGMODE     : true
                                        , 'Save'                    : 'Save'
                                        , 'Save changes'            : 'Save changes'
                                        , 'Cancel'                  : 'Cancel'
+                                       , 'Error'                   : 'Error'
+                                       , 'Error too much cropping' : 'Cropping this much would remove the entire image!'
                                                                    /* Try to keep the text for these last few very short. */
                                        , ACTIVE                    : 'Droppable area'
                                        , CAABOX                    : 'Empty CAA box'
@@ -363,6 +366,8 @@ if (CONSTANTS.DEBUGMODE) {
                           , 'Save'                    : '- ·· ·-· -'
                           , 'Save changes'            : '- ·· ··· ·-· -'
                           , 'Cancel'                  : '·· ···· ···'
+                          , 'Error'                   : '··-· -··'
+                          , 'Error too much cropping' : '·- ····- ·· ·-· -·· ···· ····· · -·- -·'
                           };
 }
 
@@ -443,22 +448,22 @@ CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelB
                       {  width                  : '100%'
                       },
                   '#CAAmaskLeft':
-                      { 'z-index'               : 3000
+                      { 'z-index'               : 300
                       ,  left                   : 0
                       ,  top                    : 0
                       },
                   '#CAAmaskRight':
-                      { 'z-index'               : 3001
+                      { 'z-index'               : 301
                       ,  right                  : 0
                       ,  top                    : 0
                       },
                   '#CAAmaskTop':
-                      { 'z-index'               : 3002
+                      { 'z-index'               : 302
                       ,  left                   : 0
                       ,  top                    : 0
                       },
                   '#CAAmaskBottom':
-                      { 'z-index'               : 3003
+                      { 'z-index'               : 303
                       ,  left                   : 0
                       ,  bottom                 : 0
                       },
@@ -567,7 +572,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelB
                       ,  position               : 'fixed'
                       ,  top                    : 0
                       ,  width                  : '100%'
-                      ,  'z-index'              : 1000
+                      ,  'z-index'              : 400
                       },
                   '#CAAimageEditor':
                       { 'background-color'      : getColor('EDITOR')
@@ -584,7 +589,7 @@ CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelB
                       ,  padding                : '2%'
                       ,  position               : 'fixed'
                       ,  width                  : '86%'
-                      , 'z-index'               : 2000
+                      , 'z-index'               : 500
                       },
                   '#CAAeditorDiv':
                       {  height                 : '96%'
@@ -1196,7 +1201,7 @@ var main = function main ($, CONSTANTS) {
         $.addScript('idbFileSystem');
     }
 
-    function antiSquish () {
+    var antiSquish = function antiSquish () {
         /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
            prevents those columns getting squished when the table-layout is set to fixed layout. */
         $('.CAAantiSquish').remove();
@@ -1666,6 +1671,12 @@ var main = function main ($, CONSTANTS) {
 
             CONSTANTS.CSS['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
+            $make('link').attr({ rel  : 'stylesheet'
+                               , type : 'text/css'
+                               , href : localStorage.getItem('jQueryUIcssDialog')
+                               })
+                         .appendTo('head');
+
             $.log('Adding css for the CAA batch script.');
             $make('style', { type : 'text/css' }).text(Object.keys(CSS).map(function create_css_rules (key) {
                 theseRules = Object.keys(CSS[key]).map(function create_css_rules_internal (rule) {
@@ -1677,11 +1688,12 @@ var main = function main ($, CONSTANTS) {
             $.log('Adding image preview css classes.');
             sizes.forEach(function create_css_style_elements (size) {
                 classes.push($make('style', { id   : 'style' + size
-                                            , type : 'text/css'
-                                            }).text('.localImage { width: ' + size + 'px; }'));
+                                            }).text('.localImage { width: ' + size + 'px; }')
+                                              .attr('type', 'text/css'));
             });
 
-            classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }'));
+            classes.push($make('style', { id : 'tblStyle1' }).text('table.tbl { table-layout: fixed; }')
+                                                             .attr('type', 'text/css'));
 
             $('head').appendAll(classes);
 
@@ -2470,6 +2482,14 @@ Native support:
         !function create_image_editor_handler () {
             $.log('Adding handler for image editor.');
             $('body').on('click', '#previewImage', function image_editor_initial_handler (e) {
+                var crop = { Left   : 0
+                           , Top    : 0
+                           , Right  : 0
+                           , Bottom : 0
+                           , height : 0
+                           , width  : 0
+                           };
+
                 if ($('#previewImage').prop('src').length === 0) {
                     return;
                 }
@@ -2592,23 +2612,33 @@ Native support:
                 });
                 $.polyfillInputNumber();
 
+                $make('div', { 'class' : 'ui-state-error' 
+                             , id      : 'CAAimageEditorCropError'
+                             }).text($.l('Error too much cropping'))
+                               .dialog({ autoOpen      : false
+                                       , closeOnEscape : true
+                                       , title         : $.l('Error')
+                                       });
+
                 var imageRatio     = $('#previewImage').quickWidth(0) / $('#previewImage').quickHeight(0)
-                  , canvasHeight   = Math.round($('#CAAimageEditor').quickHeight(0) * 0.9)
-                  , canvasWidth    = Math.round(canvasHeight * imageRatio)
+                    , c            = {}
                   , degreesRotated = 0
                   ;
+
+                c.height = Math.round($('#CAAimageEditor').quickHeight(0) * 0.9);
+                c.width  = Math.round(c.height * imageRatio);
 
                 /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
                    then figure out the height based on the editor window's width instead of the other way around. */
                 var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
 
-                if (editorWindowWidth < (canvasWidth - 230)) {
-                    canvasWidth  = Math.round(editorWindowWidth - 230);
-                    canvasHeight = Math.round(canvasWidth / imageRatio);
+                if (editorWindowWidth < (c.width - 230)) {
+                    c.width  = Math.round(editorWindowWidth - 230);
+                    c.height = Math.round(c.width / imageRatio);
                 }
 
-                $('#CAAeditorCanvasDiv').css({ height : canvasHeight + 'px'
-                                             , width  : canvasWidth + 'px'
+                $('#CAAeditorCanvasDiv').css({ height : c.height + 'px'
+                                             , width  : c.width + 'px'
                                              });
 
                 /* Load the image into the canvas. */
@@ -2622,12 +2652,21 @@ Native support:
 
                 img.onload = function load_image_handler () {
                     /* Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. */
-                    canvas.width = img.width;
-                    canvas.height = img.height;
+                    canvas.width = crop.height = img.width;
+                    canvas.height = crop.width = img.height;
+
+                    /* Set the max for the crop input[tye=number] controls.  The max will vary depending on if the image is smaller
+                       or larger than the canvas. */
+                    var getMax = function (direction) {
+                        return img[direction] >= $(canvas)[direction] ? c[direction]
+                                                                      : img[direction];
+                    };
+                    $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', getMax('height'));
+                    $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', getMax('width'));
 
                     /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
-                    canvas.style.height = canvasHeight + 'px';
-                    canvas.style.width = canvasWidth + 'px';
+                    canvas.style.height = c.height + 'px';
+                    canvas.style.width = c.width + 'px';
 
                     ctx.drawImage(img, 0, 0);
 
@@ -2677,6 +2716,51 @@ Native support:
                     prepCanvas(flip);
                 };
 
+                var cropMask = function handle_crop_mask_change (where) {
+                    var opposite
+                      , direction
+                      , $thisControl = $('#CAAeditorCropControl' + where)
+                      , value = +$thisControl.val()
+                      , background = '#FFF'
+                      , color      = '#000'
+                      , limit = +$thisControl.prop('max')
+                      , $canvas
+                      , ratio
+                      ;
+
+                    switch (where) {
+                        case 'Top'    : opposite = 'Bottom'; direction = 'height'; break;
+                        case 'Bottom' : opposite = 'Top';    direction = 'height'; break;
+                        case 'Left'   : opposite = 'Right';  direction = 'width';  break;
+                        case 'Right'  : opposite = 'Left';   direction = 'width'; 
+                    }
+
+                    if (0 > where) {
+                        value = 0;
+                        $thisControl.val(0);
+                    }
+
+                    if (limit < value) {
+                        value = limit;
+                        $thisControl.val(limit);
+                    }
+
+                    if (value + crop[opposite] >= limit) {
+                        background = 'pink';
+                        color      = 'red';
+                        $('#CAAimageEditorCropError').dialog('open');
+                    }
+                    $thisControl.add('#CAAeditorCropControl' + opposite)
+                                .css({ background : background
+                                     , color      : color
+                                     });
+
+                    crop[where] = value;
+                    $canvas = $('#CAAeditorCanvas');
+                    ratio = $canvas[direction]()/limit;
+                    $('#CAAmask' + where).css(direction, Math.round(value * ratio));
+                };
+
                 $('#CAAeditorFlipVertical').on('click', function flip_vertical_click_event_handler () {
                     flip(0,1);
                 });
@@ -2690,23 +2774,22 @@ Native support:
                 });
 
                 $('#CAAeditorCropControlTop').on('change', function crop_controls_change_event_handler_top () {
-                    $('#CAAmaskTop').css('height', $.single(this).val());
+                    cropMask('Top');
                 });
 
                 $('#CAAeditorCropControlBottom').on('change', function crop_controls_change_event_handler_bottom () {
-                    $('#CAAmaskBottom').css('height', $.single(this).val());
+                    cropMask('Bottom');
                 });
 
                 $('#CAAeditorCropControlLeft').on('change', function crop_controls_change_event_handler_left () {
-                    $('#CAAmaskLeft').css('width', $.single(this).val());
+                    cropMask('Left');
                 });
 
                 $('#CAAeditorCropControlRight').on('change', function crop_controls_change_event_handler_right () {
-                    $('#CAAmaskRight').css('width', $.single(this).val());
+                    cropMask('Right');
                 });
 
                 $('#CAAeditiorSaveImageBtn').on('click', function image_editor_save_button_click_handler () {
-//TODO: Apply cropping to saved images
                     var canvas = document.getElementById("CAAeditorCanvas")
                       , ctx = canvas.getContext("2d")
                       ;
@@ -2716,6 +2799,8 @@ Native support:
                     ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
                     ctx.fillStyle = '#FFF';
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+//TODO: Apply cropping to saved images
 
                     /* Save the image. */
                     addImageToDropbox(
@@ -2729,11 +2814,9 @@ Native support:
                     $('#CAAeditiorCancelBtn').trigger('click');
                 });
 
-                $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', canvasHeight);
-                $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', canvasWidth);
-
                 /* Create the css rule for the crop mask. */
                 $make('style', { id : 'CAAeditiorMaskColorStyle' }).text('.CAAmask { background-color: ' + $.getColor('MASK') + '; }')
+                                                                   .attr('type', 'text/css')
                                                                    .appendTo('head');
 
                 /* Create the color picker. */
