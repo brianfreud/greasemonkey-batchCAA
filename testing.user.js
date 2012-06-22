@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1391
+// @version     0.01.1427
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,7 +45,8 @@ Opera: Not compatible, sorry.
 //TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
-//TODO: Add "Apply" cropping button to image editor
+//TODO: Fullsize image editor option
+//TODO: HSL controls in image editor
 
 var height = function get_client_height (id) {
     'use strict';
@@ -53,7 +54,7 @@ var height = function get_client_height (id) {
 };
 
 var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1391'
+                , VERSION       : '0.1.1427'
                 , DEBUG_VERBOSE : false
                 , BORDERS       : '1px dotted #808080'
                 , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -200,7 +201,7 @@ var CONSTANTS = { DEBUGMODE     : true
                 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
                 , IMAGESIZES    : [50, 100, 150, 300]
                 , LANGUAGE      : 'en'
-                , SIDEBARWIDTH  : (Math.max(Math.round(window.innerWidth/500), 3) * 107) + 15
+                , SIDEBARWIDTH  : (Math.max(window.innerWidth/500 << 0, 3) * 107) + 15
                 , SIDEBARHEIGHT : window.innerHeight - height('header') - height('footer') - 25
                 , THROBBER      : localStorage.getItem('throbber')
                 , PREVIEWSIZE   : 300
@@ -2360,7 +2361,7 @@ Native support:
                 if (!$tableParent.hasClass('tbl')) {
                     $widthEle = $tableParent.parents('td:first');
                 }
-                for (var i = Math.max(3, Math.round($widthEle.quickWidth(0)/132) - 5); i > 0; i--) {
+                for (var i = Math.max(3, ($widthEle.quickWidth(0)/132 << 0) - 5); i > 0; i--) {
                        $.single(this).after($dropBox.clone(true));
                 }
                 $.log('Requesting CAA info for ' + $.single(this).data('entity'));
@@ -2619,6 +2620,7 @@ Native support:
                 });
                 $.polyfillInputNumber();
 
+//TODO: The css here isn't correct in Firefox.
                 $make('div', { 'class' : 'ui-state-error' 
                              , id      : 'CAAimageEditorCropError'
                              }).text($.l('Error too much cropping'))
@@ -2632,16 +2634,16 @@ Native support:
                   , degreesRotated = 0
                   ;
 
-                c.height = Math.round($('#CAAimageEditor').quickHeight(0) * 0.9);
-                c.width  = Math.round(c.height * imageRatio);
+                c.height = $('#CAAimageEditor').quickHeight(0) * 0.9 << 0;
+                c.width  = c.height * imageRatio << 0;
 
                 /* If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
                    then figure out the height based on the editor window's width instead of the other way around. */
                 var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
 
                 if (editorWindowWidth < (c.width - 230)) {
-                    c.width  = Math.round(editorWindowWidth - 230);
-                    c.height = Math.round(c.width / imageRatio);
+                    c.width  = editorWindowWidth - 230 << 0;
+                    c.height = c.width / imageRatio << 0;
                 }
 
                 $('#CAAeditorCanvasDiv').css({ height : c.height + 'px'
@@ -2662,14 +2664,10 @@ Native support:
                     canvas.width  = crop.width  = img.width;
                     canvas.height = crop.height = img.height;
 
-                    /* Set the max for the crop input[tye=number] controls.  The max will vary depending on if the image is smaller
-                       or larger than the canvas. */
-                    var getMax = function (direction) {
-                        return img[direction] >= c[direction] ? c[direction]
-                                                              : img[direction];
-                    };
-                    $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', getMax('height'));
-                    $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', getMax('width'));
+                    $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', img.height);
+                    $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', img.width);
+
+//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
 
                     /* Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. */
                     canvas.style.height = c.height + 'px';
@@ -2768,7 +2766,7 @@ Native support:
                     crop[where] = value;
                     $canvas = $('#CAAeditorCanvas');
                     ratio = $canvas[direction]()/limit;
-                    $('#CAAmask' + where).css(direction, Math.round(value * ratio));
+                    $('#CAAmask' + where).css(direction, value * ratio << 0);
                     return;
                 };
 
@@ -2779,21 +2777,54 @@ Native support:
                       , ctx     = canvas.getContext('2d')
                       ;
 
+                    /* Create a copy of the current canvas. */
                     copy.height = canvas.height;
                     copy.width = canvas.width;
                     copy.getContext('2d').drawImage(canvas, 0, 0);
 
+                    /* Clear the current canvas. */
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// TODO: Test against images which are higher pixel count than the canvas.
+                    /* Calculate the width and height of the cropped area. */
                     crop.height = crop.height - crop.Top - crop.Bottom;
                     crop.width  = crop.width - crop.Left - crop.Right;
+
+                    /* Resize the current canvas (DOM). */
                     canvas.height = crop.height >> 0;
                     canvas.width = crop.width >> 0;
-                    $canvas.add('#CAAeditorCanvasDiv')
-                           .css('height', $canvas.quickWidth(0) / crop.width * crop.height + 'px')
-                           .css('width', $canvas.quickHeight(0) / crop.height * crop.width + 'px');
-// TODO: Handle the case where this can create a canvas that is taller than the image editor div.
+
+                    /* Resize the current canvas (CSS). */
+                    var dimensions = { base  : { /* This is the max size to which the canvas can grow. */
+                                                 height : $('#CAAeditorCanvasDiv').quickHeight(0) << 0
+                                               , width  : $('#CAAeditorCanvasDiv').quickWidth(0) << 0
+                                               }
+                                     , css   : {}
+                                     , image : { /* This is the current size of the cropped image. */
+                                                 height : canvas.height
+                                               , width  : canvas.width
+                                               }
+                                     };
+                    
+                    /* This calculates the scaling ratio which will best fit the image.
+                       http://stackoverflow.com/questions/1373035/how-do-i-scale-one-rectangle-to-the-maximum-size-possible-within-another-rectang
+                    */
+                    dimensions.ratio = Math.min(dimensions.base.width  / dimensions.image.width,
+                                                dimensions.base.height / dimensions.image.height);
+
+                    /* This is the final calculated size for canvas. */
+                    dimensions.css = { height : dimensions.ratio * dimensions.image.height
+                                     , width  : dimensions.ratio * dimensions.image.width
+                                     };
+
+                    /* Apply the calculated size to the canvas. */
+                    $canvas.css('height', dimensions.css.height + 'px')
+                           .css('width',  dimensions.css.width  + 'px');
+
+                    /* Adjust the max for the crop controls. */
+                    $('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', dimensions.image.height);
+                    $('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', dimensions.image.width);
+
+                    /* Draw the image from the backup canvas to the current canvas while applying the crop. */
                     ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
                     return;
                 };
