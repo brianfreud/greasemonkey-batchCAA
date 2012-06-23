@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1427
+// @version     0.01.1432
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -48,339 +48,295 @@ Opera: Not compatible, sorry.
 //TODO: Fullsize image editor option
 //TODO: HSL controls in image editor
 
-var height = function get_client_height (id) {
-    'use strict';
-    return document.getElementById(id).clientHeight;
-};
+if (!document.body) {
+    document.body = document.getElementsByTagName('body')[0];
+}
 
-var CONSTANTS = { DEBUGMODE     : true
-                , VERSION       : '0.1.1427'
-                , DEBUG_VERBOSE : false
-                , BORDERS       : '1px dotted #808080'
-                , COLORS        : { ACTIVE     : '#B0C4DE'
-                                  , CAABOX     : '#F2F2FC'
-                                  , CAABUTTONS : '#4B0082'
-                                  , EDITOR     : '#F9F9F9'
-                                  , EDITORMENU : '#D5D5FF'
-                                  , INCOMPLETE : '#FFFF7A'
-                                  , COMPLETE   : '#C1FFC1'
-                                  , REMOVE     : '#B40000'
-                                  , MASK       : '#000'
-                                  }
-                , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
-                                  , 'Back'
-                                  , 'Booklet'
-                                  , 'Medium'
-                                  , 'Obi'
-                                  , 'Spine'
-                                  , 'Track'
-                                  , 'Other'
-                                  ]
-                , CREDITS       : { 'Developer and programmer' :
-                                                   [ { name : 'Brian Schweitzer (“BrianFreud”)'
-                                                     , mb   : 'brianfreud'
-                                                     , urlN : 'userscripts.org/users/28107'
-                                                     }
-                                                   ]
-                                  , Translations : [ { name : 'Calvin Walton (“kepstin”)'
-                                                     , what : 'Canadian English'
-                                                     , urlN : 'www.kepstin.ca'
-                                                     , mb   : 'kepstin'
-                                                     }]
-                                  , Icons        : [ { name : '“Mapto”'
-                                                     , what : 'Magnifying glass icons'
-                                                     , urlN : 'commons.wikimedia.org/wiki/User:Mapto'
-                                                     , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
-                                                     }
-                                                   , { name : '“Inductiveload”'
-                                                     , what : 'Magnifying glass icons'
-                                                     , urlN : 'commons.wikimedia.org/wiki/User:Inductiveload'
-                                                     , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
-                                                     }
-                                                   , { name : '“ablonevn”'
-                                                     , what : 'Gear icon'
-                                                     , urlW : 'www.clker.com/clipart-169255.html'
-                                                     }
-                                                   , { name : '“El T”'
-                                                     , what : 'Information icon'
-                                                     , urlN : 'en.wikipedia.org/wiki/User:El_T'
-                                                     , urlW : 'en.wikipedia.org/wiki/File:Information_icon.svg'
-                                                     }
-                                                   , { name : 'Timur Gafforov & Avraam Makhmudov'
-                                                     , what : 'Throbber image'
-                                                     , urlW : 'preloaders.net'
-                                                     }
-                                                   ]
-                                  , Plugins      : [ { name : 'Ben Barnett'
-                                                     , what : 'jQuery.animate-enhanced v0.91'
-                                                     , urlN : 'benbarnett.net'
-                                                     , urlW : 'github.com/benbarnett/jQuery-Animate-Enhanced'
-                                                     }
-                                                   , { name : 'Ryan Wheale & Tim Banks'
-                                                     , what : 'jQuery.getHiddenDimensions'
-                                                     , urlN : 'www.foliotek.com/devblog/author/timlanit'
-                                                     , urlW : 'www.foliotek.com/devblog/getting-the-width-of-a-hidden-element-with-jquery-using-width'
-                                                     }
-                                                   , { name : 'Brian Schweitzer & Naftali Lubin'
-                                                     , what : 'jQuery.appendAll'
-                                                     }
-                                                   , { name : 'James Padolsey'
-                                                     , what : 'jQuery.single'
-                                                     , urlN : 'james.padolsey.com'
-                                                     , urlW : 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
-                                                     }
-                                                   , { name : '“Cowboy” Ben Alman'
-                                                     , what : 'jQuery.detach+ v0.1pre'
-                                                     , urlN : 'benalman.com'
-                                                     , urlW : 'gist.github.com/978520'
-                                                     }
-                                                   ]
-                                  , Polyfills    : [ { name : 'Eric Bidelman'
-                                                     , what : 'idb.filesystem.js v0.0.1'
-                                                     , urlN : 'ericbidelman.tumblr.com'
-                                                     , urlW : 'github.com/ebidel/idb.filesystem.js'
-                                                     }
-                                                   , { name : 'Jan Odvarko'
-                                                     , what : 'jscolor'
-                                                     , urlW : 'jscolor.com'
-                                                     }
-                                                   , { name : 'Jonathan Stipe'
-                                                     , what : 'number polyfill'
-                                                     , urlW : 'github.com/jonstipe/number-polyfill'
-                                                     }
-                                                   , { name : 'Sebastian Tschan (“blueimp”)'
-                                                     , what : 'javaScript canvas to blob 2.0'
-                                                     , urlN : 'blueimp.net'
-                                                     , urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
-                                                     }
-                                                   ]
-                                  , Tools        : [ { name : 'Jeff Schiller'
-                                                     , what : 'Scour'
-                                                     , urlW : 'www.codedread.com/scour'
-                                                     }
-                                                   , { name : 'Site Project ApS'
-                                                     , what : 'JavaScript string encoder'
-                                                     , urlW : 'www.htmlescape.net/stringescape_tool.html'
-                                                     }
-                                                   , { name : 'Yahoo!'
-                                                     , what : 'Yahoo! Query Language'
-                                                     , urlW : 'developer.yahoo.com/yql/'
-                                                     }
-                                                   ]
-                                  , Libraries    : [ { name : 'Tim Smart'
-                                                     , what : 'data_string function'
-                                                     , urlN : 'github.com/Tim-Smart'
-                                                     , urlW : 'pastebin.ca/1425789'
-                                                     }
-                                                   , { name : 'Tyler Akins, Bayron Guevara, Thunder.m, Kevin van Zonneveld, Pellentesque Malesuada, Rafał Kukawski & Brian Schweitzer'
-                                                     , what : 'base64_encode function from PHPJS'
-                                                     , urlN : 'rumkin.com'
-                                                     , urlW : 'phpjs.org/functions/base64_encode'
-                                                     }
-                                                   , { name : 'Steven Thurlow (“Stoive”)'
-                                                     , what : 'dataURItoBlob'
-                                                     , urlN : 'github.com/stoive'
-                                                     , urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
-                                                     }
-                                                   , { name : 'Ben Leslie'
-                                                     , what : 'jsjpegmeta'
-                                                     , urlN : 'benno.id.au/'
-                                                     , urlW : 'code.google.com/p/jsjpegmeta/'
-                                                     }
-                                                   , { name : 'John Resig and the rest of the jQuery team'
-                                                     , what : 'jQuery 1.7.2'
-                                                     , urlW : 'jquery.com'
-                                                     }
-                                                   , { name : 'Brandon Aaron, Amir E. Aharoni, Khaled AlHourani, Mike Alsup, Robson Braga Araujo, Lim Chee Aun, Pierre-Henri Ausseil, Jesse Baird, Paul Bakaus, Adam Baratz, Phillip Barnes, Jorge Barreiro, Bruno Basto, Doug Blood, David Bolter, Kris Borchers, Mohamed Cherif Bouchelaghem, Ben Boyle, Milan Broum, Tobias Brunner, Brant Burnett, Alberto Fernández Capel, Sean Catchpole, Filippo Cavallarin, Douglas Cerna, Chi Cheng, Samuel Cormier-Iijima, Kevin Dalman, Gilmore Davidson, Jason Davies, Michael DellaNoce, Justin Domnitz, Alex Dovenmuehle, Thibault Duplessis, Aaron Eisenberger, Ashek Elahi, John Enters, Edward Faulkner, John Firebaugh, Ariel Flesler, Kyle Florence, Corey Frang, Tiago Freire, Martin Frost, Carl Fürstenberg, Bohdan Ganicky, Dmitri Gaskin, Guillaume Gautreau, Jamie Gegerson, Genie, Shahyar Ghobadpour, Giovanni Giacobbi, Scott González, Glenn Goodrich, Marc Grabanski, Philip Graham, William Griffiths, Florian Gutmann, Klaus Hartl, Dan Heberden, Peter Heiberg, Bertter Heide, Heiko Henning, Hans Hillen, Pavol Hluchý, Ben Hollis, Matt Hoskins, Gilles van den Hoven, Petr Hromadko, Jack Hsu, Trey Hunner, Matthew Hutton, Eric Hynds, Eneko Illarramendi, Paul Irish, Jacek Jędrzejewski, Scott Jehl, Mark Johnson, Marwan Al Jubeh, Michael P. Jung, Dylan Just, Tomy Kaira, Andrey Kapitcyn, Guntupalli Karunakar, Yehuda Katz, Kato Kazuyoshi, Chris Kelly, James Khoury, Harri Kilpiö, Karl Kirch, Lev Kitsis, Eyal Kobrigo, Ting Kuei, David Leal, Lukasz Lipinski, Jo Liss, Rob Loach, Garrison Locke, Lado Lomidze, Eduardo Lundgren, Justin MacCarthy, William Kevin Manire, George Marshall, Christopher McCulloh, Carson McDonald, Jay Merrifield, Dave Methvin, igor milla, Eddie Monge, Alberto Monteiro, Jason Moon, Gaëtan Muller, David Murdoch, Jasvir Nagra, Saji Nediyanchath, Douglas Neiner, Ryan Neufeld, Marc Neuwirth, Andrew Newcomb, Ryan Olton, Jay Oster, Jon Palmer, Todd Parker, Adam Parod, Shannon Pekary, Ivan Peters, David Petersen, Aaron Peterson, Stefan Petre, Dmitry Petrov, Joan Piedra, Tane Piper, Alex Polomoshnov, Andrew Powell, Aliaxandr Rahalevich, Stéphane Raimbault, Xavi Ramirez, Jean-Francois Remy, John Resig, Alex Rhea, Krzysztof Rosiński, Marian Rudzynski, Holger Rüprich, Simon Sattes, Sebastian Sauer, Max Schnur, Raymond Schwartz, Eike Send, Remy Sharp, Ian Simpson, Stojce Slavkovski, David De Sloovere, Micheil Smith, Martin Solli, David Soms, Adam Sontag, Marcos Sousa, Daniel Steigerwald, Benjamin Sterling, J. Ryan Stinnett, Dan Streetman, Chairat Sunthornwiphat, Kouhei Sutou, Timo Tijhof, Marcel Toele, Diego Tres, Israel Tsadok, Ca-Phun Ung, TJ VanToll, Josh Varner, Dominique Vincent, Jonathan Vingiano, Mario Visic, Maggie Costello Wachs, Rick Waldron, Wesley Walser, Michel Weimerskirch, Ralph Whitbeck, Shane Whittet, Kyle Wilkinson, Keith Wood, Richard Worth, Michael Wu, EungJun Yi, Jörn Zaefferer, & Ziling Zhao'
-                                                     , what : 'jQuery UI 1.8.19'
-                                                     , urlW : 'jqueryui.com'
-                                                     }
-                                                   ]
-                                  }
-                , IEDARKNESSLVL : 75
-                , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
-                , IMAGESIZES    : [50, 100, 150, 300]
-                , LANGUAGE      : 'en'
-                , SIDEBARWIDTH  : (Math.max(window.innerWidth/500 << 0, 3) * 107) + 15
-                , SIDEBARHEIGHT : window.innerHeight - height('header') - height('footer') - 25
-                , THROBBER      : localStorage.getItem('throbber')
-                , PREVIEWSIZE   : 300
-                , BEINGDRAGGED  : { OPACITY : '0.4'
-                                  , SHRINK  : '0.7'
-                                  }
-                , TEXT          : {
-                                  en : { languageName              : 'English'
-                                       , 'Add cover art'           : 'Add cover art'
-                                       , 'Add image one release'   : 'Add a box for another image.'
-                                       , 'Bottom'                  : 'Bottom'
-                                       , 'bytes'                   : 'bytes'
-                                       , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
-                                       , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
-                                       , 'Click to edit this image': 'Left click to edit this image'
-                                       , 'Colors'                  : 'Colors'
-                                       , 'Crop image'              : 'Crop'
-                                       , 'default'                 : 'default'
-                                       , 'degrees'                 : 'degrees'
-                                       , 'File size'               : 'File size'
-                                       , 'Flip image'              : 'Flip'
-                                       , 'How dark the bkgrnd'     : 'Image editor darkness level'
-                                       , 'How many degrees'        : 'How many degrees to rotate the image'
-                                       , '(Image) Resolution'      : 'Resolution'
-                                       , 'Images'                  : 'Images'
-                                       , 'Language'                : 'Language'
-                                       , 'Left'                    : 'Left'
-                                       , 'Load CAA images for all' : 'Load image data for all releases'
-                                       , 'Load CAA images'         : 'Load image data for this release'
-                                       , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
-                                       , 'Load text all releases'  : 'Loads images for all displayed releases.'
-                                       , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
-                                       , 'Crop mask color'         : 'Mask color'
-                                       , 'Magnify image'           : 'Zoom in'
-                                       , 'Options'                 : 'Options'
-                                       , 'Parse (help)'            : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
-                                       , 'Parse web pages'         : 'Parse web pages'
-                                       , 'Preview Image'           : 'Preview'
-                                       , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
-                                       , 'Remove image'            : 'Click to remove this image'
-                                       , 'Remove images'           : 'Remove images mode'
-                                       , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
-                                       , 'Remove stored images'    : 'Remove stored images'
-                                       , 'Right'                   : 'Right'
-                                       , 'Rotate image'            : 'Rotate'
-                                       , 'Shrink image'            : 'Zoom out'
-                                       , 'Submit as autoedits'     : 'Submit edits as autoedits'
-                                       , 'Submit edits'            : 'Submit edits'
-                                       , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
-                                       , 'Top'                     : 'Top'
-                                       , 'Version'                 : 'Version'
-                                       , 'coverType:Back'          : 'Back'
-                                       , 'coverType:Booklet'       : 'Booklet'
-                                       , 'coverType:Front'         : 'Front'
-                                       , 'coverType:Medium'        : 'Medium'
-                                       , 'coverType:Obi'           : 'Obi'
-                                       , 'coverType:Other'         : 'Other'
-                                       , 'coverType:Spine'         : 'Spine'
-                                       , 'coverType:Track'         : 'Track'
-                                       , 'About'                   : 'About'
-                                       , 'Developer and programmer': 'Developer and programmer'
-                                       , 'Icons'                   : 'Icons'
-                                       , 'Plugins'                 : 'Plugins'
-                                       , 'Polyfills'               : 'Polyfills'
-                                       , 'Translations'            : 'Translations'
-                                       , 'Tools'                   : 'Tools'
-                                       , 'Libraries'               : 'Libraries'
-                                       , 'Save'                    : 'Save'
-                                       , 'Save changes'            : 'Save changes'
-                                       , 'Cancel'                  : 'Cancel'
-                                       , 'Error'                   : 'Error'
-                                       , 'Error too much cropping' : 'Cropping this much would remove the entire image!'
-                                       , 'Apply'                   : 'Apply'
-                                                                   /* Try to keep the text for these last few very short. */
-                                       , ACTIVE                    : 'Droppable area'
-                                       , CAABOX                    : 'Empty CAA box'
-                                       , CAABUTTONS                : 'Load CAA buttons'
-                                       , EDITOR                    : 'Image editor background'
-                                       , EDITORMENU                : 'Image editor menu'
-                                       , INCOMPLETE                : 'Incomplete edits'
-                                       , COMPLETE                  : 'Edits ready to submit'
-                                       , REMOVE                    : 'Remove image highlight'
-                                       , MASK                      : 'Default crop mask color'
-                                       }
-                                  }
-                };
+var OUTERCONTEXT = { CONTEXTS : {}
+                   , UTILITY  : { height : function get_client_height (id) {
+                                               'use strict';
+                                               return document.getElementById(id).clientHeight;
+                                           }
+                                }
+                   };
 
+OUTERCONTEXT.CONSTANTS = { DEBUGMODE     : true
+                         , VERSION       : '0.1.1432'
+                         , DEBUG_VERBOSE : false
+                         , BORDERS       : '1px dotted #808080'
+                         , COLORS        : { ACTIVE     : '#B0C4DE'
+                                           , CAABOX     : '#F2F2FC'
+                                           , CAABUTTONS : '#4B0082'
+                                           , EDITOR     : '#F9F9F9'
+                                           , EDITORMENU : '#D5D5FF'
+                                           , INCOMPLETE : '#FFFF7A'
+                                           , COMPLETE   : '#C1FFC1'
+                                           , REMOVE     : '#B40000'
+                                           , MASK       : '#000'
+                                           }
+                         , COVERTYPES    : [ 'Front' /* The order of items in this array matters! */
+                                           , 'Back'
+                                           , 'Booklet'
+                                           , 'Medium'
+                                           , 'Obi'
+                                           , 'Spine'
+                                           , 'Track'
+                                           , 'Other'
+                                           ]
+                         , CREDITS       : { 'Developer and programmer' :
+                                                            [ { name : 'Brian Schweitzer (“BrianFreud”)'
+                                                              , mb   : 'brianfreud'
+                                                              , urlN : 'userscripts.org/users/28107'
+                                                              }
+                                                            ]
+                                           , Translations : [ { name : 'Calvin Walton (“kepstin”)'
+                                                              , what : 'Canadian English'
+                                                              , urlN : 'www.kepstin.ca'
+                                                              , mb   : 'kepstin'
+                                                              }]
+                                           , Icons        : [ { name : '“Mapto”'
+                                                              , what : 'Magnifying glass icons'
+                                                              , urlN : 'commons.wikimedia.org/wiki/User:Mapto'
+                                                              , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
+                                                              }
+                                                            , { name : '“Inductiveload”'
+                                                              , what : 'Magnifying glass icons'
+                                                              , urlN : 'commons.wikimedia.org/wiki/User:Inductiveload'
+                                                              , urlW : 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
+                                                              }
+                                                            , { name : '“ablonevn”'
+                                                              , what : 'Gear icon'
+                                                              , urlW : 'www.clker.com/clipart-169255.html'
+                                                              }
+                                                            , { name : '“El T”'
+                                                              , what : 'Information icon'
+                                                              , urlN : 'en.wikipedia.org/wiki/User:El_T'
+                                                              , urlW : 'en.wikipedia.org/wiki/File:Information_icon.svg'
+                                                              }
+                                                            , { name : 'Timur Gafforov & Avraam Makhmudov'
+                                                              , what : 'Throbber image'
+                                                              , urlW : 'preloaders.net'
+                                                              }
+                                                            ]
+                                           , Plugins      : [ { name : 'Ben Barnett'
+                                                              , what : 'jQuery.animate-enhanced v0.91'
+                                                              , urlN : 'benbarnett.net'
+                                                              , urlW : 'github.com/benbarnett/jQuery-Animate-Enhanced'
+                                                              }
+                                                            , { name : 'Ryan Wheale & Tim Banks'
+                                                              , what : 'jQuery.getHiddenDimensions'
+                                                              , urlN : 'www.foliotek.com/devblog/author/timlanit'
+                                                              , urlW : 'www.foliotek.com/devblog/getting-the-width-of-a-hidden-element-with-jquery-using-width'
+                                                              }
+                                                            , { name : 'Brian Schweitzer & Naftali Lubin'
+                                                              , what : 'jQuery.appendAll'
+                                                              }
+                                                            , { name : 'James Padolsey'
+                                                              , what : 'jQuery.single'
+                                                              , urlN : 'james.padolsey.com'
+                                                              , urlW : 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
+                                                              }
+                                                            , { name : '“Cowboy” Ben Alman'
+                                                              , what : 'jQuery.detach+ v0.1pre'
+                                                              , urlN : 'benalman.com'
+                                                              , urlW : 'gist.github.com/978520'
+                                                              }
+                                                            ]
+                                           , Polyfills    : [ { name : 'Eric Bidelman'
+                                                              , what : 'idb.filesystem.js v0.0.1'
+                                                              , urlN : 'ericbidelman.tumblr.com'
+                                                              , urlW : 'github.com/ebidel/idb.filesystem.js'
+                                                              }
+                                                            , { name : 'Jan Odvarko'
+                                                              , what : 'jscolor'
+                                                              , urlW : 'jscolor.com'
+                                                              }
+                                                            , { name : 'Jonathan Stipe'
+                                                              , what : 'number polyfill'
+                                                              , urlW : 'github.com/jonstipe/number-polyfill'
+                                                              }
+                                                            , { name : 'Sebastian Tschan (“blueimp”)'
+                                                              , what : 'javaScript canvas to blob 2.0'
+                                                              , urlN : 'blueimp.net'
+                                                              , urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
+                                                              }
+                                                            ]
+                                           , Tools        : [ { name : 'Jeff Schiller'
+                                                              , what : 'Scour'
+                                                              , urlW : 'www.codedread.com/scour'
+                                                              }
+                                                            , { name : 'Site Project ApS'
+                                                              , what : 'JavaScript string encoder'
+                                                              , urlW : 'www.htmlescape.net/stringescape_tool.html'
+                                                              }
+                                                            , { name : 'Yahoo!'
+                                                              , what : 'Yahoo! Query Language'
+                                                              , urlW : 'developer.yahoo.com/yql/'
+                                                              }
+                                                            ]
+                                           , Libraries    : [ { name : 'Tim Smart'
+                                                              , what : 'data_string function'
+                                                              , urlN : 'github.com/Tim-Smart'
+                                                              , urlW : 'pastebin.ca/1425789'
+                                                              }
+                                                            , { name : 'Tyler Akins, Bayron Guevara, Thunder.m, Kevin van Zonneveld, Pellentesque Malesuada, Rafał Kukawski & Brian Schweitzer'
+                                                              , what : 'base64_encode function from PHPJS'
+                                                              , urlN : 'rumkin.com'
+                                                              , urlW : 'phpjs.org/functions/base64_encode'
+                                                              }
+                                                            , { name : 'Steven Thurlow (“Stoive”)'
+                                                              , what : 'dataURItoBlob'
+                                                              , urlN : 'github.com/stoive'
+                                                              , urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
+                                                              }
+                                                            , { name : 'Ben Leslie'
+                                                              , what : 'jsjpegmeta'
+                                                              , urlN : 'benno.id.au/'
+                                                              , urlW : 'code.google.com/p/jsjpegmeta/'
+                                                              }
+                                                            , { name : 'John Resig and the rest of the jQuery team'
+                                                              , what : 'jQuery 1.7.2'
+                                                              , urlW : 'jquery.com'
+                                                              }
+                                                            , { name : 'Brandon Aaron, Amir E. Aharoni, Khaled AlHourani, Mike Alsup, Robson Braga Araujo, Lim Chee Aun, Pierre-Henri Ausseil, Jesse Baird, Paul Bakaus, Adam Baratz, Phillip Barnes, Jorge Barreiro, Bruno Basto, Doug Blood, David Bolter, Kris Borchers, Mohamed Cherif Bouchelaghem, Ben Boyle, Milan Broum, Tobias Brunner, Brant Burnett, Alberto Fernández Capel, Sean Catchpole, Filippo Cavallarin, Douglas Cerna, Chi Cheng, Samuel Cormier-Iijima, Kevin Dalman, Gilmore Davidson, Jason Davies, Michael DellaNoce, Justin Domnitz, Alex Dovenmuehle, Thibault Duplessis, Aaron Eisenberger, Ashek Elahi, John Enters, Edward Faulkner, John Firebaugh, Ariel Flesler, Kyle Florence, Corey Frang, Tiago Freire, Martin Frost, Carl Fürstenberg, Bohdan Ganicky, Dmitri Gaskin, Guillaume Gautreau, Jamie Gegerson, Genie, Shahyar Ghobadpour, Giovanni Giacobbi, Scott González, Glenn Goodrich, Marc Grabanski, Philip Graham, William Griffiths, Florian Gutmann, Klaus Hartl, Dan Heberden, Peter Heiberg, Bertter Heide, Heiko Henning, Hans Hillen, Pavol Hluchý, Ben Hollis, Matt Hoskins, Gilles van den Hoven, Petr Hromadko, Jack Hsu, Trey Hunner, Matthew Hutton, Eric Hynds, Eneko Illarramendi, Paul Irish, Jacek Jędrzejewski, Scott Jehl, Mark Johnson, Marwan Al Jubeh, Michael P. Jung, Dylan Just, Tomy Kaira, Andrey Kapitcyn, Guntupalli Karunakar, Yehuda Katz, Kato Kazuyoshi, Chris Kelly, James Khoury, Harri Kilpiö, Karl Kirch, Lev Kitsis, Eyal Kobrigo, Ting Kuei, David Leal, Lukasz Lipinski, Jo Liss, Rob Loach, Garrison Locke, Lado Lomidze, Eduardo Lundgren, Justin MacCarthy, William Kevin Manire, George Marshall, Christopher McCulloh, Carson McDonald, Jay Merrifield, Dave Methvin, igor milla, Eddie Monge, Alberto Monteiro, Jason Moon, Gaëtan Muller, David Murdoch, Jasvir Nagra, Saji Nediyanchath, Douglas Neiner, Ryan Neufeld, Marc Neuwirth, Andrew Newcomb, Ryan Olton, Jay Oster, Jon Palmer, Todd Parker, Adam Parod, Shannon Pekary, Ivan Peters, David Petersen, Aaron Peterson, Stefan Petre, Dmitry Petrov, Joan Piedra, Tane Piper, Alex Polomoshnov, Andrew Powell, Aliaxandr Rahalevich, Stéphane Raimbault, Xavi Ramirez, Jean-Francois Remy, John Resig, Alex Rhea, Krzysztof Rosiński, Marian Rudzynski, Holger Rüprich, Simon Sattes, Sebastian Sauer, Max Schnur, Raymond Schwartz, Eike Send, Remy Sharp, Ian Simpson, Stojce Slavkovski, David De Sloovere, Micheil Smith, Martin Solli, David Soms, Adam Sontag, Marcos Sousa, Daniel Steigerwald, Benjamin Sterling, J. Ryan Stinnett, Dan Streetman, Chairat Sunthornwiphat, Kouhei Sutou, Timo Tijhof, Marcel Toele, Diego Tres, Israel Tsadok, Ca-Phun Ung, TJ VanToll, Josh Varner, Dominique Vincent, Jonathan Vingiano, Mario Visic, Maggie Costello Wachs, Rick Waldron, Wesley Walser, Michel Weimerskirch, Ralph Whitbeck, Shane Whittet, Kyle Wilkinson, Keith Wood, Richard Worth, Michael Wu, EungJun Yi, Jörn Zaefferer, & Ziling Zhao'
+                                                              , what : 'jQuery UI 1.8.19'
+                                                              , urlW : 'jqueryui.com'
+                                                              }
+                                                            ]
+                                           }
+                         , IEDARKNESSLVL : 75
+                         , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
+                         , IMAGESIZES    : [50, 100, 150, 300]
+                         , LANGUAGE      : 'en'
+                         , SIDEBARWIDTH  : (Math.max(window.innerWidth/500 << 0, 3) * 107) + 15
+                         , SIDEBARHEIGHT : window.innerHeight - OUTERCONTEXT.UTILITY.height('header') - OUTERCONTEXT.UTILITY.height('footer') - 25
+                         , THROBBER      : localStorage.getItem('throbber')
+                         , PREVIEWSIZE   : 300
+                         , BEINGDRAGGED  : { OPACITY : '0.4'
+                                           , SHRINK  : '0.7'
+                                           }
+                         , TEXT          : {
+                                           en : { 'languageName'            : 'English'
+                                                , 'Add cover art'           : 'Add cover art'
+                                                , 'Add image one release'   : 'Add a box for another image.'
+                                                , 'Bottom'                  : 'Bottom'
+                                                , 'bytes'                   : 'bytes'
+                                                , 'Changed colors note'     : 'Changes to the color settings will take effect the next time that this script is run.'
+                                                , 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
+                                                , 'Click to edit this image': 'Left click to edit this image'
+                                                , 'Colors'                  : 'Colors'
+                                                , 'Crop image'              : 'Crop'
+                                                , 'default'                 : 'default'
+                                                , 'degrees'                 : 'degrees'
+                                                , 'File size'               : 'File size'
+                                                , 'Flip image'              : 'Flip'
+                                                , 'How dark the bkgrnd'     : 'Image editor darkness level'
+                                                , 'How many degrees'        : 'How many degrees to rotate the image'
+                                                , '(Image) Resolution'      : 'Resolution'
+                                                , 'Images'                  : 'Images'
+                                                , 'Language'                : 'Language'
+                                                , 'Left'                    : 'Left'
+                                                , 'Load CAA images for all' : 'Load image data for all releases'
+                                                , 'Load CAA images'         : 'Load image data for this release'
+                                                , 'loading'                 : 'Loading data from the Cover Art Archive, please wait...'
+                                                , 'Load text all releases'  : 'Loads images for all displayed releases.'
+                                                , 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
+                                                , 'Crop mask color'         : 'Mask color'
+                                                , 'Magnify image'           : 'Zoom in'
+                                                , 'Options'                 : 'Options'
+                                                , 'Parse (help)'            : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
+                                                , 'Parse web pages'         : 'Parse web pages'
+                                                , 'Preview Image'           : 'Preview'
+                                                , 'Remove (help)'           : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
+                                                , 'Remove image'            : 'Click to remove this image'
+                                                , 'Remove images'           : 'Remove images mode'
+                                                , 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
+                                                , 'Remove stored images'    : 'Remove stored images'
+                                                , 'Right'                   : 'Right'
+                                                , 'Rotate image'            : 'Rotate'
+                                                , 'Shrink image'            : 'Zoom out'
+                                                , 'Submit as autoedits'     : 'Submit edits as autoedits'
+                                                , 'Submit edits'            : 'Submit edits'
+                                                , 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
+                                                , 'Top'                     : 'Top'
+                                                , 'Version'                 : 'Version'
+                                                , 'coverType:Back'          : 'Back'
+                                                , 'coverType:Booklet'       : 'Booklet'
+                                                , 'coverType:Front'         : 'Front'
+                                                , 'coverType:Medium'        : 'Medium'
+                                                , 'coverType:Obi'           : 'Obi'
+                                                , 'coverType:Other'         : 'Other'
+                                                , 'coverType:Spine'         : 'Spine'
+                                                , 'coverType:Track'         : 'Track'
+                                                , 'About'                   : 'About'
+                                                , 'Developer and programmer': 'Developer and programmer'
+                                                , 'Icons'                   : 'Icons'
+                                                , 'Plugins'                 : 'Plugins'
+                                                , 'Polyfills'               : 'Polyfills'
+                                                , 'Translations'            : 'Translations'
+                                                , 'Tools'                   : 'Tools'
+                                                , 'Libraries'               : 'Libraries'
+                                                , 'Save'                    : 'Save'
+                                                , 'Save changes'            : 'Save changes'
+                                                , 'Cancel'                  : 'Cancel'
+                                                , 'Error'                   : 'Error'
+                                                , 'Error too much cropping' : 'Cropping this much would remove the entire image!'
+                                                , 'Apply'                   : 'Apply'
+                                                                            /* Try to keep the text for these last few very short. */
+                                                , 'ACTIVE'                  : 'Droppable area'
+                                                , 'CAABOX'                  : 'Empty CAA box'
+                                                , 'CAABUTTONS'              : 'Load CAA buttons'
+                                                , 'EDITOR'                  : 'Image editor background'
+                                                , 'EDITORMENU'              : 'Image editor menu'
+                                                , 'INCOMPLETE'              : 'Incomplete edits'
+                                                , 'COMPLETE'                : 'Edits ready to submit'
+                                                , 'REMOVE'                  : 'Remove image highlight'
+                                                , 'MASK'                    : 'Default crop mask color'
+                                                }
+                                           }
+                         };
+         
 /* Special case Canadian English. */
-CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(CONSTANTS.TEXT.en));
-CONSTANTS.TEXT['en-ca'].languageName             += ' (Canadian)';
-CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
-CONSTANTS.TEXT['en-ca']['Changed colors note']   = 'Changes to the colour settings will take effect the next time that this script is run.';
-CONSTANTS.TEXT['en-ca']['take effect next time'] = 'Changes to the language and colour settings will take effect the next time that this script is run.';
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(OUTERCONTEXT.CONSTANTS.TEXT.en));
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca'].languageName             += ' (Canadian)';
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note']   = 'Changes to the colour settings will take effect the next time that this script is run.';
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['take effect next time'] = 'Changes to the language and colour settings will take effect the next time that this script is run.';
 
-if (CONSTANTS.DEBUGMODE) {
-    CONSTANTS.TEXT.test = { languageName              : 'Testing'
-                          , 'Add cover art'           : '-·· -··- -····'
-                          , 'Add image one release'   : '·-· -- -· -·- ··--- --···'
-                          , 'bytes'                   : '·--· ···-'
-                          , 'Colors'                  : '····· · -·-'
-                          , 'default'                 : ' ··--·· -- ··· --·-'
-                          , 'File size'               : '··--- ··· ·-'
-                          , '(Image) Resolution'      : '···· --·- ····- ·· ·-·'
-                          , 'Images'                  : '-·· ····'
-                          , 'Language'                : '····- --· ·-'
-                          , 'Load CAA images for all' : '·--- ·-·· -·- · -··· -----'
-                          , 'Load CAA images'         : '··--·· --- ··- -· ·-·· ---·· ··--·· ·--- -··- -- ··- ·· --- ···- ---·· -- --· -·-· ·---- ·-·-·- -·-· -·· ·· -·-'
-                          , 'loading'                 : '··-· ·--· ---·· ··· -· ·· ·-· ·-·· --·· ----· --·- ----- ····· ·-· -· ·- -·· --··-- ··· ----- ·---- ····· ·· --· ·· ···· ···--'
-                          , 'Load text all releases'  : '-···· ··- ···- ·---- ·-·-·- ·-· - -·--'
-                          , 'Load text one release'   : '·-·-·- -· -·- ·-·· ·--· ····- --- · --- ·· ···-- ·-·-·- --··--'
-                          , 'Magnify image'           : '··-· ··--- ·····'
-                          , 'Options'                 : '·- ·-·'
-                          , 'Parse (help)'            : '--- ·- ·-·· --··-- -· -·- ····- --··-- ··-· ·--- --··· --- - ·---- ·-·-·- ·- --· -·-- --·· ···-- ·-- - ·-·· --··-- -- ··- ·- ··- ····· ----· --··-- -·-· ···- -· ·--'
-                          , 'Parse web pages'         : '- ·-- ··-· -···· --··· --- - ·--· ----· ·--· ·-·-·- -·- -- ·-- -·· ···· ··--- - · ·--'
-                          , 'Preview Image'           : '···- ----- -- ---'
-                          , 'Remove (help)'           : '·-· ·-·· ····- --··-- ·- -- ··· -·· ···- -··- · -·· --·- ····- ··· -· ·-- ·-·· ·---- ----· ··· -··- ·---- ··--·· -· ·· --·'
-                          , 'Remove image'            : '-··· -··- ··· - ···- ·---- ·-·-·'
-                          , 'Remove images'           : '-·-· ·---- --· ···· ·-·· ···- ·- - ··- -···'
-                          , 'Shrink image'            : '-·· ····- ·--·'
-                          , 'Submit edits'            : '-··- ·-· ·· -·- -- -·-· ···· ·- --· ···· -·-- -··- -·-- --'
-                          , 'Changed colors note'     : '---·· ··--·· ·--- -··- -- ··- ·· --- ···- ---·· -- --· -·-· ·---- ·-·-·- -·-· -·· ·· -·- ··-·'
-                          , 'Changed language note'   : '-·- -·-· --·- -···· ··· · ·· ·---- ---·· ·-·-·- ·-- --- ·-·· -·-- --'
-                          , 'take effect next time'   : '--·- ··--- ··· ·- ···· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ····- --· ·- ·--- ---·· ·- --· -- ·---- ···--'
-                          , 'Version'                 : '··--·· -- ···'
-                          , 'coverType:Back'          : '---·· ·- --· --'
-                          , 'coverType:Booklet'       : '·---- ···--'
-                          , 'coverType:Front'         : '-·- -·-·'
-                          , 'coverType:Medium'        : '--·- -····'
-                          , 'coverType:Obi'           : '··· · ·· ·----'
-                          , 'coverType:Other'         : '---··'
-                          , 'coverType:Spine'         : '---'
-                          , 'coverType:Track'         : '·-·-·- ·--'
-                          , ACTIVE                    : '--· - ----- ·---- ··- ···-'
-                          , CAABOX                    : '--··· --··-- · --- · --· -·-·'
-                          , CAABUTTONS                : '··--- --- - -··- -·-- --··--'
-                          , INCOMPLETE                : '-·· -··- -····'
-                          , COMPLETE                  : '·-· -- -·'
-                          , REMOVE                    : '-·- ··--- --··· ·--· ···-'
-                          , 'Submit as autoedits'     : '··--- --··· ·--· ···-'
-                          , 'Remove stored images'    : '-·· -··- -···· ·--· ···-'
-                          , 'Remove stored images nfo': '-···· ·--· ···--·· -··- -···· ·--· ···-'
-                          , 'How dark the bkgrnd'     : '··-- -- - -··- -·-- --·-··'
-                          , EDITOR                    : '--- - -··- -·-- --··'
-                          , EDITORMENU                : '· --·- ····- ·· ·-· -·· ···· ····· · -·- -·-· ·'
-                          , 'Click to edit this image': '-·· ·--- -··- -- ··- ·· -'
-                          , 'degrees'                 : '···- ·· ·-· -··'
-                          , 'Rotate image'            : '···· ····· ·'
-                          , 'Flip image'              : '·-· -··-··'
-                          , 'Crop image'              : '-- --··· ·--'
-                          , 'Top'                     : '·- ···· -·-· ····- -'
-                          , 'Bottom'                  : '--·-'
-                          , 'Left'                    : '····- ·· ·-· -·'
-                          , 'Right'                   : '···· ····· · -·-'
-                          , 'Crop mask color'         : '··· -·-· ···'
-                          , MASK                      : '·-· -- -·'
-                          , 'About'                   : '···· ··-·-'
-                          , 'Developer and programmer': '--- - -··- -·-- --··'
-                          , 'Icons'                   : '--- - -··- -·-- --··'
-                          , 'Plugins'                 : '--- - -··- -·-- --··'
-                          , 'Polyfills'               : '--- - -··- -·-- --··'
-                          , 'Translations'            : '--- - -··- -·-- --··'
-                          , 'Tools'                   : '--- - -··- -·-- --··'
-                          , 'Libraries'               : '--- - -··- -·-- --··'
-                          , 'Save'                    : '- ·· ·-· -'
-                          , 'Save changes'            : '- ·· ··· ·-· -'
-                          , 'Cancel'                  : '·· ···· ···'
-                          , 'Error'                   : '··-· -··'
-                          , 'Error too much cropping' : '·- ····- ·· ·-· -·· ···· ····· · -·- -·'
-                          };
+/* Conditionally add the debug "language". */
+if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
+    OUTERCONTEXT.CONSTANTS.TEXT.test = ({ strings: {}
+                                        , generateMorse: function() {
+                                              'use strict';
+                                              var chars = [' ', '-', '·']
+                                                  , morseString = ''
+                                                  , repeats = Math.random() * 50 >> 0
+                                                  ;
+                                              while (repeats--) {
+                                                  morseString += chars[Math.random() * 3 >> 0];
+                                              }
+                                              return morseString;
+                                          }
+                                        , init: function() {
+                                              'use strict';
+                                              var self = this;
+                                              Object.keys(OUTERCONTEXT.CONSTANTS.TEXT.en).forEach(function(text) {
+                                                  self.strings[text] = self.generateMorse();
+                                              });
+                                              this.strings.languageName = 'pseudo-Morse code';
+                                              return this.strings;
+                                          }
+                                        }).init();
 }
 
 // Gets a color value stored in localStorage.
-var getColor = function getColor (color) {
+OUTERCONTEXT.UTILITY.getColor = function getColor (color) {
     'use strict';
     return localStorage.getItem('caaBatch_colors_' + color);
 };
 
 // Converts a hex color string into an rgba color string
-var hexToRGBA = function hexToRGBA (hex, opacity) {
+OUTERCONTEXT.UTILITY.hexToRGBA = function hexToRGBA (hex, opacity) {
     'use strict';
     hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
     var R = parseInt(hex.substring(0, 2), 16)
@@ -390,622 +346,619 @@ var hexToRGBA = function hexToRGBA (hex, opacity) {
     return 'rgba(' + [R, G, B, opacity].join(',') + ')';
 };
 
-var shrink = ['scale', '(', CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('');
+OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
 
 /* Initialize the image editor's background opacity store, if needed. */
 if (localStorage.getItem('caaBatch_editorDarkness') === null) {
     localStorage.setItem('caaBatch_editorDarkness', 75);
 }
 
-CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                      { 'background-color'      : '#DDD'
-                      },
-                  '#caaVersion':
-                      { 'float'                 : 'right'
-                      , 'font-size'             : '75%'
-                      , 'margin-top'            : '-15px'
-                      },
-                  '#colorPicker, #CAAeditiorMaskColorControl':
-                      {  border                 : '1px outset #D3D3D3'
-                      ,  padding                : '15px' // This makes the default box around the color disappear on Chrome
-                      },
-                  '#colorSelect':
-                      { 'float'                 : 'left'
-                      ,  padding                : '5px'
-                      ,  width                  : '202px'
-                      },
-                  '#CAAeditorDarknessControl':
-                      { 'margin-left'           : '5px'
-                      ,  width                  : '3.5em'
-                      },
-                  '#CAAeditorCanvas':
-                      { 'background-color'      : '#FFF'
-                      },
-                  '#CAAeditorRotateControl':
-                      { 'margin-right'          : '2px'
-                      ,  width                  : '4em'
-                      },
-                  '#CAAeditorMenu':
-                      { 'background-color'      : getColor('EDITORMENU')
-                      , 'border-radius'         : '20px'
-                      ,  border                 : '1px dotted navy'
-                      ,  height                 : '60%'
-                      ,  padding                : '16px'
-                      ,  position               : 'absolute'
-                      ,  right                  : '40px'
-                      ,  top                    : '20%'
-                      },
-                  '#CAAeditorCanvasDiv':
-                      {  position               : 'relative'
-                      },
-                  '.CAAmask':
-                      {  position               : 'absolute'
-                      ,  height                 : '0'
-                      ,  width                  : '0'
-                      },
-                  '#CAAmaskLeft, #CAAmaskRight':
-                      {  height                 : '100%'
-                      },
-                  '#CAAmaskTop, #CAAmaskBottom':
-                      {  width                  : '100%'
-                      },
-                  '#CAAmaskLeft':
-                      { 'z-index'               : 300
-                      ,  left                   : 0
-                      ,  top                    : 0
-                      },
-                  '#CAAmaskRight':
-                      { 'z-index'               : 301
-                      ,  right                  : 0
-                      ,  top                    : 0
-                      },
-                  '#CAAmaskTop':
-                      { 'z-index'               : 302
-                      ,  left                   : 0
-                      ,  top                    : 0
-                      },
-                  '#CAAmaskBottom':
-                      { 'z-index'               : 303
-                      ,  left                   : 0
-                      ,  bottom                 : 0
-                      },
-                  '.cropLabel':
-                      {  clear                  : 'both'
-                      ,  display                : 'block'
-                      , 'margin-bottom'         : '4px'
-                      },
-                  '.cropControl':
-                      {  height                 : '24px'
-                      ,  margin                 : '0 4px 2px 0!important'
-                      , 'vertical-align'        : 'middle'
-                      , width                   : '45px'
-                      },
-                  '.flipControl':
-                      { 'border-radius'         : '21px'
-                      , 'border-width'          : '1px'
-                      , 'font-size'             : '130%'
-                      , 'font-weight'           : '600'
-                      ,  padding                : '0px 15px'
-                      },
-                  '#editor000Container':
-                      {  display                : 'inline-block'
-                      },
-                  '#imageContainer':
-                      {  height                 : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
-                      , 'max-height'            : (CONSTANTS.SIDEBARHEIGHT - CONSTANTS.PREVIEWSIZE - 145) + 'px'
-                      , 'overflow-y'            : 'auto'
-                      },
-                  '#imageHeader':
-                      { 'float'                 : 'left'
-                      ,  width                  : '30%'
-                      },
-                  '#imageSizeControlsMenu':
-                      { 'float'                 : 'right'
-                      , 'height'                : '24px'
-                      ,  width                  : '25%'
-                      },
-                  '#languageSelect':
-                      {  height                 : '5em'
-                      ,  margin                 : '10px 10px -27px 6px'
-                      ,  padding                : '6px'
-                      },
-                  '#optionsHeader, #aboutControl':
-                      {  display                : 'inline-block'
-                      , 'float'                 : 'right'
-                      ,  filter                 : 'alpha(opacity=40)'
-                      , '-moz-opacity'          : '0.4'
-                      ,  opacity                : '0.4'
-                      ,  width                  : '40%'
-                      },
-                  '#optionsHeader':
-                      { 'margin-right'          : '-26px'
-                      , 'margin-top'            : '-3px'
-                      },
-                  '#aboutControl':
-                      {  height                 : '23px'
-                      , 'margin-top'            : '-1px'
-                      ,  width                  : '23px'
-                      },
-                  '#optionsMenu, #aboutMenu':
-                      {  border                 : '1px solid #D3D3D3'
-                      ,    '-moz-border-radius' : '8px'
-                      , '-webkit-border-radius' : '8px'
-                      ,         'border-radius' : '8px'
-                      , 'line-height'           : 2
-                      ,  margin                 : '10px 3px'
-                      ,  padding                : '8px'
-                      },
-                  '#optionsMenu * select':
-                      { 'font-size'             : '105%'
-                      },
-                  '#optionsMenu > label > select':
-                      {  padding                : '3px'
-                      },
-                  '#optionsMenu > label, #optionsMenu > label > select':
-                      { 'margin-left'           : '5px'
-                      , 'margin-top'            : '5px'
-                      },
-                  '#optionsNote':
-                      { 'font-size'             : '85%'
-                      , 'font-style'            : 'oblique'
-                      },
-                  '#page':
-                      { 'min-height'            : (CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
-                      },
-                  '#previewText':
-                      { 'line-height'           : '140%'
-                      ,  margin                 : '0 auto'
-                      , 'padding-top'           : '10px'
-                      ,  width                  : '60%'
-                      },
-                  '#previewText > dd':
-                      { 'float'                 : 'right'
-                      },
-                  '#xhrComlink':
-                      {  display                : 'none'
-                      },
-                  '#CAAoverlay':
-                      {  background             : 'black'
-                      ,  bottom                 : 0
-                      ,  filter                 : 'alpha(opacity=' + localStorage.getItem('caaBatch_editorDarkness') + ')'
-                      ,  left                   : 0
-                      , '-moz-opacity'          : localStorage.getItem('caaBatch_editorDarkness') / 100
-                      ,       opacity           : localStorage.getItem('caaBatch_editorDarkness') / 100
-                      ,  position               : 'fixed'
-                      ,  top                    : 0
-                      ,  width                  : '100%'
-                      ,  'z-index'              : 400
-                      },
-                  '#CAAimageEditor':
-                      { 'background-color'      : getColor('EDITOR')
-                      ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                      , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                      ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                      ,  border                 : '1px outset grey'
-                      , 'border-radius'         : '20px'
-                      ,  height                 : '86%'
-                      ,  left                   : '50%'
-                      ,  margin                 : '0 auto'
-                      , 'margin-left'           : '-43%'
-                      , 'margin-top'            : '5%'
-                      ,  padding                : '2%'
-                      ,  position               : 'fixed'
-                      ,  width                  : '86%'
-                      , 'z-index'               : 500
-                      },
-                  '#CAAeditorDiv':
-                      {  height                 : '96%'
-                      ,  margin                 : '2%'
-                      ,  width                  : '96%'
-                      },
-                  '*':
-                      {    '-moz-box-sizing'    : 'border-box'
-                      , '-webkit-box-sizing'    : 'border-box'
-                      ,         'box-sizing'    : 'border-box'
-                      },
-                  '.beingDragged':
-                      {  filter                 : 'alpha(opacity=' + (100 * CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
-                      , '-moz-opacity'          : CONSTANTS.BEINGDRAGGED.OPACITY
-                      ,  opacity                : CONSTANTS.BEINGDRAGGED.OPACITY
-                      ,    '-moz-transform'     : shrink
-                      , '-webkit-transform'     : shrink
-                      ,      '-o-transform'     : shrink
-                      ,          transform      : shrink
-                      },
-                  '.CAAdropbox':
-                      {    '-moz-border-radius' : '6px'
-                      , '-webkit-border-radius' : '6px'
-                      ,         'border-radius' : '6px'
-                      ,  display                : 'inline-block'
-                      ,  margin                 : '6px'
-                      , 'min-height'            : '126px'
-                      ,  padding                : '3px'
-                      , 'vertical-align'        : 'middle'
-                      ,  width                  : '126px'
-                      },
-                  '.CAAdropbox > div':
-                      {  display                : 'block'
-                      ,  height                 : '120px'
-                      ,  margin                 : '3px auto'
-                      },
-                  '.CAAdropbox > div > img':
-                      { display                 : 'block'
-                      , 'image-rendering'       : 'optimizeQuality'
-                      ,  margin                 : '0 auto'
-                      , 'max-height'            : '120px'
-                      , 'max-width'             : '120px'
-                      },
-                  '.CAAdropbox > figcaption':
-                      {  height                 : '14em'
-                      ,  position               : 'relative'
-                      , 'text-align'            : 'center'
-                      },
-                  '.CAAdropbox > figcaption > div':
-                      { 'font-size'             : '80%'
-                      ,  height                 : '2.5em'
-                      },
-                  '.CAAdropbox > figcaption > input':
-                      { 'font-size'             : '12px'
-                      ,  width                  : '90%'
-                      },
-                  '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
-                      {  clear                  : 'both'
-                      },
-                  '.CAAdropbox > figcaption > select':
-                      { 'background-color'      : 'transparent'
-                      ,  clear                  : 'both'
-                      ,  clip                   : 'rect(2px, 49px, 145px, 2px)'
-                      ,  color                  : '#555'
-                      , 'font-size'             : 'inherit'
-                      ,  left                   : '36px'
-                      , 'padding-bottom'        : '20px'
-                      , 'padding-right'         : '20px'
-                      , 'padding-top'           : '8px'
-                      ,  position               : 'absolute'
-                      , 'text-align'            : 'center'
-                      },
-                  '.caaAdd':
-                      { 'background-color'      : 'green!important'
-                      ,  border                 : '0 none #FAFAFA!important'
-                      ,    '-moz-border-radius' : '7px'
-                      , '-webkit-border-radius' : '7px'
-                      ,         'border-radius' : '7px'
-                      ,  color                  : '#FFF!important'
-                      , 'float'                 : 'left'
-                      , 'font-size'             : '175%'
-                      , 'font-weight'           : '900!important'
-                      ,  left                   : '2em'
-                      , 'margin-left'           : '-1.2em'
-                      ,  filter                 : 'alpha(opacity=30)'
-                      , '-moz-opacity'          : '0.3'
-                      ,  opacity                : '0.3'
-                      , 'padding-bottom'        : 0
-                      , 'padding-top'           : 0
-                      ,  position               : 'absolute'
-                      },
-                  '.caaAdd:active, .caaAll:active, .caaLoad:active':
-                      { 'border-style'          : 'inset!important'
-                      ,  color                  : '#FFF'
-                      ,  filter                 : 'alpha(opacity=100)'
-                      , '-moz-opacity'          : '1'
-                      ,  opacity                : 1
-                      },
-                  '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
-                      {  color                  : '#D3D3D3'
-                      ,  filter                 : 'alpha(opacity=90)'
-                      , '-moz-opacity'          : '0.9'
-                      ,  opacity                : '.9'
-                      },
-                  '.caaDiv':
-                      {  display                : 'inline-block'
-                      , 'overflow-x'            : 'auto!important'
-                      , 'padding-left'          : '25px'
-                      , 'white-space'           : 'nowrap'
-                      ,  width                  : '100%'
-                      },
-                  '.caaLoad, .caaAll':
-                      { 'background-color'      : getColor('CAABUTTONS') + '!important'
-                      ,  border                 : '1px outset #FAFAFA!important'
-                      , 'border-radius'         : '7px'
-                      ,  color                  : '#FFF!important'
-                      , 'font-size'             : '90%'
-                      , 'margin-bottom'         : '16px'
-                      , 'margin-top'            : '1px!important'
-                      ,  filter                 : 'alpha(opacity=35)'
-                      , '-moz-opacity'          : '0.35'
-                      ,  opacity                : '.35'
-                      ,  padding                : '3px 8px'
-                      },
-                  '.caaMBCredit':
-                      { 'font-size'             : '85%'
-                      , 'white-space'           : 'nowrap'
-                      },
-                  '.newCAAimage':
-                      { 'background-color'      : getColor('CAABOX')
-                      },
-                  '.newCAAimage > div':
-                      { 'background-color'      : '#E0E0FF'
-                      ,  border                 : CONSTANTS.BORDERS
-                      , 'margin-bottom'         : '6px!important'
-                      },
-                  '.tintWrapper':
-                      { 'background-color'      : hexToRGBA(getColor('REMOVE'), '0.8')
-                      , 'border-radius'         : '5px'
-                      ,  display                : 'inline-block'
-                      ,  margin                 : 0
-                      ,  filter                 : 'alpha(opacity=80)'
-                      , '-moz-opacity'          : '0.8'
-                      ,  opacity                : '0.8'
-                      ,  outline                : 0
-                      ,  padding                : 0
-                      , 'vertical-align'        : 'baseline'
-                      },
-                  '#previewContainer':
-                      { height                  : (CONSTANTS.PREVIEWSIZE + 37) + 'px'
-                      , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 37) + 'px'
-                      },
-                  '#previewImage':
-                      {  cursor                 : 'pointer'
-                      ,  display                : 'block'
-                      ,  height                 : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
-                      ,  margin                 : '0 auto'
-                      , 'max-height'            : (CONSTANTS.PREVIEWSIZE + 15) + 'px'
-                      ,  padding                : '15px 0 0 0'
-                      },
-                  '#sidebar':
-                      { 'border-left'           : CONSTANTS.BORDERS
-                      , 'padding-left'          : '8px'
-                      ,  position               : 'fixed'
-                      ,  right                  : '20px'
-                      ,  width                  : CONSTANTS.SIDEBARWIDTH + 'px'
-                      },
-                  '.CAAcreditWho':
-                      { 'text-indent'           : '-2em'
-                      },
-                  '.closeButton':
-                      { 'background-color'      : '#FFD0DB'
-                      ,  border                 : '1px solid #EEC9C8'
-                      ,    '-moz-border-radius' : '8px'
-                      , '-webkit-border-radius' : '8px'
-                      ,         'border-radius' : '8px'
-                      ,  cursor                 : 'pointer'
-                      , 'float'                 : 'right'
-                      , 'line-height'           : '.8em'
-                      , 'margin-right'          : '-1em'
-                      , 'margin-top'            : '-.95em'
-                      ,  filter                 : 'alpha(opacity=90)'
-                      , '-moz-opacity'          : '0.9'
-                      ,  opacity                : '0.9'
-                      ,  padding                : '2px 4px 5px'
-                      },
-                  '.closeButton:hover':
-                      { 'background-color'      : '#FF82AB'
-                      , 'font-weight'           : '900'
-                      ,  filter                 : 'alpha(opacity=100)'
-                      , '-moz-opacity'          : '1.0'
-                      ,  opacity                : '1.0'
-                      },
-                  '.existingCAAimage':
-                      { 'background-color'      : '#FFF'
-                      ,  border                 : '0 none'
-                      },
-                  '.existingCAAimage > div > img':
-                      {  border                 : '0 none'
-                      , 'image-rendering'       : 'optimizeQuality'
-                      },
-                  '.imageRow':
-                      { 'padding-bottom'        : '1em!important'
-                      },
-                  '.imageSizeControl, #optionsHeader, #aboutControl':
-                      {  cursor                 : 'pointer'
-                      , 'float'                 : 'right'
-                      },
-                  '.imageSizeControl, #optionsHeader':
-                      {  height                 : '26px'
-                      ,  width                  : '26px'
-                      },
-                  '.imageSizeControl:hover, #optionsHeader:hover, #aboutControl:hover':
-                      {  filter                 : 'alpha(opacity=100)'
-                      , '-moz-opacity'          : '1'
-                      ,  opacity                : 1
-                      },
-                  '.localImage':
-                      {  padding                : '3px'
-                      , 'vertical-align'        : 'top'
-                      },
-                  '.newCAAimage > div > img':
-                      { 'min-height'            : '120px'
-                      , 'image-rendering'       : 'optimizeQuality'
-                      },
-                  '.over':
-                      { 'background-color'      : getColor('ACTIVE')
-                      },
-                  '.previewDT':
-                      {  clear                  : 'left'
-                      , 'float'                 : 'left'
-                      , 'font-weight'           : '700'
-                      },
-                  '.previewDT::after, #aboutMenu * dt::after':
-                      {  color                  : '#000' 
-                      ,  content                : '": "'
-                      },
-                  '#aboutMenu * dt::before':
-                      {  color                  : '#000' 
-                      ,  content                : '" • "'
-                      },
-                  '.tintImage, .imageSizeControl':
-                      {  filter                 : 'alpha(opacity=40)'
-                      , '-moz-opacity'          : '0.4'
-                      ,  opacity                : '0.4'
-                      },
-                  '.workingCAAimage':
-                      { 'padding-left'          : '1px'
-                      , 'padding-right'         : '1px'
-                      },
-                  '.workingCAAimage > div':
-                      { 'margin-bottom'         : '8px!important'
-                      },
-                  'div.loadingDiv > img':
-                      {  height                 : '30px'
-                      , 'image-rendering'       : 'optimizeQuality'
-                      , 'padding-right'         : '10px'
-                      ,  width                  : '30px'
-                      },
-                  'fieldset':
-                      {  border                 : '1px solid #D3D3D3'
-                      ,    '-moz-border-radius' : '8px'
-                      , '-webkit-border-radius' : '8px'
-                      ,         'border-radius' : '8px'
-                      ,  margin                 : '30px -4px 7px'
-                      ,  padding                : '6px'
-                      },
-                  '#CAAeditorMenu > fieldset':
-                      {  border                 : 'none'
-                      ,  margin                 : '16px -4px 7px'
-                      },
-                  'figure':
-                      {  border                 : CONSTANTS.BORDERS
-                      },
-                  'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                      {  border                 : '1px outset #EEE'
-                      ,    '-moz-border-radius' : '6px'
-                      , '-webkit-border-radius' : '6px'
-                      ,         'border-radius' : '6px'
-                      ,  cursor                 : 'pointer'
-                      , 'font-family'           : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
-                      , 'font-size'             : '100%'
-                      , 'margin-right'          : '0'
-                      , 'outline'               : 'none'
-                      ,  padding                : '3px'
-                      , 'text-align'            : 'center'
-                      },
-                  '#ClearStorageBtn':
-                      { 'background-color'      : 'red'
-                      ,  color                  : '#FFF'
-                      , 'font-weight'           : 700
-                      ,  filter                 : 'alpha(opacity=70)'
-                      , '-moz-opacity'          : '0.7'
-                      ,  opacity                : '.7'
-                      ,  width                  : '190px'
-                      },
-                  '#ClearStorageBtn:disabled':
-                      { 'background-color'      : 'grey'
-                      ,  color                  : '#000'
-                      , 'text-decoration'       : 'line-through'
-                      },
-                  '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                      { 'float'                 : 'right'
-                      ,  width                  : '79px'
-                      },
-                  '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active, #CAAeditiorApplyCropBtn:active':
-                      {  border                 : '1px inset #D3D3D3'
-                      ,  filter                 : 'alpha(opacity=100)'
-                      , '-moz-opacity'          : '1'
-                      ,  opacity                : '1'
-                      },
-                  'legend':
-                      {  color                  : '#000!important'
-                      , 'font-size'             : '110%!important'
-                      , 'font-variant'          : 'small-caps'
-                      },
-                  'table.tbl * table, #imageContainer, #previewContainer':
-                      {  width                  : '100%'
-                      },
-                  'table.tbl .count':
-                      {  width                  : '6em!important'
-                      },
-                  'h4':
-                      { 'font-size'             : '115%'
-                      },
-                  '#aboutMenu * h5':
-                      { 'font-size'             : '100%'
-                      },
-                  '#aboutMenu * dd':
-                      { 'padding-bottom'        : '5px'
-                      },
-                  '#aboutHeader':
-                      { 'margin-top'            : '0'
-                      },
-                  /* css for the number polyfill */
-                  'div.number-spin-btn-container':
-                      {  display                : 'inline-block'
-                      ,  margin                 : '0'
-                      ,  padding                : '0'
-                      ,  position               : 'relative'
-                      , 'vertical-align'        : 'bottom'
-                      },
-                  'div.number-spin-btn':
-                      { 'background-color'      : '#CCCCCC'
-                      ,  border                 : '2px outset #CCCCCC'
-                      ,  height                 : '11.5px!important'
-                      ,  width                  : '1.2em'
-                      },
-                  'div.number-spin-btn-up':
-                      {  'border-bottom-width'  : '1px'
-                      ,  '-webkit-border-radius': '3px 3px 0px 0px'
-                      ,          'border-radius': '3px 3px 0px 0px'
-                      },
-                  'div.number-spin-btn-up:before':
-                      {  content                : '""'
-                      , 'border-color'          : 'transparent transparent black transparent'
-                      , 'border-style'          : 'solid'
-                      , 'border-width'          : '0 0.3em 0.3em 0.3em'
-                      ,  height                 : '0'
-                      ,  left                   : '50%'
-                      ,  margin                 : '-0.15em 0 0 -0.3em'
-                      ,  padding                : '0'
-                      ,  position               : 'absolute'
-                      ,  top                    : '25%'
-                      ,  width                  : '0'
-                      },
-                  'div.number-spin-btn-down':
-                      { '-webkit-border-radius' : '0px 0px 3px 3px'
-                      ,         'border-radius' : '0px 0px 3px 3px'
-                      , 'border-top-width'      : '1px'
-                      },
-                  'div.number-spin-btn-down:before':
-                      {  content                : '""'
-                      ,  width                  : '0'
-                      ,  height                 : '0'
-                      , 'border-width'          : '0.3em 0.3em 0 0.3em'
-                      , 'border-style'          : 'solid'
-                      , 'border-color'          : 'black transparent transparent transparent'
-                      ,  position               : 'absolute'
-                      ,  top                    : '75%'
-                      ,  left                   : '50%'
-                      ,  margin                 : '-0.15em 0 0 -0.3em'
-                      ,  padding                : '0'
-                      },
-                  'div.number-spin-btn:hover':
-                      {  cursor                 : 'pointer'
-                      },
-                  'div.number-spin-btn:active':
-                      { 'background-color'      : '#999999'
-                      ,  border                 : '2px inset #999999'
-                      },
-                  'div.number-spin-btn-up:active:before':
-                      { 'border-color'          : 'transparent transparent white transparent'
-                      ,  left                   : '51%'
-                      ,  top                    : '26%'
-                      },
-                  'div.number-spin-btn-down:active:before':
-                      { 'border-color'          : 'white transparent transparent transparent'
-                      ,  left                   : '51%'
-                      ,  top                    : '76%'
-                      }
-};
-
+OUTERCONTEXT.CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
+                             { 'background-color'      : '#DDD'
+                             },
+                         '#caaVersion':
+                             { 'float'                 : 'right'
+                             , 'font-size'             : '75%'
+                             , 'margin-top'            : '-15px'
+                             },
+                         '#colorPicker, #CAAeditiorMaskColorControl':
+                             {  border                 : '1px outset #D3D3D3'
+                             ,  padding                : '15px' // This makes the default box around the color disappear on Chrome
+                             },
+                         '#colorSelect':
+                             { 'float'                 : 'left'
+                             ,  padding                : '5px'
+                             ,  width                  : '202px'
+                             },
+                         '#CAAeditorDarknessControl':
+                             { 'margin-left'           : '5px'
+                             ,  width                  : '3.5em'
+                             },
+                         '#CAAeditorCanvas':
+                             { 'background-color'      : '#FFF'
+                             },
+                         '#CAAeditorRotateControl':
+                             { 'margin-right'          : '2px'
+                             ,  width                  : '4em'
+                             },
+                         '#CAAeditorMenu':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
+                             , 'border-radius'         : '20px'
+                             ,  border                 : '1px dotted navy'
+                             ,  height                 : '60%'
+                             ,  padding                : '16px'
+                             ,  position               : 'absolute'
+                             ,  right                  : '40px'
+                             ,  top                    : '20%'
+                             },
+                         '#CAAeditorCanvasDiv':
+                             {  position               : 'relative'
+                             },
+                         '.CAAmask':
+                             {  position               : 'absolute'
+                             ,  height                 : '0'
+                             ,  width                  : '0'
+                             },
+                         '#CAAmaskLeft, #CAAmaskRight':
+                             {  height                 : '100%'
+                             },
+                         '#CAAmaskTop, #CAAmaskBottom':
+                             {  width                  : '100%'
+                             },
+                         '#CAAmaskLeft':
+                             { 'z-index'               : 300
+                             ,  left                   : 0
+                             ,  top                    : 0
+                             },
+                         '#CAAmaskRight':
+                             { 'z-index'               : 301
+                             ,  right                  : 0
+                             ,  top                    : 0
+                             },
+                         '#CAAmaskTop':
+                             { 'z-index'               : 302
+                             ,  left                   : 0
+                             ,  top                    : 0
+                             },
+                         '#CAAmaskBottom':
+                             { 'z-index'               : 303
+                             ,  left                   : 0
+                             ,  bottom                 : 0
+                             },
+                         '.cropLabel':
+                             {  clear                  : 'both'
+                             ,  display                : 'block'
+                             , 'margin-bottom'         : '4px'
+                             },
+                         '.cropControl':
+                             {  height                 : '24px'
+                             ,  margin                 : '0 4px 2px 0!important'
+                             , 'vertical-align'        : 'middle'
+                             , width                   : '45px'
+                             },
+                         '.flipControl':
+                             { 'border-radius'         : '21px'
+                             , 'border-width'          : '1px'
+                             , 'font-size'             : '130%'
+                             , 'font-weight'           : '600'
+                             ,  padding                : '0px 15px'
+                             },
+                         '#editor000Container':
+                             {  display                : 'inline-block'
+                             },
+                         '#imageContainer':
+                             {  height                 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
+                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
+                             , 'overflow-y'            : 'auto'
+                             },
+                         '#imageHeader':
+                             { 'float'                 : 'left'
+                             ,  width                  : '30%'
+                             },
+                         '#imageSizeControlsMenu':
+                             { 'float'                 : 'right'
+                             , 'height'                : '24px'
+                             ,  width                  : '25%'
+                             },
+                         '#languageSelect':
+                             {  height                 : '5em'
+                             ,  margin                 : '10px 10px -27px 6px'
+                             ,  padding                : '6px'
+                             },
+                         '#optionsHeader, #aboutControl':
+                             {  display                : 'inline-block'
+                             , 'float'                 : 'right'
+                             ,  filter                 : 'alpha(opacity=40)'
+                             , '-moz-opacity'          : '0.4'
+                             ,  opacity                : '0.4'
+                             ,  width                  : '40%'
+                             },
+                         '#optionsHeader':
+                             { 'margin-right'          : '-26px'
+                             , 'margin-top'            : '-3px'
+                             },
+                         '#aboutControl':
+                             {  height                 : '23px'
+                             , 'margin-top'            : '-1px'
+                             ,  width                  : '23px'
+                             },
+                         '#optionsMenu, #aboutMenu':
+                             {  border                 : '1px solid #D3D3D3'
+                             ,    '-moz-border-radius' : '8px'
+                             , '-webkit-border-radius' : '8px'
+                             ,         'border-radius' : '8px'
+                             , 'line-height'           : 2
+                             ,  margin                 : '10px 3px'
+                             ,  padding                : '8px'
+                             },
+                         '#optionsMenu * select':
+                             { 'font-size'             : '105%'
+                             },
+                         '#optionsMenu > label > select':
+                             {  padding                : '3px'
+                             },
+                         '#optionsMenu > label, #optionsMenu > label > select':
+                             { 'margin-left'           : '5px'
+                             , 'margin-top'            : '5px'
+                             },
+                         '#optionsNote':
+                             { 'font-size'             : '85%'
+                             , 'font-style'            : 'oblique'
+                             },
+                         '#page':
+                             { 'min-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
+                             },
+                         '#previewText':
+                             { 'line-height'           : '140%'
+                             ,  margin                 : '0 auto'
+                             , 'padding-top'           : '10px'
+                             ,  width                  : '60%'
+                             },
+                         '#previewText > dd':
+                             { 'float'                 : 'right'
+                             },
+                         '#xhrComlink':
+                             {  display                : 'none'
+                             },
+                         '#CAAoverlay':
+                             {  background             : 'black'
+                             ,  bottom                 : 0
+                             ,  filter                 : 'alpha(opacity=' + localStorage.getItem('caaBatch_editorDarkness') + ')'
+                             ,  left                   : 0
+                             , '-moz-opacity'          : localStorage.getItem('caaBatch_editorDarkness') / 100
+                             ,       opacity           : localStorage.getItem('caaBatch_editorDarkness') / 100
+                             ,  position               : 'fixed'
+                             ,  top                    : 0
+                             ,  width                  : '100%'
+                             ,  'z-index'              : 400
+                             },
+                         '#CAAimageEditor':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITOR')
+                             ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                             , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                             ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                             ,  border                 : '1px outset grey'
+                             , 'border-radius'         : '20px'
+                             ,  height                 : '86%'
+                             ,  left                   : '50%'
+                             ,  margin                 : '0 auto'
+                             , 'margin-left'           : '-43%'
+                             , 'margin-top'            : '5%'
+                             ,  padding                : '2%'
+                             ,  position               : 'fixed'
+                             ,  width                  : '86%'
+                             , 'z-index'               : 500
+                             },
+                         '#CAAeditorDiv':
+                             {  height                 : '96%'
+                             ,  margin                 : '2%'
+                             ,  width                  : '96%'
+                             },
+                         '*':
+                             {    '-moz-box-sizing'    : 'border-box'
+                             , '-webkit-box-sizing'    : 'border-box'
+                             ,         'box-sizing'    : 'border-box'
+                             },
+                         '.beingDragged':
+                             {  filter                 : 'alpha(opacity=' + (100 * OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
+                             , '-moz-opacity'          : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
+                             ,  opacity                : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
+                             ,    '-moz-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                             , '-webkit-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                             ,      '-o-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                             ,          transform      : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                             },
+                         '.CAAdropbox':
+                             {    '-moz-border-radius' : '6px'
+                             , '-webkit-border-radius' : '6px'
+                             ,         'border-radius' : '6px'
+                             ,  display                : 'inline-block'
+                             ,  margin                 : '6px'
+                             , 'min-height'            : '126px'
+                             ,  padding                : '3px'
+                             , 'vertical-align'        : 'middle'
+                             ,  width                  : '126px'
+                             },
+                         '.CAAdropbox > div':
+                             {  display                : 'block'
+                             ,  height                 : '120px'
+                             ,  margin                 : '3px auto'
+                             },
+                         '.CAAdropbox > div > img':
+                             { display                 : 'block'
+                             , 'image-rendering'       : 'optimizeQuality'
+                             ,  margin                 : '0 auto'
+                             , 'max-height'            : '120px'
+                             , 'max-width'             : '120px'
+                             },
+                         '.CAAdropbox > figcaption':
+                             {  height                 : '14em'
+                             ,  position               : 'relative'
+                             , 'text-align'            : 'center'
+                             },
+                         '.CAAdropbox > figcaption > div':
+                             { 'font-size'             : '80%'
+                             ,  height                 : '2.5em'
+                             },
+                         '.CAAdropbox > figcaption > input':
+                             { 'font-size'             : '12px'
+                             ,  width                  : '90%'
+                             },
+                         '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
+                             {  clear                  : 'both'
+                             },
+                         '.CAAdropbox > figcaption > select':
+                             { 'background-color'      : 'transparent'
+                             ,  clear                  : 'both'
+                             ,  clip                   : 'rect(2px, 49px, 145px, 2px)'
+                             ,  color                  : '#555'
+                             , 'font-size'             : 'inherit'
+                             ,  left                   : '36px'
+                             , 'padding-bottom'        : '20px'
+                             , 'padding-right'         : '20px'
+                             , 'padding-top'           : '8px'
+                             ,  position               : 'absolute'
+                             , 'text-align'            : 'center'
+                             },
+                         '.caaAdd':
+                             { 'background-color'      : 'green!important'
+                             ,  border                 : '0 none #FAFAFA!important'
+                             ,    '-moz-border-radius' : '7px'
+                             , '-webkit-border-radius' : '7px'
+                             ,         'border-radius' : '7px'
+                             ,  color                  : '#FFF!important'
+                             , 'float'                 : 'left'
+                             , 'font-size'             : '175%'
+                             , 'font-weight'           : '900!important'
+                             ,  left                   : '2em'
+                             , 'margin-left'           : '-1.2em'
+                             ,  filter                 : 'alpha(opacity=30)'
+                             , '-moz-opacity'          : '0.3'
+                             ,  opacity                : '0.3'
+                             , 'padding-bottom'        : 0
+                             , 'padding-top'           : 0
+                             ,  position               : 'absolute'
+                             },
+                         '.caaAdd:active, .caaAll:active, .caaLoad:active':
+                             { 'border-style'          : 'inset!important'
+                             ,  color                  : '#FFF'
+                             ,  filter                 : 'alpha(opacity=100)'
+                             , '-moz-opacity'          : '1'
+                             ,  opacity                : 1
+                             },
+                         '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
+                             {  color                  : '#D3D3D3'
+                             ,  filter                 : 'alpha(opacity=90)'
+                             , '-moz-opacity'          : '0.9'
+                             ,  opacity                : '.9'
+                             },
+                         '.caaDiv':
+                             {  display                : 'inline-block'
+                             , 'overflow-x'            : 'auto!important'
+                             , 'padding-left'          : '25px'
+                             , 'white-space'           : 'nowrap'
+                             ,  width                  : '100%'
+                             },
+                         '.caaLoad, .caaAll':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
+                             ,  border                 : '1px outset #FAFAFA!important'
+                             , 'border-radius'         : '7px'
+                             ,  color                  : '#FFF!important'
+                             , 'font-size'             : '90%'
+                             , 'margin-bottom'         : '16px'
+                             , 'margin-top'            : '1px!important'
+                             ,  filter                 : 'alpha(opacity=35)'
+                             , '-moz-opacity'          : '0.35'
+                             ,  opacity                : '.35'
+                             ,  padding                : '3px 8px'
+                             },
+                         '.caaMBCredit':
+                             { 'font-size'             : '85%'
+                             , 'white-space'           : 'nowrap'
+                             },
+                         '.newCAAimage':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABOX')
+                             },
+                         '.newCAAimage > div':
+                             { 'background-color'      : '#E0E0FF'
+                             ,  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
+                             , 'margin-bottom'         : '6px!important'
+                             },
+                         '.tintWrapper':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
+                             , 'border-radius'         : '5px'
+                             ,  display                : 'inline-block'
+                             ,  margin                 : 0
+                             ,  filter                 : 'alpha(opacity=80)'
+                             , '-moz-opacity'          : '0.8'
+                             ,  opacity                : '0.8'
+                             ,  outline                : 0
+                             ,  padding                : 0
+                             , 'vertical-align'        : 'baseline'
+                             },
+                         '#previewContainer':
+                             { height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                             },
+                         '#previewImage':
+                             {  cursor                 : 'pointer'
+                             ,  display                : 'block'
+                             ,  height                 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+                             ,  margin                 : '0 auto'
+                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+                             ,  padding                : '15px 0 0 0'
+                             },
+                         '#sidebar':
+                             { 'border-left'           : OUTERCONTEXT.CONSTANTS.BORDERS
+                             , 'padding-left'          : '8px'
+                             ,  position               : 'fixed'
+                             ,  right                  : '20px'
+                             ,  width                  : OUTERCONTEXT.CONSTANTS.SIDEBARWIDTH + 'px'
+                             },
+                         '.CAAcreditWho':
+                             { 'text-indent'           : '-2em'
+                             },
+                         '.closeButton':
+                             { 'background-color'      : '#FFD0DB'
+                             ,  border                 : '1px solid #EEC9C8'
+                             ,    '-moz-border-radius' : '8px'
+                             , '-webkit-border-radius' : '8px'
+                             ,         'border-radius' : '8px'
+                             ,  cursor                 : 'pointer'
+                             , 'float'                 : 'right'
+                             , 'line-height'           : '.8em'
+                             , 'margin-right'          : '-1em'
+                             , 'margin-top'            : '-.95em'
+                             ,  filter                 : 'alpha(opacity=90)'
+                             , '-moz-opacity'          : '0.9'
+                             ,  opacity                : '0.9'
+                             ,  padding                : '2px 4px 5px'
+                             },
+                         '.closeButton:hover':
+                             { 'background-color'      : '#FF82AB'
+                             , 'font-weight'           : '900'
+                             ,  filter                 : 'alpha(opacity=100)'
+                             , '-moz-opacity'          : '1.0'
+                             ,  opacity                : '1.0'
+                             },
+                         '.existingCAAimage':
+                             { 'background-color'      : '#FFF'
+                             ,  border                 : '0 none'
+                             },
+                         '.existingCAAimage > div > img':
+                             {  border                 : '0 none'
+                             , 'image-rendering'       : 'optimizeQuality'
+                             },
+                         '.imageRow':
+                             { 'padding-bottom'        : '1em!important'
+                             },
+                         '.imageSizeControl, #optionsHeader, #aboutControl':
+                             {  cursor                 : 'pointer'
+                             , 'float'                 : 'right'
+                             },
+                         '.imageSizeControl, #optionsHeader':
+                             {  height                 : '26px'
+                             ,  width                  : '26px'
+                             },
+                         '.imageSizeControl:hover, #optionsHeader:hover, #aboutControl:hover':
+                             {  filter                 : 'alpha(opacity=100)'
+                             , '-moz-opacity'          : '1'
+                             ,  opacity                : 1
+                             },
+                         '.localImage':
+                             {  padding                : '3px'
+                             , 'vertical-align'        : 'top'
+                             },
+                         '.newCAAimage > div > img':
+                             { 'min-height'            : '120px'
+                             , 'image-rendering'       : 'optimizeQuality'
+                             },
+                         '.over':
+                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('ACTIVE')
+                             },
+                         '.previewDT':
+                             {  clear                  : 'left'
+                             , 'float'                 : 'left'
+                             , 'font-weight'           : '700'
+                             },
+                         '.previewDT::after, #aboutMenu * dt::after':
+                             {  color                  : '#000' 
+                             ,  content                : '": "'
+                             },
+                         '#aboutMenu * dt::before':
+                             {  color                  : '#000' 
+                             ,  content                : '" • "'
+                             },
+                         '.tintImage, .imageSizeControl':
+                             {  filter                 : 'alpha(opacity=40)'
+                             , '-moz-opacity'          : '0.4'
+                             ,  opacity                : '0.4'
+                             },
+                         '.workingCAAimage':
+                             { 'padding-left'          : '1px'
+                             , 'padding-right'         : '1px'
+                             },
+                         '.workingCAAimage > div':
+                             { 'margin-bottom'         : '8px!important'
+                             },
+                         'div.loadingDiv > img':
+                             {  height                 : '30px'
+                             , 'image-rendering'       : 'optimizeQuality'
+                             , 'padding-right'         : '10px'
+                             ,  width                  : '30px'
+                             },
+                         'fieldset':
+                             {  border                 : '1px solid #D3D3D3'
+                             ,    '-moz-border-radius' : '8px'
+                             , '-webkit-border-radius' : '8px'
+                             ,         'border-radius' : '8px'
+                             ,  margin                 : '30px -4px 7px'
+                             ,  padding                : '6px'
+                             },
+                         '#CAAeditorMenu > fieldset':
+                             {  border                 : 'none'
+                             ,  margin                 : '16px -4px 7px'
+                             },
+                         'figure':
+                             {  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
+                             },
+                         'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
+                             {  border                 : '1px outset #EEE'
+                             ,    '-moz-border-radius' : '6px'
+                             , '-webkit-border-radius' : '6px'
+                             ,         'border-radius' : '6px'
+                             ,  cursor                 : 'pointer'
+                             , 'font-family'           : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
+                             , 'font-size'             : '100%'
+                             , 'margin-right'          : '0'
+                             , 'outline'               : 'none'
+                             ,  padding                : '3px'
+                             , 'text-align'            : 'center'
+                             },
+                         '#ClearStorageBtn':
+                             { 'background-color'      : 'red'
+                             ,  color                  : '#FFF'
+                             , 'font-weight'           : 700
+                             ,  filter                 : 'alpha(opacity=70)'
+                             , '-moz-opacity'          : '0.7'
+                             ,  opacity                : '.7'
+                             ,  width                  : '190px'
+                             },
+                         '#ClearStorageBtn:disabled':
+                             { 'background-color'      : 'grey'
+                             ,  color                  : '#000'
+                             , 'text-decoration'       : 'line-through'
+                             },
+                         '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
+                             { 'float'                 : 'right'
+                             ,  width                  : '79px'
+                             },
+                         '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active, #CAAeditiorApplyCropBtn:active':
+                             {  border                 : '1px inset #D3D3D3'
+                             ,  filter                 : 'alpha(opacity=100)'
+                             , '-moz-opacity'          : '1'
+                             ,  opacity                : '1'
+                             },
+                         'legend':
+                             {  color                  : '#000!important'
+                             , 'font-size'             : '110%!important'
+                             , 'font-variant'          : 'small-caps'
+                             },
+                         'table.tbl * table, #imageContainer, #previewContainer':
+                             {  width                  : '100%'
+                             },
+                         'table.tbl .count':
+                             {  width                  : '6em!important'
+                             },
+                         'h4':
+                             { 'font-size'             : '115%'
+                             },
+                         '#aboutMenu * h5':
+                             { 'font-size'             : '100%'
+                             },
+                         '#aboutMenu * dd':
+                             { 'padding-bottom'        : '5px'
+                             },
+                         '#aboutHeader':
+                             { 'margin-top'            : '0'
+                             },
+                         /* css for the number polyfill */
+                         'div.number-spin-btn-container':
+                             {  display                : 'inline-block'
+                             ,  margin                 : '0'
+                             ,  padding                : '0'
+                             ,  position               : 'relative'
+                             , 'vertical-align'        : 'bottom'
+                             },
+                         'div.number-spin-btn':
+                             { 'background-color'      : '#CCCCCC'
+                             ,  border                 : '2px outset #CCCCCC'
+                             ,  height                 : '11.5px!important'
+                             ,  width                  : '1.2em'
+                             },
+                         'div.number-spin-btn-up':
+                             {  'border-bottom-width'  : '1px'
+                             ,  '-webkit-border-radius': '3px 3px 0px 0px'
+                             ,          'border-radius': '3px 3px 0px 0px'
+                             },
+                         'div.number-spin-btn-up:before':
+                             {  content                : '""'
+                             , 'border-color'          : 'transparent transparent black transparent'
+                             , 'border-style'          : 'solid'
+                             , 'border-width'          : '0 0.3em 0.3em 0.3em'
+                             ,  height                 : '0'
+                             ,  left                   : '50%'
+                             ,  margin                 : '-0.15em 0 0 -0.3em'
+                             ,  padding                : '0'
+                             ,  position               : 'absolute'
+                             ,  top                    : '25%'
+                             ,  width                  : '0'
+                             },
+                         'div.number-spin-btn-down':
+                             { '-webkit-border-radius' : '0px 0px 3px 3px'
+                             ,         'border-radius' : '0px 0px 3px 3px'
+                             , 'border-top-width'      : '1px'
+                             },
+                         'div.number-spin-btn-down:before':
+                             {  content                : '""'
+                             ,  width                  : '0'
+                             ,  height                 : '0'
+                             , 'border-width'          : '0.3em 0.3em 0 0.3em'
+                             , 'border-style'          : 'solid'
+                             , 'border-color'          : 'black transparent transparent transparent'
+                             ,  position               : 'absolute'
+                             ,  top                    : '75%'
+                             ,  left                   : '50%'
+                             ,  margin                 : '-0.15em 0 0 -0.3em'
+                             ,  padding                : '0'
+                             },
+                         'div.number-spin-btn:hover':
+                             {  cursor                 : 'pointer'
+                             },
+                         'div.number-spin-btn:active':
+                             { 'background-color'      : '#999999'
+                             ,  border                 : '2px inset #999999'
+                             },
+                         'div.number-spin-btn-up:active:before':
+                             { 'border-color'          : 'transparent transparent white transparent'
+                             ,  left                   : '51%'
+                             ,  top                    : '26%'
+                             },
+                         'div.number-spin-btn-down:active:before':
+                             { 'border-color'          : 'white transparent transparent transparent'
+                             ,  left                   : '51%'
+                             ,  top                    : '76%'
+                             }
+       };
+       
 /* START remote file accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
    new context loses the special permissions granted to userscripts, and thus does not have access to GM_xmlhttpRequest. */
 
 /* Create a hidden div which will be used to pass messages between javascript security contexts. */
-var body       = document.getElementsByTagName('body')[0]
-  , messageDiv = document.createElement('div')
-  ;
-
+var messageDiv = document.createElement('div');
 messageDiv.id = 'xhrComlink';
-body.appendChild(messageDiv);
+document.body.appendChild(messageDiv);
 
 /* When a click event alerts the code that a new link is in the communications div, read that link's uri out of the linked span.
    Then convert the binary file into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
@@ -1112,7 +1065,7 @@ messageDiv.addEventListener('click', getUriWorkaround, true);
 
 /* END remote file accessor functions. */
 
-var main = function main ($, CONSTANTS) {
+OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
     'use strict';
     jQuery.noConflict();
 
@@ -1143,8 +1096,8 @@ var main = function main ($, CONSTANTS) {
         return $make('header', { 'class': 'closeButton' }).text('x');
     };
 
-    /* This forces CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
-    $('body').append($make('img', { src: CONSTANTS.THROBBER }).hide());
+    /* This forces INNERCONTEXT.CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
+    $('body').append($make('img', { src: INNERCONTEXT.CONSTANTS.THROBBER }).hide());
 
     var $imageContainer
       , $previewContainer
@@ -1183,7 +1136,7 @@ var main = function main ($, CONSTANTS) {
     var getEditColor = function get_edit_color_by_completeness ($ele) {
         $.log('Testing edit status to determine background color for dropbox.');
         var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
-        return $.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
+        return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
     };
 
     var tintImageRed = function tint_image_Red (image) {
@@ -1224,14 +1177,14 @@ var main = function main ($, CONSTANTS) {
         };
 
         window.requestFileSystem  = window.requestFileSystem || window.webkitRequestFileSystem;
-        window.requestFileSystem(window.TEMPORARY, CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function requestFileSystem_error_handler (e) {
+        window.requestFileSystem(window.TEMPORARY, INNERCONTEXT.CONSTANTS.FILESYSTEMSIZE * 1024 * 1024, storeFS, function requestFileSystem_error_handler (e) {
             $.log('Requesting a temporary local file system failed.  Error message is:');
             $.log(e);
         });
         /* End temporary local file system code. */
 
         !function init_resize_sidebar () {
-            $('#content').css('margin-right', (CONSTANTS.SIDEBARWIDTH + 20) + 'px');
+            $('#content').css('margin-right', (INNERCONTEXT.CONSTANTS.SIDEBARWIDTH + 20) + 'px');
             $('#page').css('background', '#FFF');
         }();
 
@@ -1290,7 +1243,7 @@ var main = function main ($, CONSTANTS) {
                                                      , step      : 1
                                                      , 'min'     : 0
                                                      , 'max'     : 100
-                                                     , value     : localStorage.getItem('caaBatch_editorDarkness') || CONSTANTS.IEDARKNESSLVL
+                                                     , value     : localStorage.getItem('caaBatch_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL
                                                      , title     : $.l('How dark the bkgrnd')
                                                      })
               , $editor000Label  = $make('label',    { 'for'     : 'CAAeditorDarknessControl'
@@ -1364,12 +1317,12 @@ var main = function main ($, CONSTANTS) {
                                                     .text($.l('Remove images'))
               , $sizeContainer   = $make('div',      { id        : 'imageSizeControlsMenu' })
               , $version         = $make('span',     { id        : 'caaVersion' })
-                                                    .text([$.l('Version'), ' ', CONSTANTS.VERSION].join(''))
+                                                    .text([$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''))
               , $creditList      = $make('div')
               ;
 
             /* Populate the colors list */
-            var colors        = Object.keys(CONSTANTS.COLORS)
+            var colors        = Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
               , colorsMap     = []
               ;
 
@@ -1385,7 +1338,7 @@ var main = function main ($, CONSTANTS) {
 
             var populateColorList = function populate_colors_list (map) {
                 var colorItem   = colors[map.index]
-                  , color       = CONSTANTS.COLORS[colorItem]
+                  , color       = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
                   , lsItemName  = 'caaBatch_colors_' + colorItem
                   , $thisOption = $make('option', { 'class' : 'colorOption'
                                                   , value   : colorItem
@@ -1426,7 +1379,7 @@ var main = function main ($, CONSTANTS) {
                     void 0 !== credit.urlW && ($thisWhat = $make('a', { href : 'http://' + credit.urlW }).append($thisWhat));
                     var $dd = $make('dd').append($thisWho);
                     if (void 0 !== credit.mb) {
-                        $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text('MusicBrainz');
+                        $thisMB = $make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text(credit.name.match(/\w+\s/)[0] + '@ MusicBrainz');
                         $thisMB = $make('span', { 'class': 'caaMBCredit' }).appendAll([ $pre.quickClone()
                                                                                       , $thisMB
                                                                                       , $post.quickClone()
@@ -1442,21 +1395,21 @@ var main = function main ($, CONSTANTS) {
     
                 var populateCreditListPerRole = function populate_credits_list_per_role (role) {
                     credits = [];
-                    CONSTANTS.CREDITS[role].sort(sortCredits).forEach(populateRoleListPerCredit);
+                    INNERCONTEXT.CONSTANTS.CREDITS[role].sort(sortCredits).forEach(populateRoleListPerCredit);
                     $creditList.appendAll([ $make('h5').text($.l(role))
                                           , $make('dl').appendAll(credits)
                                           ]);
                 };
 
-                Object.keys(CONSTANTS.CREDITS)
+                Object.keys(INNERCONTEXT.CONSTANTS.CREDITS)
                       .forEach(populateCreditListPerRole);
             }();
 
             /* Populate the languages list */
             var languages = [];
 
-            Object.keys(CONSTANTS.TEXT).forEach(function populate_languages_list (key) {
-                languages.push([key, CONSTANTS.TEXT[key].languageName]);
+            Object.keys(INNERCONTEXT.CONSTANTS.TEXT).forEach(function populate_languages_list (key) {
+                languages.push([key, INNERCONTEXT.CONSTANTS.TEXT[key].languageName]);
             });
             languages.sort(function sort_languages_list (a, b) {
                 return a[1] === b[1] ? 0                 // a[1] == b[1] ->  0
@@ -1513,7 +1466,7 @@ var main = function main ($, CONSTANTS) {
                                                          , $optionsNote
                                                          ])
                                           ])
-                        , $make('hr').css('border-top', CONSTANTS.BORDERS)
+                        , $make('hr').css('border-top', INNERCONTEXT.CONSTANTS.BORDERS)
                         , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
                         , $previewContainer.appendAll(
                                             [ $previewImage
@@ -1608,7 +1561,7 @@ var main = function main ($, CONSTANTS) {
             var $firstOption = $('#colorSelect').find('option:first');
             $firstOption.prop('selected', true);
             myPicker.fromString(
-                               $.getColor([ $firstOption.val() ])
+                               INNERCONTEXT.UTILITY.getColor([ $firstOption.val() ])
                                );
         }();
 
@@ -1665,13 +1618,13 @@ var main = function main ($, CONSTANTS) {
         !function init_add_css () {
             $.log('Adding css rules');
 
-            var CSS   = CONSTANTS.CSS
-              , sizes = CONSTANTS.IMAGESIZES
+            var CSS   = INNERCONTEXT.CONSTANTS.CSS
+              , sizes = INNERCONTEXT.CONSTANTS.IMAGESIZES
               , theseRules
               , classes = []
               ;
 
-            CONSTANTS.CSS['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
+            INNERCONTEXT.CONSTANTS.CSS['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
             $make('link').attr({ rel  : 'stylesheet'
                                , type : 'text/css'
@@ -1902,7 +1855,7 @@ Native support:
                     var img = new Image();
                     var useCanvasData = function useCanvasData () {
                         $.log('Appending temporary canvas item to the body.');
-                        CONSTANTS.DEBUGMODE && $('body').append($(canvas)).prop('title', source);
+                        INNERCONTEXT.CONSTANTS.DEBUGMODE && $('body').append($(canvas)).prop('title', source);
                         $.log('Converting image to jpg, sending new blob to addImageToDropbox().');
                         addImageToDropbox(
                                          $.dataURItoBlob(
@@ -1953,7 +1906,7 @@ Native support:
                 file = files[i];
                 name = file.name;
                 type = supportedImageType(name);
-                CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
+                INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
                 if (!type) {
                     $.log(debugMsg + ', unusable file type detected');
                     continue;
@@ -2252,13 +2205,13 @@ Native support:
                                                  }).hide()
               , $loadingDiv     = $make('div', { 'class' : 'loadingDiv' }).text($.l('loading'))
                                                                           .prepend($make('img', { 'class' : 'throbberImage'
-                                                                                                , src     : CONSTANTS.THROBBER
+                                                                                                , src     : INNERCONTEXT.CONSTANTS.THROBBER
                                                                                                 })).hide()
               ;
 
             var makeCAATypeList = function makeCAATypeList () {
                                       $.log('Creating CAA type select.');
-                                      var types     = CONSTANTS.COVERTYPES
+                                      var types     = INNERCONTEXT.CONSTANTS.COVERTYPES
                                         , $typeList = $make('select', { 'class'  : 'caaSelect'
                                                                       , multiple : 'multiple'
                                                                       , size     : types.length
@@ -2317,7 +2270,7 @@ Native support:
                          been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
                          http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
                       var $img = $emptyDropBox.find('img');
-                      $img[0].src = CONSTANTS.THROBBER;
+                      $img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
                       $img.css('padding-top', '20px');
                       var realImg = new Image();
                       realImg.src = this.image;
@@ -2334,7 +2287,7 @@ Native support:
                       };
                       /* End lowsrc workaround. */
                       $.each(this.types, function assign_image_type (i) {
-                          var value = $.inArray(this, CONSTANTS.COVERTYPES) + 1;
+                          var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
                           $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
                       });
                       checkScroll($newCAARow.find('div.loadingDiv'));
@@ -2562,7 +2515,7 @@ Native support:
                   , $ieMaskColorControl = $make('input',    { 'class' : 'cropControl'
                                                             , id : 'CAAeditiorMaskColorControl'
                                                             , type : 'color'
-                                                            , value : $.getColor('MASK')
+                                                            , value : INNERCONTEXT.UTILITY.getColor('MASK')
                                                             })
                   , $CAAoverlay         = $make('div',      { id : 'CAAoverlay' }).hide()
                   , $ieButtonsField     = $make('fieldset', { id : 'CAAeditorBtnField' })
@@ -2900,7 +2853,7 @@ Native support:
                 });
 
                 /* Create the css rule for the crop mask. */
-                $make('style', { id : 'CAAeditiorMaskColorStyle' }).text('.CAAmask { background-color: ' + $.getColor('MASK') + '; }')
+                $make('style', { id : 'CAAeditiorMaskColorStyle' }).text('.CAAmask { background-color: ' + INNERCONTEXT.UTILITY.getColor('MASK') + '; }')
                                                                    .attr('type', 'text/css')
                                                                    .appendTo('head');
 
@@ -2910,7 +2863,7 @@ Native support:
                 iePicker.hash = true;
                 iePicker.pickerFace = 5;
                 iePicker.pickerInsetColor = 'black';
-                iePicker.fromString($.getColor('MASK'));
+                iePicker.fromString(INNERCONTEXT.UTILITY.getColor('MASK'));
 
                 /* Add functionality to the color picker to change the css rule for the crop mask. */
                 $('#CAAeditiorMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
@@ -3040,7 +2993,7 @@ Native support:
     }();
 };
 
-function thirdParty($, CONSTANTS, getColor) {
+OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
     /* Despite the name, each function in thirdParty is by Brian Schweitzer unless otherwise noted. */
 
     /*jshint strict:false */
@@ -3084,28 +3037,24 @@ function thirdParty($, CONSTANTS, getColor) {
             }
 
             // write the ArrayBuffer to a blob, and you're done
-            /* The deprecated BlobBuilder format is normally prefixed;
-           we need to find the right one.  (The Blob constructor which
-           has replaced BlobBuilder is not yet implemented. */
-            var Builder = window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder || window.BlobBuilder;
-            var bb = new Builder();
+            /* The deprecated BlobBuilder format is normally prefixed; we need to find the right one.  (The Blob constructor which
+               has replaced BlobBuilder is not yet implemented. */
+            window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder;
+            var bb = new BlobBuilder();
             bb.append(ab);
             return bb.getBlob('image/' + mime);
         },
-        getColor: function getColor_handler(colorConstantName) {
-            return getColor(colorConstantName);
-        },
         // A very basic version of a gettext function.
         l: function l(str) {
-            return (CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
+            return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
         },
         // Logs a message to the console if debug mode is on.
         log: function log(str, verbose) {
-            if (!CONSTANTS.DEBUGMODE) {
+            if (!THIRDCONTEXT.CONSTANTS.DEBUGMODE) {
                 return;
             }
             'undefined' === typeof verbose && (verbose = false);
-            (!verbose || CONSTANTS.DEBUG_VERBOSE) && console.log(str);
+            (!verbose || THIRDCONTEXT.CONSTANTS.DEBUG_VERBOSE) && console.log(str);
             return;
         },
         /* Polyfill input[type=number], if needed. */
@@ -3215,7 +3164,7 @@ function thirdParty($, CONSTANTS, getColor) {
               detach(this, async, fn);
           });
       };
-}
+};
 
 !function main_loader(i) {
     'use strict';
@@ -3228,18 +3177,19 @@ function thirdParty($, CONSTANTS, getColor) {
         }
       , loadLocal = function loadLocal (fn) {
             makeScript();
-            script.textContent = '(' + fn.toString() + ')(jQuery, ' + JSON.stringify(CONSTANTS) + ',' + getColor.toString() + ');';
+            script.textContent = '(' + OUTERCONTEXT.CONTEXTS[fn].toString() + ')(jQuery, { CONSTANTS:' + JSON.stringify(OUTERCONTEXT.CONSTANTS) + ', UTILITY: { getColor:' + OUTERCONTEXT.UTILITY.getColor.toString() + '}});';
             head.appendChild(script);
         }
       ;
     (function script_loader (i) {
         var continueLoading = function continueLoading () {
-            loadLocal(thirdParty);
-            loadLocal(main);
+debugger
+            loadLocal('THIRDPARTY');
+            loadLocal('INNERCONTEXT');
         };
         if ( requires.length === 1 &&
              localStorage.getItem('caaBatch') !== null &&
-             localStorage.getItem('caaBatch') === CONSTANTS.VERSION) {
+             localStorage.getItem('caaBatch') === OUTERCONTEXT.CONSTANTS.VERSION) {
             i++;
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
@@ -3250,7 +3200,7 @@ function thirdParty($, CONSTANTS, getColor) {
             makeScript();
             script.src = requires[0];
             script.addEventListener('load', function loader_move_to_next_script () {
-                localStorage.setItem('caaBatch', CONSTANTS.VERSION);
+                localStorage.setItem('caaBatch', OUTERCONTEXT.CONSTANTS.VERSION);
                 script_loader(1);
             }, true);
             head.appendChild(script);
