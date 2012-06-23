@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1436
+// @version     0.01.1438
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,6 +52,10 @@ if (!document.body) {
     document.body = document.getElementsByTagName('body')[0];
 }
 
+/* Initialize needed variables persistantly stored in localStorage. */
+null === localStorage.getItem('Caabie_imageCache') && localStorage.setItem('Caabie_imageCache', []);
+
+/* Initialize constants. */
 var OUTERCONTEXT = { CONTEXTS: {}
                    , UTILITY: { extend : function (objOne, objTwo) {
                                              'use strict';
@@ -75,11 +79,11 @@ var OUTERCONTEXT = { CONTEXTS: {}
                                              'use strict';
                                              return document.getElementById(id).clientHeight;
                                          }
-                   }
-};
+                              }
+                   };
 
 OUTERCONTEXT.CONSTANTS = { DEBUGMODE     : true
-                         , VERSION       : '0.1.1436'
+                         , VERSION       : '0.1.1438'
                          , DEBUG_VERBOSE : false
                          , BORDERS       : '1px dotted #808080'
                          , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -214,10 +218,12 @@ OUTERCONTEXT.CONSTANTS = { DEBUGMODE     : true
                                                               }
                                                             , { name : 'John Resig and the rest of the jQuery team'
                                                               , what : 'jQuery 1.7.2'
+                                                              , urlN : 'jquery.org/team'
                                                               , urlW : 'jquery.com'
                                                               }
-                                                            , { name : 'Brandon Aaron, Amir E. Aharoni, Khaled AlHourani, Mike Alsup, Robson Braga Araujo, Lim Chee Aun, Pierre-Henri Ausseil, Jesse Baird, Paul Bakaus, Adam Baratz, Phillip Barnes, Jorge Barreiro, Bruno Basto, Doug Blood, David Bolter, Kris Borchers, Mohamed Cherif Bouchelaghem, Ben Boyle, Milan Broum, Tobias Brunner, Brant Burnett, Alberto Fernández Capel, Sean Catchpole, Filippo Cavallarin, Douglas Cerna, Chi Cheng, Samuel Cormier-Iijima, Kevin Dalman, Gilmore Davidson, Jason Davies, Michael DellaNoce, Justin Domnitz, Alex Dovenmuehle, Thibault Duplessis, Aaron Eisenberger, Ashek Elahi, John Enters, Edward Faulkner, John Firebaugh, Ariel Flesler, Kyle Florence, Corey Frang, Tiago Freire, Martin Frost, Carl Fürstenberg, Bohdan Ganicky, Dmitri Gaskin, Guillaume Gautreau, Jamie Gegerson, Genie, Shahyar Ghobadpour, Giovanni Giacobbi, Scott González, Glenn Goodrich, Marc Grabanski, Philip Graham, William Griffiths, Florian Gutmann, Klaus Hartl, Dan Heberden, Peter Heiberg, Bertter Heide, Heiko Henning, Hans Hillen, Pavol Hluchý, Ben Hollis, Matt Hoskins, Gilles van den Hoven, Petr Hromadko, Jack Hsu, Trey Hunner, Matthew Hutton, Eric Hynds, Eneko Illarramendi, Paul Irish, Jacek Jędrzejewski, Scott Jehl, Mark Johnson, Marwan Al Jubeh, Michael P. Jung, Dylan Just, Tomy Kaira, Andrey Kapitcyn, Guntupalli Karunakar, Yehuda Katz, Kato Kazuyoshi, Chris Kelly, James Khoury, Harri Kilpiö, Karl Kirch, Lev Kitsis, Eyal Kobrigo, Ting Kuei, David Leal, Lukasz Lipinski, Jo Liss, Rob Loach, Garrison Locke, Lado Lomidze, Eduardo Lundgren, Justin MacCarthy, William Kevin Manire, George Marshall, Christopher McCulloh, Carson McDonald, Jay Merrifield, Dave Methvin, igor milla, Eddie Monge, Alberto Monteiro, Jason Moon, Gaëtan Muller, David Murdoch, Jasvir Nagra, Saji Nediyanchath, Douglas Neiner, Ryan Neufeld, Marc Neuwirth, Andrew Newcomb, Ryan Olton, Jay Oster, Jon Palmer, Todd Parker, Adam Parod, Shannon Pekary, Ivan Peters, David Petersen, Aaron Peterson, Stefan Petre, Dmitry Petrov, Joan Piedra, Tane Piper, Alex Polomoshnov, Andrew Powell, Aliaxandr Rahalevich, Stéphane Raimbault, Xavi Ramirez, Jean-Francois Remy, John Resig, Alex Rhea, Krzysztof Rosiński, Marian Rudzynski, Holger Rüprich, Simon Sattes, Sebastian Sauer, Max Schnur, Raymond Schwartz, Eike Send, Remy Sharp, Ian Simpson, Stojce Slavkovski, David De Sloovere, Micheil Smith, Martin Solli, David Soms, Adam Sontag, Marcos Sousa, Daniel Steigerwald, Benjamin Sterling, J. Ryan Stinnett, Dan Streetman, Chairat Sunthornwiphat, Kouhei Sutou, Timo Tijhof, Marcel Toele, Diego Tres, Israel Tsadok, Ca-Phun Ung, TJ VanToll, Josh Varner, Dominique Vincent, Jonathan Vingiano, Mario Visic, Maggie Costello Wachs, Rick Waldron, Wesley Walser, Michel Weimerskirch, Ralph Whitbeck, Shane Whittet, Kyle Wilkinson, Keith Wood, Richard Worth, Michael Wu, EungJun Yi, Jörn Zaefferer, & Ziling Zhao'
+                                                            , { name : 'The jQueryUI team'
                                                               , what : 'jQuery UI 1.8.19'
+                                                              , urlN : 'jqueryui.com/about'
                                                               , urlW : 'jqueryui.com'
                                                               }
                                                             ]
@@ -349,11 +355,14 @@ if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
                                        }.init();
 }
 
+/* Define utility functions used while defining the CSS constants. */
 OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.UTILITY,
                               // Gets a color value stored in localStorage.
                             { getColor  : function getColor (color) {
                                               'use strict';
-                                              return localStorage.getItem('caaBatch_colors_' + color);
+                                              var thisColor = localStorage.getItem('Caabie_colors_' + color);
+                                              thisColor === null && (thisColor = OUTERCONTEXT.CONSTANTS.COLORS[color]);
+                                              return thisColor;
                                           }
                               // Converts a hex color string into an rgba color string
                             , hexToRGBA : function hexToRGBA (hex, opacity) {
@@ -367,609 +376,612 @@ OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.UTILITY,
                                           }
                             });
 
+/* Define repeated css strings used while defining the CSS constants. */
 OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
 
-/* Initialize the image editor's background opacity store, if needed. */
-if (null === localStorage.getItem('caaBatch_editorDarkness')) {
-    localStorage.setItem('caaBatch_editorDarkness', 75);
-}
+/* Initialize CSS constants which are persistantly stored in localStorage. */
+null === localStorage.getItem('Caabie_editorDarkness') && localStorage.setItem('Caabie_editorDarkness', 75);
 
+/* Define the CSS constants. */
 OUTERCONTEXT.CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                             { 'background-color'      : '#DDD'
-                             },
-                         '#caaVersion':
-                             { 'float'                 : 'right'
-                             , 'font-size'             : '75%'
-                             , 'margin-top'            : '-15px'
-                             },
-                         '#colorPicker, #CAAeditiorMaskColorControl':
-                             {  border                 : '1px outset #D3D3D3'
-                             ,  padding                : '15px' // This makes the default box around the color disappear on Chrome
-                             },
-                         '#colorSelect':
-                             { 'float'                 : 'left'
-                             ,  padding                : '5px'
-                             ,  width                  : '202px'
-                             },
-                         '#CAAeditorDarknessControl':
-                             { 'margin-left'           : '5px'
-                             ,  width                  : '3.5em'
-                             },
-                         '#CAAeditorCanvas':
-                             { 'background-color'      : '#FFF'
-                             },
-                         '#CAAeditorRotateControl':
-                             { 'margin-right'          : '2px'
-                             ,  width                  : '4em'
-                             },
-                         '#CAAeditorMenu':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
-                             , 'border-radius'         : '20px'
-                             ,  border                 : '1px dotted navy'
-                             ,  height                 : '60%'
-                             ,  padding                : '16px'
-                             ,  position               : 'absolute'
-                             ,  right                  : '40px'
-                             ,  top                    : '20%'
-                             },
-                         '#CAAeditorCanvasDiv':
-                             {  position               : 'relative'
-                             },
-                         '.CAAmask':
-                             {  position               : 'absolute'
-                             ,  height                 : '0'
-                             ,  width                  : '0'
-                             },
-                         '#CAAmaskLeft, #CAAmaskRight':
-                             {  height                 : '100%'
-                             },
-                         '#CAAmaskTop, #CAAmaskBottom':
-                             {  width                  : '100%'
-                             },
-                         '#CAAmaskLeft':
-                             { 'z-index'               : 300
-                             ,  left                   : 0
-                             ,  top                    : 0
-                             },
-                         '#CAAmaskRight':
-                             { 'z-index'               : 301
-                             ,  right                  : 0
-                             ,  top                    : 0
-                             },
-                         '#CAAmaskTop':
-                             { 'z-index'               : 302
-                             ,  left                   : 0
-                             ,  top                    : 0
-                             },
-                         '#CAAmaskBottom':
-                             { 'z-index'               : 303
-                             ,  left                   : 0
-                             ,  bottom                 : 0
-                             },
-                         '.cropLabel':
-                             {  clear                  : 'both'
-                             ,  display                : 'block'
-                             , 'margin-bottom'         : '4px'
-                             },
-                         '.cropControl':
-                             {  height                 : '24px'
-                             ,  margin                 : '0 4px 2px 0!important'
-                             , 'vertical-align'        : 'middle'
-                             , width                   : '45px'
-                             },
-                         '.flipControl':
-                             { 'border-radius'         : '21px'
-                             , 'border-width'          : '1px'
-                             , 'font-size'             : '130%'
-                             , 'font-weight'           : '600'
-                             ,  padding                : '0px 15px'
-                             },
-                         '#editor000Container':
-                             {  display                : 'inline-block'
-                             },
-                         '#imageContainer':
-                             {  height                 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
-                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
-                             , 'overflow-y'            : 'auto'
-                             },
-                         '#imageHeader':
-                             { 'float'                 : 'left'
-                             ,  width                  : '30%'
-                             },
-                         '#imageSizeControlsMenu':
-                             { 'float'                 : 'right'
-                             , 'height'                : '24px'
-                             ,  width                  : '25%'
-                             },
-                         '#languageSelect':
-                             {  height                 : '5em'
-                             ,  margin                 : '10px 10px -27px 6px'
-                             ,  padding                : '6px'
-                             },
-                         '#optionsHeader, #aboutControl':
-                             {  display                : 'inline-block'
-                             , 'float'                 : 'right'
-                             ,  filter                 : 'alpha(opacity=40)'
-                             , '-moz-opacity'          : '0.4'
-                             ,  opacity                : '0.4'
-                             ,  width                  : '40%'
-                             },
-                         '#optionsHeader':
-                             { 'margin-right'          : '-26px'
-                             , 'margin-top'            : '-3px'
-                             },
-                         '#aboutControl':
-                             {  height                 : '23px'
-                             , 'margin-top'            : '-1px'
-                             ,  width                  : '23px'
-                             },
-                         '#optionsMenu, #aboutMenu':
-                             {  border                 : '1px solid #D3D3D3'
-                             ,    '-moz-border-radius' : '8px'
-                             , '-webkit-border-radius' : '8px'
-                             ,         'border-radius' : '8px'
-                             , 'line-height'           : 2
-                             ,  margin                 : '10px 3px'
-                             ,  padding                : '8px'
-                             },
-                         '#optionsMenu * select':
-                             { 'font-size'             : '105%'
-                             },
-                         '#optionsMenu > label > select':
-                             {  padding                : '3px'
-                             },
-                         '#optionsMenu > label, #optionsMenu > label > select':
-                             { 'margin-left'           : '5px'
-                             , 'margin-top'            : '5px'
-                             },
-                         '#optionsNote':
-                             { 'font-size'             : '85%'
-                             , 'font-style'            : 'oblique'
-                             },
-                         '#page':
-                             { 'min-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
-                             },
-                         '#previewText':
-                             { 'line-height'           : '140%'
-                             ,  margin                 : '0 auto'
-                             , 'padding-top'           : '10px'
-                             ,  width                  : '60%'
-                             },
-                         '#previewText > dd':
-                             { 'float'                 : 'right'
-                             },
-                         '#xhrComlink':
-                             {  display                : 'none'
-                             },
-                         '#CAAoverlay':
-                             {  background             : 'black'
-                             ,  bottom                 : 0
-                             ,  filter                 : 'alpha(opacity=' + localStorage.getItem('caaBatch_editorDarkness') + ')'
-                             ,  left                   : 0
-                             , '-moz-opacity'          : localStorage.getItem('caaBatch_editorDarkness') / 100
-                             ,       opacity           : localStorage.getItem('caaBatch_editorDarkness') / 100
-                             ,  position               : 'fixed'
-                             ,  top                    : 0
-                             ,  width                  : '100%'
-                             ,  'z-index'              : 400
-                             },
-                         '#CAAimageEditor':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITOR')
-                             ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                             , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                             ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-                             ,  border                 : '1px outset grey'
-                             , 'border-radius'         : '20px'
-                             ,  height                 : '86%'
-                             ,  left                   : '50%'
-                             ,  margin                 : '0 auto'
-                             , 'margin-left'           : '-43%'
-                             , 'margin-top'            : '5%'
-                             ,  padding                : '2%'
-                             ,  position               : 'fixed'
-                             ,  width                  : '86%'
-                             , 'z-index'               : 500
-                             },
-                         '#CAAeditorDiv':
-                             {  height                 : '96%'
-                             ,  margin                 : '2%'
-                             ,  width                  : '96%'
-                             },
-                         '*':
-                             {    '-moz-box-sizing'    : 'border-box'
-                             , '-webkit-box-sizing'    : 'border-box'
-                             ,         'box-sizing'    : 'border-box'
-                             },
-                         '.beingDragged':
-                             {  filter                 : 'alpha(opacity=' + (100 * OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
-                             , '-moz-opacity'          : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
-                             ,  opacity                : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
-                             ,    '-moz-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
-                             , '-webkit-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
-                             ,      '-o-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
-                             ,          transform      : OUTERCONTEXT.CSSSTRINGS.SHRINK
-                             },
-                         '.CAAdropbox':
-                             {    '-moz-border-radius' : '6px'
-                             , '-webkit-border-radius' : '6px'
-                             ,         'border-radius' : '6px'
-                             ,  display                : 'inline-block'
-                             ,  margin                 : '6px'
-                             , 'min-height'            : '126px'
-                             ,  padding                : '3px'
-                             , 'vertical-align'        : 'middle'
-                             ,  width                  : '126px'
-                             },
-                         '.CAAdropbox > div':
-                             {  display                : 'block'
-                             ,  height                 : '120px'
-                             ,  margin                 : '3px auto'
-                             },
-                         '.CAAdropbox > div > img':
-                             { display                 : 'block'
-                             , 'image-rendering'       : 'optimizeQuality'
-                             ,  margin                 : '0 auto'
-                             , 'max-height'            : '120px'
-                             , 'max-width'             : '120px'
-                             },
-                         '.CAAdropbox > figcaption':
-                             {  height                 : '14em'
-                             ,  position               : 'relative'
-                             , 'text-align'            : 'center'
-                             },
-                         '.CAAdropbox > figcaption > div':
-                             { 'font-size'             : '80%'
-                             ,  height                 : '2.5em'
-                             },
-                         '.CAAdropbox > figcaption > input':
-                             { 'font-size'             : '12px'
-                             ,  width                  : '90%'
-                             },
-                         '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
-                             {  clear                  : 'both'
-                             },
-                         '.CAAdropbox > figcaption > select':
-                             { 'background-color'      : 'transparent'
-                             ,  clear                  : 'both'
-                             ,  clip                   : 'rect(2px, 49px, 145px, 2px)'
-                             ,  color                  : '#555'
-                             , 'font-size'             : 'inherit'
-                             ,  left                   : '36px'
-                             , 'padding-bottom'        : '20px'
-                             , 'padding-right'         : '20px'
-                             , 'padding-top'           : '8px'
-                             ,  position               : 'absolute'
-                             , 'text-align'            : 'center'
-                             },
-                         '.caaAdd':
-                             { 'background-color'      : 'green!important'
-                             ,  border                 : '0 none #FAFAFA!important'
-                             ,    '-moz-border-radius' : '7px'
-                             , '-webkit-border-radius' : '7px'
-                             ,         'border-radius' : '7px'
-                             ,  color                  : '#FFF!important'
-                             , 'float'                 : 'left'
-                             , 'font-size'             : '175%'
-                             , 'font-weight'           : '900!important'
-                             ,  left                   : '2em'
-                             , 'margin-left'           : '-1.2em'
-                             ,  filter                 : 'alpha(opacity=30)'
-                             , '-moz-opacity'          : '0.3'
-                             ,  opacity                : '0.3'
-                             , 'padding-bottom'        : 0
-                             , 'padding-top'           : 0
-                             ,  position               : 'absolute'
-                             },
-                         '.caaAdd:active, .caaAll:active, .caaLoad:active':
-                             { 'border-style'          : 'inset!important'
-                             ,  color                  : '#FFF'
-                             ,  filter                 : 'alpha(opacity=100)'
-                             , '-moz-opacity'          : '1'
-                             ,  opacity                : 1
-                             },
-                         '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
-                             {  color                  : '#D3D3D3'
-                             ,  filter                 : 'alpha(opacity=90)'
-                             , '-moz-opacity'          : '0.9'
-                             ,  opacity                : '.9'
-                             },
-                         '.caaDiv':
-                             {  display                : 'inline-block'
-                             , 'overflow-x'            : 'auto!important'
-                             , 'padding-left'          : '25px'
-                             , 'white-space'           : 'nowrap'
-                             ,  width                  : '100%'
-                             },
-                         '.caaLoad, .caaAll':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
-                             ,  border                 : '1px outset #FAFAFA!important'
-                             , 'border-radius'         : '7px'
-                             ,  color                  : '#FFF!important'
-                             , 'font-size'             : '90%'
-                             , 'margin-bottom'         : '16px'
-                             , 'margin-top'            : '1px!important'
-                             ,  filter                 : 'alpha(opacity=35)'
-                             , '-moz-opacity'          : '0.35'
-                             ,  opacity                : '.35'
-                             ,  padding                : '3px 8px'
-                             },
-                         '.caaMBCredit':
-                             { 'font-size'             : '85%'
-                             , 'white-space'           : 'nowrap'
-                             },
-                         '.newCAAimage':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABOX')
-                             },
-                         '.newCAAimage > div':
-                             { 'background-color'      : '#E0E0FF'
-                             ,  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
-                             , 'margin-bottom'         : '6px!important'
-                             },
-                         '.tintWrapper':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
-                             , 'border-radius'         : '5px'
-                             ,  display                : 'inline-block'
-                             ,  margin                 : 0
-                             ,  filter                 : 'alpha(opacity=80)'
-                             , '-moz-opacity'          : '0.8'
-                             ,  opacity                : '0.8'
-                             ,  outline                : 0
-                             ,  padding                : 0
-                             , 'vertical-align'        : 'baseline'
-                             },
-                         '#previewContainer':
-                             { height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
-                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
-                             },
-                         '#previewImage':
-                             {  cursor                 : 'pointer'
-                             ,  display                : 'block'
-                             ,  height                 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
-                             ,  margin                 : '0 auto'
-                             , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
-                             ,  padding                : '15px 0 0 0'
-                             },
-                         '#sidebar':
-                             { 'border-left'           : OUTERCONTEXT.CONSTANTS.BORDERS
-                             , 'padding-left'          : '8px'
-                             ,  position               : 'fixed'
-                             ,  right                  : '20px'
-                             ,  width                  : OUTERCONTEXT.CONSTANTS.SIDEBARWIDTH + 'px'
-                             },
-                         '.CAAcreditWho':
-                             { 'text-indent'           : '-2em'
-                             },
-                         '.closeButton':
-                             { 'background-color'      : '#FFD0DB'
-                             ,  border                 : '1px solid #EEC9C8'
-                             ,    '-moz-border-radius' : '8px'
-                             , '-webkit-border-radius' : '8px'
-                             ,         'border-radius' : '8px'
-                             ,  cursor                 : 'pointer'
-                             , 'float'                 : 'right'
-                             , 'line-height'           : '.8em'
-                             , 'margin-right'          : '-1em'
-                             , 'margin-top'            : '-.95em'
-                             ,  filter                 : 'alpha(opacity=90)'
-                             , '-moz-opacity'          : '0.9'
-                             ,  opacity                : '0.9'
-                             ,  padding                : '2px 4px 5px'
-                             },
-                         '.closeButton:hover':
-                             { 'background-color'      : '#FF82AB'
-                             , 'font-weight'           : '900'
-                             ,  filter                 : 'alpha(opacity=100)'
-                             , '-moz-opacity'          : '1.0'
-                             ,  opacity                : '1.0'
-                             },
-                         '.existingCAAimage':
-                             { 'background-color'      : '#FFF'
-                             ,  border                 : '0 none'
-                             },
-                         '.existingCAAimage > div > img':
-                             {  border                 : '0 none'
-                             , 'image-rendering'       : 'optimizeQuality'
-                             },
-                         '.imageRow':
-                             { 'padding-bottom'        : '1em!important'
-                             },
-                         '.imageSizeControl, #optionsHeader, #aboutControl':
-                             {  cursor                 : 'pointer'
-                             , 'float'                 : 'right'
-                             },
-                         '.imageSizeControl, #optionsHeader':
-                             {  height                 : '26px'
-                             ,  width                  : '26px'
-                             },
-                         '.imageSizeControl:hover, #optionsHeader:hover, #aboutControl:hover':
-                             {  filter                 : 'alpha(opacity=100)'
-                             , '-moz-opacity'          : '1'
-                             ,  opacity                : 1
-                             },
-                         '.localImage':
-                             {  padding                : '3px'
-                             , 'vertical-align'        : 'top'
-                             },
-                         '.newCAAimage > div > img':
-                             { 'min-height'            : '120px'
-                             , 'image-rendering'       : 'optimizeQuality'
-                             },
-                         '.over':
-                             { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('ACTIVE')
-                             },
-                         '.previewDT':
-                             {  clear                  : 'left'
-                             , 'float'                 : 'left'
-                             , 'font-weight'           : '700'
-                             },
-                         '.previewDT::after, #aboutMenu * dt::after':
-                             {  color                  : '#000' 
-                             ,  content                : '": "'
-                             },
-                         '#aboutMenu * dt::before':
-                             {  color                  : '#000' 
-                             ,  content                : '" • "'
-                             },
-                         '.tintImage, .imageSizeControl':
-                             {  filter                 : 'alpha(opacity=40)'
-                             , '-moz-opacity'          : '0.4'
-                             ,  opacity                : '0.4'
-                             },
-                         '.workingCAAimage':
-                             { 'padding-left'          : '1px'
-                             , 'padding-right'         : '1px'
-                             },
-                         '.workingCAAimage > div':
-                             { 'margin-bottom'         : '8px!important'
-                             },
-                         'div.loadingDiv > img':
-                             {  height                 : '30px'
-                             , 'image-rendering'       : 'optimizeQuality'
-                             , 'padding-right'         : '10px'
-                             ,  width                  : '30px'
-                             },
-                         'fieldset':
-                             {  border                 : '1px solid #D3D3D3'
-                             ,    '-moz-border-radius' : '8px'
-                             , '-webkit-border-radius' : '8px'
-                             ,         'border-radius' : '8px'
-                             ,  margin                 : '30px -4px 7px'
-                             ,  padding                : '6px'
-                             },
-                         '#CAAeditorMenu > fieldset':
-                             {  border                 : 'none'
-                             ,  margin                 : '16px -4px 7px'
-                             },
-                         'figure':
-                             {  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
-                             },
-                         'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                             {  border                 : '1px outset #EEE'
-                             ,    '-moz-border-radius' : '6px'
-                             , '-webkit-border-radius' : '6px'
-                             ,         'border-radius' : '6px'
-                             ,  cursor                 : 'pointer'
-                             , 'font-family'           : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
-                             , 'font-size'             : '100%'
-                             , 'margin-right'          : '0'
-                             , 'outline'               : 'none'
-                             ,  padding                : '3px'
-                             , 'text-align'            : 'center'
-                             },
-                         '#ClearStorageBtn':
-                             { 'background-color'      : 'red'
-                             ,  color                  : '#FFF'
-                             , 'font-weight'           : 700
-                             ,  filter                 : 'alpha(opacity=70)'
-                             , '-moz-opacity'          : '0.7'
-                             ,  opacity                : '.7'
-                             ,  width                  : '190px'
-                             },
-                         '#ClearStorageBtn:disabled':
-                             { 'background-color'      : 'grey'
-                             ,  color                  : '#000'
-                             , 'text-decoration'       : 'line-through'
-                             },
-                         '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
-                             { 'float'                 : 'right'
-                             ,  width                  : '79px'
-                             },
-                         '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active, #CAAeditiorApplyCropBtn:active':
-                             {  border                 : '1px inset #D3D3D3'
-                             ,  filter                 : 'alpha(opacity=100)'
-                             , '-moz-opacity'          : '1'
-                             ,  opacity                : '1'
-                             },
-                         'legend':
-                             {  color                  : '#000!important'
-                             , 'font-size'             : '110%!important'
-                             , 'font-variant'          : 'small-caps'
-                             },
-                         'table.tbl * table, #imageContainer, #previewContainer':
-                             {  width                  : '100%'
-                             },
-                         'table.tbl .count':
-                             {  width                  : '6em!important'
-                             },
-                         'h4':
-                             { 'font-size'             : '115%'
-                             },
-                         '#aboutMenu * h5':
-                             { 'font-size'             : '100%'
-                             },
-                         '#aboutMenu * dd':
-                             { 'padding-bottom'        : '5px'
-                             },
-                         '#aboutHeader':
-                             { 'margin-top'            : '0'
-                             },
-                         /* css for the number polyfill */
-                         'div.number-spin-btn-container':
-                             {  display                : 'inline-block'
-                             ,  margin                 : '0'
-                             ,  padding                : '0'
-                             ,  position               : 'relative'
-                             , 'vertical-align'        : 'bottom'
-                             },
-                         'div.number-spin-btn':
-                             { 'background-color'      : '#CCCCCC'
-                             ,  border                 : '2px outset #CCCCCC'
-                             ,  height                 : '11.5px!important'
-                             ,  width                  : '1.2em'
-                             },
-                         'div.number-spin-btn-up':
-                             {  'border-bottom-width'  : '1px'
-                             ,  '-webkit-border-radius': '3px 3px 0px 0px'
-                             ,          'border-radius': '3px 3px 0px 0px'
-                             },
-                         'div.number-spin-btn-up:before':
-                             {  content                : '""'
-                             , 'border-color'          : 'transparent transparent black transparent'
-                             , 'border-style'          : 'solid'
-                             , 'border-width'          : '0 0.3em 0.3em 0.3em'
-                             ,  height                 : '0'
-                             ,  left                   : '50%'
-                             ,  margin                 : '-0.15em 0 0 -0.3em'
-                             ,  padding                : '0'
-                             ,  position               : 'absolute'
-                             ,  top                    : '25%'
-                             ,  width                  : '0'
-                             },
-                         'div.number-spin-btn-down':
-                             { '-webkit-border-radius' : '0px 0px 3px 3px'
-                             ,         'border-radius' : '0px 0px 3px 3px'
-                             , 'border-top-width'      : '1px'
-                             },
-                         'div.number-spin-btn-down:before':
-                             {  content                : '""'
-                             ,  width                  : '0'
-                             ,  height                 : '0'
-                             , 'border-width'          : '0.3em 0.3em 0 0.3em'
-                             , 'border-style'          : 'solid'
-                             , 'border-color'          : 'black transparent transparent transparent'
-                             ,  position               : 'absolute'
-                             ,  top                    : '75%'
-                             ,  left                   : '50%'
-                             ,  margin                 : '-0.15em 0 0 -0.3em'
-                             ,  padding                : '0'
-                             },
-                         'div.number-spin-btn:hover':
-                             {  cursor                 : 'pointer'
-                             },
-                         'div.number-spin-btn:active':
-                             { 'background-color'      : '#999999'
-                             ,  border                 : '2px inset #999999'
-                             },
-                         'div.number-spin-btn-up:active:before':
-                             { 'border-color'          : 'transparent transparent white transparent'
-                             ,  left                   : '51%'
-                             ,  top                    : '26%'
-                             },
-                         'div.number-spin-btn-down:active:before':
-                             { 'border-color'          : 'white transparent transparent transparent'
-                             ,  left                   : '51%'
-                             ,  top                    : '76%'
-                             }
+                                   { 'background-color'      : '#DDD'
+                                   },
+                               '#caaVersion':
+                                   { 'float'                 : 'right'
+                                   , 'font-size'             : '75%'
+                                   , 'margin-top'            : '-15px'
+                                   },
+                               '#colorPicker, #CAAeditiorMaskColorControl':
+                                   {  border                 : '1px outset #D3D3D3'
+                                   },
+                               '#colorSelect':
+                                   { 'float'                 : 'left'      
+                                   ,  padding                : '5px'
+                                   ,  width                  : '202px'
+                                   },
+                               '#CAAeditorDarknessControl':
+                                   { 'margin-left'           : '5px'
+                                   ,  width                  : '3.5em'
+                                   },
+                               '#CAAeditorCanvas':
+                                   { 'background-color'      : '#FFF'
+                                   },
+                               '#CAAeditorRotateControl':
+                                   { 'margin-right'          : '2px'
+                                   ,  width                  : '4em'
+                                   },
+                               '#CAAeditorMenu':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
+                                   , 'border-radius'         : '20px'
+                                   ,  border                 : '1px dotted navy'
+                                   ,  height                 : '60%'
+                                   ,  padding                : '16px'
+                                   ,  position               : 'absolute'
+                                   ,  right                  : '40px'
+                                   ,  top                    : '20%'
+                                   },
+                               '#CAAeditorCanvasDiv':
+                                   {  position               : 'relative'
+                                   },
+                               '.CAAmask':
+                                   {  position               : 'absolute'
+                                   ,  height                 : '0'
+                                   ,  width                  : '0'
+                                   },
+                               '#CAAmaskLeft, #CAAmaskRight':
+                                   {  height                 : '100%'
+                                   },
+                               '#CAAmaskTop, #CAAmaskBottom':
+                                   {  width                  : '100%'
+                                   },
+                               '#CAAmaskLeft':
+                                   { 'z-index'               : 300
+                                   ,  left                   : 0
+                                   ,  top                    : 0
+                                   },
+                               '#CAAmaskRight':
+                                   { 'z-index'               : 301
+                                   ,  right                  : 0
+                                   ,  top                    : 0
+                                   },
+                               '#CAAmaskTop':
+                                   { 'z-index'               : 302
+                                   ,  left                   : 0
+                                   ,  top                    : 0
+                                   },
+                               '#CAAmaskBottom':
+                                   { 'z-index'               : 303
+                                   ,  left                   : 0
+                                   ,  bottom                 : 0
+                                   },
+                               '.cropLabel':
+                                   {  clear                  : 'both'
+                                   ,  display                : 'block'
+                                   , 'margin-bottom'         : '4px'
+                                   },
+                               '.cropControl':
+                                   {  height                 : '24px'
+                                   ,  margin                 : '0 4px 2px 0!important'
+                                   , 'vertical-align'        : 'middle'
+                                   , width                   : '45px'
+                                   },
+                               '.flipControl':
+                                   { 'border-radius'         : '21px'
+                                   , 'border-width'          : '1px'
+                                   , 'font-size'             : '130%'
+                                   , 'font-weight'           : '600'
+                                   ,  padding                : '0px 15px'
+                                   },
+                               '#editor000Container':
+                                   {  display                : 'inline-block'
+                                   },
+                               '#imageContainer':
+                                   {  height                 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
+                                   , 'max-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - OUTERCONTEXT.CONSTANTS.PREVIEWSIZE - 145) + 'px'
+                                   , 'overflow-y'            : 'auto'
+                                   },
+                               '#imageHeader':
+                                   { 'float'                 : 'left'
+                                   ,  width                  : '30%'
+                                   },
+                               '#imageSizeControlsMenu':
+                                   { 'float'                 : 'right'
+                                   , 'height'                : '24px'
+                                   ,  width                  : '25%'
+                                   },
+                               '#languageSelect':
+                                   {  height                 : '5em'
+                                   ,  margin                 : '10px 10px -27px 6px'
+                                   ,  padding                : '6px'
+                                   },
+                               '#optionsHeader, #aboutControl':
+                                   {  display                : 'inline-block'
+                                   , 'float'                 : 'right'
+                                   ,  filter                 : 'alpha(opacity=40)'
+                                   , '-moz-opacity'          : '0.4'
+                                   ,  opacity                : '0.4'
+                                   ,  width                  : '40%'
+                                   },
+                               '#optionsHeader':
+                                   { 'margin-right'          : '-26px'
+                                   , 'margin-top'            : '-3px'
+                                   },
+                               '#aboutControl':
+                                   {  height                 : '23px'
+                                   , 'margin-top'            : '-1px'
+                                   ,  width                  : '23px'
+                                   },
+                               '#optionsMenu, #aboutMenu':
+                                   {  border                 : '1px solid #D3D3D3'
+                                   ,    '-moz-border-radius' : '8px'
+                                   , '-webkit-border-radius' : '8px'
+                                   ,         'border-radius' : '8px'
+                                   , 'line-height'           : 2
+                                   ,  margin                 : '10px 3px'
+                                   ,  padding                : '8px'
+                                   },
+                               '#optionsMenu * select':
+                                   { 'font-size'             : '105%'
+                                   },
+                               '#optionsMenu > label > select':
+                                   {  padding                : '3px'
+                                   },
+                               '#optionsMenu > label, #optionsMenu > label > select':
+                                   { 'margin-left'           : '5px'
+                                   , 'margin-top'            : '5px'
+                                   },
+                               '#optionsNote':
+                                   { 'font-size'             : '85%'
+                                   , 'font-style'            : 'oblique'
+                                   },
+                               '#page':
+                                   { 'min-height'            : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
+                                   },
+                               '#previewText':
+                                   { 'line-height'           : '140%'
+                                   ,  margin                 : '0 auto'
+                                   , 'padding-top'           : '10px'
+                                   ,  width                  : '60%'
+                                   },
+                               '#previewText > dd':
+                                   { 'float'                 : 'right'
+                                   },
+                               '#xhrComlink':
+                                   {  display                : 'none'
+                                   },
+                               '#CAAoverlay':
+                                   {  background             : 'black'
+                                   ,  bottom                 : 0
+                                   ,  filter                 : 'alpha(opacity=' + localStorage.getItem('Caabie_editorDarkness') + ')'
+                                   ,  left                   : 0
+                                   , '-moz-opacity'          : localStorage.getItem('Caabie_editorDarkness') / 100
+                                   ,       opacity           : localStorage.getItem('Caabie_editorDarkness') / 100
+                                   ,  position               : 'fixed'
+                                   ,  top                    : 0
+                                   ,  width                  : '100%'
+                                   ,  'z-index'              : 400
+                                   },
+                               '#CAAimageEditor':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('EDITOR')
+                                   ,    '-moz-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                                   , '-webkit-box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                                   ,         'box-shadow'    : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+                                   ,  border                 : '1px outset grey'
+                                   , 'border-radius'         : '20px'
+                                   ,  height                 : '86%'
+                                   ,  left                   : '50%'
+                                   ,  margin                 : '0 auto'
+                                   , 'margin-left'           : '-43%'      
+                                   , 'margin-top'            : '5%'
+                                   ,  padding                : '2%'
+                                   ,  position               : 'fixed'
+                                   ,  width                  : '86%'
+                                   , 'z-index'               : 500
+                                   },
+                               '#CAAeditorDiv':
+                                   {  height                 : '96%'
+                                   ,  margin                 : '2%'
+                                   ,  width                  : '96%'
+                                   },
+                               '*':
+                                   {    '-moz-box-sizing'    : 'border-box'
+                                   , '-webkit-box-sizing'    : 'border-box'
+                                   ,         'box-sizing'    : 'border-box'
+                                   },
+                               '.beingDragged':
+                                   {  filter                 : 'alpha(opacity=' + (100 * OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
+                                   , '-moz-opacity'          : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
+                                   ,  opacity                : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
+                                   ,    '-moz-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                                   , '-webkit-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                                   ,      '-o-transform'     : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                                   ,          transform      : OUTERCONTEXT.CSSSTRINGS.SHRINK
+                                   },
+                               '.CAAdropbox':
+                                   {    '-moz-border-radius' : '6px'
+                                   , '-webkit-border-radius' : '6px'
+                                   ,         'border-radius' : '6px'
+                                   ,  display                : 'inline-block'
+                                   ,  margin                 : '6px'
+                                   , 'min-height'            : '126px'
+                                   ,  padding                : '3px'
+                                   , 'vertical-align'        : 'middle'
+                                   ,  width                  : '126px'
+                                   },
+                               '.CAAdropbox > div':
+                                   {  display                : 'block'
+                                   ,  height                 : '120px'
+                                   ,  margin                 : '3px auto'
+                                   },
+                               '.CAAdropbox > div > img':
+                                   { display                 : 'block'
+                                   , 'image-rendering'       : 'optimizeQuality'
+                                   ,  margin                 : '0 auto'
+                                   , 'max-height'            : '120px'
+                                   , 'max-width'             : '120px'
+                                   },
+                               '.CAAdropbox > figcaption':
+                                   {  height                 : '14em'
+                                   ,  position               : 'relative'
+                                   , 'text-align'            : 'center'
+                                   },
+                               '.CAAdropbox > figcaption > div':
+                                   { 'font-size'             : '80%'
+                                   ,  height                 : '2.5em'
+                                   },
+                               '.CAAdropbox > figcaption > input':
+                                   { 'font-size'             : '12px'
+                                   ,  width                  : '90%'
+                                   },
+                               '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
+                                   {  clear                  : 'both'
+                                   },
+                               '.CAAdropbox > figcaption > select':
+                                   { 'background-color'      : 'transparent'
+                                   ,  clear                  : 'both'
+                                   ,  clip                   : 'rect(2px, 49px, 145px, 2px)'
+                                   ,  color                  : '#555'
+                                   , 'font-size'             : 'inherit'
+                                   ,  left                   : '36px'
+                                   , 'padding-bottom'        : '20px'
+                                   , 'padding-right'         : '20px'
+                                   , 'padding-top'           : '8px'
+                                   ,  position               : 'absolute'
+                                   , 'text-align'            : 'center'
+                                   },
+                               '.caaAdd':
+                                   { 'background-color'      : 'green!important'
+                                   ,  border                 : '0 none #FAFAFA!important'
+                                   ,    '-moz-border-radius' : '7px'
+                                   , '-webkit-border-radius' : '7px'
+                                   ,         'border-radius' : '7px'
+                                   ,  color                  : '#FFF!important'
+                                   , 'float'                 : 'left'
+                                   , 'font-size'             : '175%'
+                                   , 'font-weight'           : '900!important'
+                                   ,  left                   : '2em'
+                                   , 'margin-left'           : '-1.2em'
+                                   ,  filter                 : 'alpha(opacity=30)'
+                                   , '-moz-opacity'          : '0.3'
+                                   ,  opacity                : '0.3'
+                                   , 'padding-bottom'        : 0
+                                   , 'padding-top'           : 0
+                                   ,  position               : 'absolute'
+                                   },
+                               '.caaAdd:active, .caaAll:active, .caaLoad:active':
+                                   { 'border-style'          : 'inset!important'
+                                   ,  color                  : '#FFF'
+                                   ,  filter                 : 'alpha(opacity=100)'
+                                   , '-moz-opacity'          : '1'
+                                   ,  opacity                : 1
+                                   },
+                               '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
+                                   {  color                  : '#D3D3D3'
+                                   ,  filter                 : 'alpha(opacity=90)'
+                                   , '-moz-opacity'          : '0.9'
+                                   ,  opacity                : '.9'
+                                   },
+                               '.caaDiv':
+                                   {  display                : 'inline-block'
+                                   , 'overflow-x'            : 'auto!important'
+                                   , 'padding-left'          : '25px'
+                                   , 'white-space'           : 'nowrap'
+                                   ,  width                  : '100%'
+                                   },
+                               '.caaLoad, .caaAll':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
+                                   ,  border                 : '1px outset #FAFAFA!important'
+                                   , 'border-radius'         : '7px'
+                                   ,  color                  : '#FFF!important'
+                                   , 'font-size'             : '90%'
+                                   , 'margin-bottom'         : '16px'
+                                   , 'margin-top'            : '1px!important'
+                                   ,  filter                 : 'alpha(opacity=35)'
+                                   , '-moz-opacity'          : '0.35'
+                                   ,  opacity                : '.35'
+                                   ,  padding                : '3px 8px'
+                                   },
+                               '.caaMBCredit':
+                                   { 'font-size'             : '85%'
+                                   , 'white-space'           : 'nowrap'
+                                   },
+                               '.newCAAimage':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('CAABOX')
+                                   },
+                               '.newCAAimage > div':
+                                   { 'background-color'      : '#E0E0FF'
+                                   ,  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
+                                   , 'margin-bottom'         : '6px!important'
+                                   },
+                               '.tintWrapper':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
+                                   , 'border-radius'         : '5px'
+                                   ,  display                : 'inline-block'
+                                   ,  margin                 : 0
+                                   ,  filter                 : 'alpha(opacity=80)'
+                                   , '-moz-opacity'          : '0.8'
+                                   ,  opacity                : '0.8'
+                                   ,  outline                : 0
+                                   ,  padding                : 0
+                                   , 'vertical-align'        : 'baseline'
+                                   },
+                               '#previewContainer':
+                                   { height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                                   , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 37) + 'px'
+                                   },
+                               '#previewImage':
+                                   {  cursor                 : 'pointer'
+                                   ,  display                : 'block'
+                                   ,  height                 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+                                   ,  margin                 : '0 auto'
+                                   , 'max-height'            : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+                                   ,  padding                : '15px 0 0 0'
+                                   },
+                               '#sidebar':
+                                   { 'border-left'           : OUTERCONTEXT.CONSTANTS.BORDERS
+                                   , 'padding-left'          : '8px'      
+                                   ,  position               : 'fixed'      
+                                   ,  right                  : '20px'
+                                   ,  width                  : OUTERCONTEXT.CONSTANTS.SIDEBARWIDTH + 'px'
+                                   },
+                               '.CAAcreditWho':
+                                   { 'text-indent'           : '-2em'
+                                   },
+                               '.closeButton':
+                                   { 'background-color'      : '#FFD0DB'
+                                   ,  border                 : '1px solid #EEC9C8'
+                                   ,    '-moz-border-radius' : '8px'
+                                   , '-webkit-border-radius' : '8px'
+                                   ,         'border-radius' : '8px'
+                                   ,  cursor                 : 'pointer'
+                                   , 'float'                 : 'right'
+                                   , 'line-height'           : '.8em'
+                                   , 'margin-right'          : '-1em'
+                                   , 'margin-top'            : '-.95em'
+                                   ,  filter                 : 'alpha(opacity=90)'
+                                   , '-moz-opacity'          : '0.9'
+                                   ,  opacity                : '0.9'
+                                   ,  padding                : '2px 4px 5px'
+                                   },
+                               '.closeButton:hover':      
+                                   { 'background-color'      : '#FF82AB'
+                                   , 'font-weight'           : '900'
+                                   ,  filter                 : 'alpha(opacity=100)'
+                                   , '-moz-opacity'          : '1.0'
+                                   ,  opacity                : '1.0'      
+                                   },
+                               '.existingCAAimage':
+                                   { 'background-color'      : '#FFF'
+                                   ,  border                 : '0 none'
+                                   },
+                               '.existingCAAimage > div > img':
+                                   {  border                 : '0 none'
+                                   , 'image-rendering'       : 'optimizeQuality'
+                                   },
+                               '.imageRow':
+                                   { 'padding-bottom'        : '1em!important'
+                             },
+                               '.imageSizeControl, #optionsHeader, #aboutControl':
+                                   {  cursor                 : 'pointer'
+                                   , 'float'                 : 'right'
+                                   },
+                               '.imageSizeControl, #optionsHeader':
+                                   {  height                 : '26px'
+                                   ,  width                  : '26px'
+                                   },
+                               '.imageSizeControl:hover, #optionsHeader:hover, #aboutControl:hover':
+                                   {  filter                 : 'alpha(opacity=100)'
+                                   , '-moz-opacity'          : '1'
+                                   ,  opacity                : 1
+                                   },
+                               '.localImage':
+                                   {  padding                : '3px'
+                                   , 'vertical-align'        : 'top'
+                                   },
+                               '.newCAAimage > div > img':
+                                   { 'min-height'            : '120px'
+                                   , 'image-rendering'       : 'optimizeQuality'
+                                   },
+                               '.over':
+                                   { 'background-color'      : OUTERCONTEXT.UTILITY.getColor('ACTIVE')
+                                   },
+                               '.previewDT':
+                                   {  clear                  : 'left'
+                                   , 'float'                 : 'left'
+                                   , 'font-weight'           : '700'
+                                   },
+                               '.previewDT::after, #aboutMenu * dt::after':
+                                   {  color                  : '#000' 
+                                   ,  content                : '": "'
+                                   },
+                               '#aboutMenu * dt::before':
+                                   {  color                  : '#000' 
+                                   ,  content                : '" • "'
+                                   },
+                               '.tintImage, .imageSizeControl':
+                                   {  filter                 : 'alpha(opacity=40)'
+                                   , '-moz-opacity'          : '0.4'
+                                   ,  opacity                : '0.4'
+                                   },
+                               '.workingCAAimage':
+                                   { 'padding-left'          : '1px'
+                                   , 'padding-right'         : '1px'
+                                   },
+                               '.workingCAAimage > div':
+                                   { 'margin-bottom'         : '8px!important'
+                                   },
+                               'div.loadingDiv > img':
+                                   {  height                 : '30px'
+                                   , 'image-rendering'       : 'optimizeQuality'
+                                   , 'padding-right'         : '10px'
+                                   ,  width                  : '30px'
+                                   },
+                               'fieldset':
+                                   {  border                 : '1px solid #D3D3D3'
+                                   ,    '-moz-border-radius' : '8px'
+                                   , '-webkit-border-radius' : '8px'
+                                   ,         'border-radius' : '8px'
+                                   ,  margin                 : '30px -4px 7px'
+                                   ,  padding                : '6px'
+                                   },
+                               '#CAAeditorMenu > fieldset':
+                                   {  border                 : 'none'
+                                   ,  margin                 : '16px -4px 7px'
+                                   },
+                               'figure':
+                                   {  border                 : OUTERCONTEXT.CONSTANTS.BORDERS
+                                   },
+                               'input[type="color"], #ColorDefaultBtn, #ClearStorageBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
+                                   {  border                 : '1px outset #EEE'
+                                   ,    '-moz-border-radius' : '6px'
+                                   , '-webkit-border-radius' : '6px'
+                                   ,         'border-radius' : '6px'
+                                   ,  cursor                 : 'pointer'
+                                   , 'font-family'           : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
+                                   , 'font-size'             : '100%'
+                                   , 'margin-right'          : '0'
+                                   , 'outline'               : 'none'
+                                   ,  padding                : '3px'
+                                   , 'text-align'            : 'center'
+                                   },
+                               '#ClearStorageBtn':
+                                   { 'background-color'      : 'red'
+                                   ,  color                  : '#FFF'
+                                   , 'font-weight'           : 700
+                                   ,  filter                 : 'alpha(opacity=70)'
+                                   , '-moz-opacity'          : '0.7'
+                                   ,  opacity                : '.7'
+                                   ,  width                  : '190px'
+                                   },
+                               '#ClearStorageBtn:disabled':
+                                   { 'background-color'      : 'grey'
+                                   ,  color                  : '#000'
+                                   , 'text-decoration'       : 'line-through'
+                                   },
+                               '#colorPicker, #ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAeditiorCancelBtn, #CAAeditiorApplyCropBtn':
+                                   { 'float'                 : 'right'
+                                   ,  width                  : '79px'
+                                   },
+                               '#colorPicker:active, #ColorDefaultBtn:active, #ClearStorageBtn:active, #CAAeditiorMaskColorControl:active, #CAAeditiorSaveImageBtn:active, #CAAeditiorCancelBtn:active, #CAAeditiorApplyCropBtn:active':
+                                   {  border                 : '1px inset #D3D3D3'
+                                   ,  filter                 : 'alpha(opacity=100)'
+                                   , '-moz-opacity'          : '1'
+                                   ,  opacity                : '1'
+                                   },
+                               'legend':
+                                   {  color                  : '#000!important'
+                                   , 'font-size'             : '110%!important'
+                                   , 'font-variant'          : 'small-caps'
+                                   },
+                               'table.tbl * table, #imageContainer, #previewContainer':      
+                                   {  width                  : '100%'
+                                   },
+                               'table.tbl .count':
+                                   {  width                  : '6em!important'
+                                   },
+                               'h4':
+                                   { 'font-size'             : '115%'
+                                   },
+                               'h5':
+                                   { '-webkit-margin-after'  : '0'
+                                   , '-webkit-margin-before' : '1em'
+                                   },
+                               '#aboutMenu * h5':
+                                   { 'font-size'             : '100%'
+                                   },
+                               '#aboutMenu * dd':
+                                   { 'padding-bottom'        : '5px'
+                                   },
+                               '#aboutHeader':
+                                   { 'margin-top'            : '0'
+                                   },
+                               /* css for the number polyfill */
+                               'div.number-spin-btn-container':
+                                   {  display                : 'inline-block'
+                                   ,  margin                 : '0'
+                                   ,  padding                : '0'
+                                   ,  position               : 'relative'
+                                   , 'vertical-align'        : 'bottom'
+                                   },
+                               'div.number-spin-btn':
+                                   { 'background-color'      : '#CCCCCC'
+                                   ,  border                 : '2px outset #CCCCCC'
+                                   ,  height                 : '11.5px!important'
+                                   ,  width                  : '1.2em'
+                                   },
+                               'div.number-spin-btn-up':
+                                   {  'border-bottom-width'  : '1px'
+                                   ,  '-webkit-border-radius': '3px 3px 0px 0px'
+                                   ,          'border-radius': '3px 3px 0px 0px'
+                                   },
+                               'div.number-spin-btn-up:before':
+                                   {  content                : '""'
+                                   , 'border-color'          : 'transparent transparent black transparent'
+                                   , 'border-style'          : 'solid'
+                                   , 'border-width'          : '0 0.3em 0.3em 0.3em'
+                                   ,  height                 : '0'
+                                   ,  left                   : '50%'
+                                   ,  margin                 : '-0.15em 0 0 -0.3em'
+                                   ,  padding                : '0'
+                                   ,  position               : 'absolute'
+                                   ,  top                    : '25%'
+                                   ,  width                  : '0'
+                                   },
+                               'div.number-spin-btn-down':
+                                   { '-webkit-border-radius' : '0px 0px 3px 3px'
+                                   ,         'border-radius' : '0px 0px 3px 3px'      
+                                   , 'border-top-width'      : '1px'      
+                                   },
+                               'div.number-spin-btn-down:before':
+                                   {  content                : '""'
+                                   ,  width                  : '0'
+                                   ,  height                 : '0'
+                                   , 'border-width'          : '0.3em 0.3em 0 0.3em'
+                                   , 'border-style'          : 'solid'
+                                   , 'border-color'          : 'black transparent transparent transparent'
+                                   ,  position               : 'absolute'
+                                   ,  top                    : '75%'
+                                   ,  left                   : '50%'
+                                   ,  margin                 : '-0.15em 0 0 -0.3em'
+                                   ,  padding                : '0'
+                                   },
+                               'div.number-spin-btn:hover':
+                                   {  cursor                 : 'pointer'
+                                   },
+                               'div.number-spin-btn:active':
+                                   { 'background-color'      : '#999999'
+                                   ,  border                 : '2px inset #999999'
+                                   },
+                               'div.number-spin-btn-up:active:before':
+                                   { 'border-color'          : 'transparent transparent white transparent'
+                                   ,  left                   : '51%'
+                                   ,  top                    : '26%'
+                                   },
+                               'div.number-spin-btn-down:active:before':
+                                   { 'border-color'          : 'white transparent transparent transparent'
+                                   ,  left                   : '51%'
+                                   ,  top                    : '76%'
+                                   }
        };
        
 /* START remote file accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
@@ -1093,10 +1105,24 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
 
     $.log('Script initializing.');
 
+    INNERCONTEXT.UTILITY = {};
+
+    INNERCONTEXT.UTILITY.antiSquish = function antiSquish () {
+        /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
+           prevents those columns getting squished when the table-layout is set to fixed layout. */
+        $('.CAAantiSquish').remove();
+        for (var $th = $(document.getElementsByTagName('th')), i = 0; 3 > i; i += 2) {
+            $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
+                      ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''), { 'class' : 'CAAantiSquish' });
+        }
+    };
+    INNERCONTEXT.UTILITY.antiSquish();
+
+
     $('head').append('<base href="">');
 
     var supportedImageFormats = ['bmp', 'gif', 'jpg', 'png']
-      , cachedImages = localStorage.getItem('caaBatch_imageCache')
+      , cachedImages = localStorage.getItem('Caabie_imageCache')
       , re = { image : /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp|ico)$/i
              , mbid  : /\w{8}\-\w{4}\-\w{4}\-\w{4}-\w{12}/
              , uri   : /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi
@@ -1175,17 +1201,6 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         $.addScript('idbFileSystem');
     }
 
-    var antiSquish = function antiSquish () {
-        /* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.  This next bit
-           prevents those columns getting squished when the table-layout is set to fixed layout. */
-        $('.CAAantiSquish').remove();
-        for (var $th = $(document.getElementsByTagName('th')), i = 0; 3 > i; i += 2) {
-            $.addRule(['thead > tr > th:nth-child(', (i + 1), ')'].join(''),
-                      ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join(''), { 'class' : 'CAAantiSquish' });
-        }
-    };
-    antiSquish();
-
     var init = function init () {
         /* This creates a temporary local file system to use to store remote image files. */
         var localFS;
@@ -1211,8 +1226,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function init_create_mainUI () {
             $.log('Creating main UI and the options menu.');
 
-            var colorOptions     = []
-              , optionsImage     = localStorage.getItem('iconSettings')
+            var optionsImage     = localStorage.getItem('iconSettings')
               , baseImage        = localStorage.getItem('magnifyingGlassBase')
               , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
@@ -1262,7 +1276,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                                                                           , step      : 1
                                                                           , 'min'     : 0
                                                                           , 'max'     : 100
-                                                                          , value     : localStorage.getItem('caaBatch_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL
+                                                                          , value     : localStorage.getItem('Caabie_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL
                                                                           , title     : $.l('How dark the bkgrnd')
                                                                           })
                                    , $editor000Label  : $make('label',    { 'for'     : 'CAAeditorDarknessControl'
@@ -1327,7 +1341,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                                                                           , title     : $.l('Remove stored images nfo')
                                                                           , type      : 'button'
                                                                           , value     : $.l('Remove stored images')
-                                                                          , disabled  : localStorage.getItem('caaBatch_imageCache') === '[]'
+                                                                          , disabled  : localStorage.getItem('Caabie_imageCache') === '[]'
                                                                           })
                                    , $removeControl   : $make('input',    { id        : 'caaOptionRemove'
                                                                           , title     : $.l('Remove (help)')
@@ -1345,38 +1359,40 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                                    };
 
             /* Populate the colors list */
-            var colors        = Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
-              , colorsMap     = []
-              ;
+            !function populateColorsList () {
+                var colors        = Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
+                  , colorsMap     = []
+                  , $colorOptions = INNERCONTEXT.DOM.$colorOptions = []
+                  ;
+    
+                var prepColorList = function prep_color_list_for_sorting (color, i) {
+                    colorsMap.push({ index: i
+                                   , value: $.l(color).toLowerCase()
+                                   });
+                };
+    
+                var sortColors = function sort_color_list (a, b) {
+                    return a.value > b.value ? 1 : -1;
+                };
+    
+                var populateColorList = function populate_colors_list (map) {
+                    var colorItem   = colors[map.index]
+                      , color       = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
+                      , lsItemName  = 'Caabie_colors_' + colorItem
+                      , $thisOption = $make('option', { 'class' : 'colorOption'
+                                                      , value   : colorItem
+                                                      }).data('default', color)
+                                                        .text($.l(colorItem));
+                    if (null === localStorage.getItem(lsItemName)) {
+                        $.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
+                        localStorage.setItem(lsItemName, color);
+                    }
+                    $colorOptions.push($thisOption);
+                };
 
-            var prepColorList = function prep_color_list_for_sorting (color, i) {
-                colorsMap.push({ index: i
-                               , value: $.l(color).toLowerCase()
-                               });
-            };
-
-            var sortColors = function sort_color_list (a, b) {
-                return a.value > b.value ? 1 : -1;
-            };
-
-            var populateColorList = function populate_colors_list (map) {
-                var colorItem   = colors[map.index]
-                  , color       = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
-                  , lsItemName  = 'caaBatch_colors_' + colorItem
-                  , $thisOption = $make('option', { 'class' : 'colorOption'
-                                                  , value   : colorItem
-                                                  }).data('default', color)
-                                                    .text($.l(colorItem));
-                if (null === localStorage.getItem(lsItemName)) {
-                    $.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
-                    localStorage.setItem(lsItemName, color);
-                }
-                colorOptions.push($thisOption);
-            };
-
-            colors.forEach(prepColorList);
-
-            colorsMap.sort(sortColors).map(populateColorList);
+                colors.forEach(prepColorList);
+                colorsMap.sort(sortColors).map(populateColorList);
+            }();
 
             /* Populate the credits list */
             !function populateCreditsList () {
@@ -1440,7 +1456,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                                          : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
                                                        : -1; // a[1] <  b[1] -> -1
                 });
-                var userLang  = localStorage.getItem('caaBatch_language') || 'en';
+                var userLang  = localStorage.getItem('Caabie_language') || 'en';
                 var makeLanguageOptions = function make_language_options (language) {
                                               return $make('option', { selected : (language[0] === userLang)
                                                                      , value    : language[0]
@@ -1449,74 +1465,76 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                 INNERCONTEXT.DOM.$ARRlangs = languages.map(makeLanguageOptions);
             }();
 
-            /* Populate the DOM */
-            document.getElementById('sidebar').innerHTML = '';
-            $('#sidebar').detach(function sidebar_internal_detach_handler () {
-                $(this).appendAll(
-                        [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
-                        , INNERCONTEXT.DOM.$aboutControl.append(aboutImage)
-                        , INNERCONTEXT.DOM.$sizeContainer.appendAll(
-                                                          [ INNERCONTEXT.DOM.$imageMagnify.append(plusImage)
-                                                          , INNERCONTEXT.DOM.$imageShrink.append(minusImage)
-                                                          ])
-                        , INNERCONTEXT.DOM.$optionsControl.append(optionsImage)
-                        , INNERCONTEXT.DOM.$imageContainer.appendAll(
-                                                           [ INNERCONTEXT.DOM.$aboutMenu.appendAll(
-                                                                                         [ INNERCONTEXT.DOM.$aboutLegend
-                                                                                         , INNERCONTEXT.DOM.$aboutHeader
-                                                                                         , INNERCONTEXT.DOM.$version.quickClone().prepend('Caabie ')
-                                                                                         , INNERCONTEXT.DOM.$creditList
-                                                                                         ])
-                                                           , INNERCONTEXT.DOM.$optionsMenu.appendAll(
-                                                                                           [ INNERCONTEXT.DOM.$optionsLegend
-                                                                                           , INNERCONTEXT.DOM.$version
-                                                                                           , INNERCONTEXT.DOM.$removeControl
-                                                                                           , INNERCONTEXT.DOM.$removeLabel
-                                                                                           , $make('br')
-                                                                                           , INNERCONTEXT.DOM.$parseControl
-                                                                                           , INNERCONTEXT.DOM.$parseLabel
-                                                                                           , $make('br')
-                                                                                           , INNERCONTEXT.DOM.$storageBtn
-                                                                                           , $make('br')
-                                                                                           , INNERCONTEXT.DOM.$langLabel.append(INNERCONTEXT.DOM.$langList.appendAll(
-                                                                                                                                                           INNERCONTEXT.DOM.$ARRlangs))
-                                                                                           , INNERCONTEXT.DOM.$colorField.appendAll(
-                                                                                                                          [ INNERCONTEXT.DOM.$colorLegend
-                                                                                                                          , INNERCONTEXT.DOM.$colorSelect.appendAll(colorOptions)
-                                                                                                                          , INNERCONTEXT.DOM.$colorPicker
-                                                                                                                          , INNERCONTEXT.DOM.$colorDefault
-                                                                                                                          , INNERCONTEXT.DOM.$editor000Contnr.append(INNERCONTEXT.DOM.$editor000Label.append(INNERCONTEXT.DOM.$editor000Ctrl))
-                                                                                                                          ])
-                                                                                           , INNERCONTEXT.DOM.$optionsNote
-                                                                                           ])
-                                                                            ])
-                        , $make('hr').css('border-top', INNERCONTEXT.CONSTANTS.BORDERS)
-                        , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
-                        , INNERCONTEXT.DOM.$previewContainer.appendAll(
-                                                             [ INNERCONTEXT.DOM.$previewImage
-                                                             , INNERCONTEXT.DOM.$previewInfo.appendAll(
-                                                                                             [ INNERCONTEXT.DOM.$dtResolution
-                                                                                             , INNERCONTEXT.DOM.$ddResolution
-                                                                                             , INNERCONTEXT.DOM.$dtFilesize
-                                                                                             , INNERCONTEXT.DOM.$ddFilesize
-                                                                                             ])
-                                                             ])
-                        ]);
-
-                /* Autoeditor check */
-                var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
-                    thisEditor = $('.account > a:first').text();
-                if (-1 !== $.inArray(thisEditor, autoeditorList)) {
-                    $.log('The stored autoeditor preference is set to: ' + localStorage.getItem('caaBatch_autoeditPref'));
-                    /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
-                       object, even though it *looks* like it is returning a string. */
-                    var autoeditPref = (localStorage.getItem('caaBatch_autoeditPref') === "true");
-                    INNERCONTEXT.DOM.$autoeditControl[0].checked = autoeditPref;
-                    INNERCONTEXT.DOM.$autoeditControl.add(INNERCONTEXT.DOM.$autoeditLabel)
-                                                     .add($make('br'))
-                                                     .insertBefore(INNERCONTEXT.DOM.$parseControl);
-                }
-            });
+            /* Build the DOM */
+            !function buildCAAbieDOM () {
+                document.getElementById('sidebar').innerHTML = '';
+                $('#sidebar').detach(function sidebar_internal_detach_handler () {
+                    var $DOM = INNERCONTEXT.DOM;
+                    $(this).appendAll(
+                            [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
+                            , $DOM.$aboutControl.append(aboutImage)
+                            , $DOM.$sizeContainer.appendAll(
+                                                  [ $DOM.$imageMagnify.append(plusImage)
+                                                  , $DOM.$imageShrink.append(minusImage)
+                                                  ])
+                            , $DOM.$optionsControl.append(optionsImage)
+                            , $DOM.$imageContainer.appendAll(
+                                                   [ $DOM.$aboutMenu.appendAll(
+                                                                     [ $DOM.$aboutLegend
+                                                                     , $DOM.$aboutHeader
+                                                                     , $DOM.$version.quickClone().prepend('Caabie ')
+                                                                     , $DOM.$creditList
+                                                                     ])
+                                                   , $DOM.$optionsMenu.appendAll(
+                                                                       [ $DOM.$optionsLegend
+                                                                       , $DOM.$version
+                                                                       , $DOM.$removeControl
+                                                                       , $DOM.$removeLabel
+                                                                       , $make('br')
+                                                                       , $DOM.$parseControl
+                                                                       , $DOM.$parseLabel
+                                                                       , $make('br')
+                                                                       , $DOM.$storageBtn
+                                                                       , $make('br')
+                                                                       , $DOM.$langLabel.append($DOM.$langList.appendAll($DOM.$ARRlangs))
+                                                                       , $DOM.$colorField.appendAll(
+                                                                                          [ $DOM.$colorLegend
+                                                                                          , $DOM.$colorSelect.appendAll($DOM.$colorOptions)
+                                                                                          , $DOM.$colorPicker
+                                                                                          , $DOM.$colorDefault
+                                                                                          , $DOM.$editor000Contnr.append($DOM.$editor000Label.append($DOM.$editor000Ctrl))
+                                                                                          ])
+                                                                       , $DOM.$optionsNote
+                                                                       ])
+                                                        ])
+                            , $make('hr').css('border-top', INNERCONTEXT.CONSTANTS.BORDERS)
+                            , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
+                            , $DOM.$previewContainer.appendAll(
+                                                     [ $DOM.$previewImage
+                                                     , $DOM.$previewInfo.appendAll(
+                                                                         [ $DOM.$dtResolution
+                                                                         , $DOM.$ddResolution
+                                                                         , $DOM.$dtFilesize
+                                                                         , $DOM.$ddFilesize
+                                                                         ])
+                                                     ])
+                            ]);
+    
+                    /* Autoeditor check */
+                    var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
+                        thisEditor = $('.account > a:first').text();
+                    if (-1 !== $.inArray(thisEditor, autoeditorList)) {
+                        $.log('The stored autoeditor preference is set to: ' + localStorage.getItem('Caabie_autoeditPref'));
+                        /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
+                           object, even though it *looks* like it is returning a string. */
+                        var autoeditPref = (localStorage.getItem('Caabie_autoeditPref') === "true");
+                        INNERCONTEXT.DOM.$autoeditControl[0].checked = autoeditPref;
+                        INNERCONTEXT.DOM.$autoeditControl.add(INNERCONTEXT.DOM.$autoeditLabel)
+                                                         .add($make('br'))
+                                                         .insertBefore(INNERCONTEXT.DOM.$parseControl);
+                    }
+                });
+            }();
 
             // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
             INNERCONTEXT.DOM.$optionsControl.click(function optionsControl_click_handler() {
@@ -1532,7 +1550,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
             $.log('Adding handler for remembering preferences of the autoedit checkbox.');
             $('#caaAutoedit').on('click', function change_autoeditor_preference_handler (e) {
                 $.log('Autoeditor pref now set to: ' + $.single(this).is(':checked'));
-                localStorage.setItem('caaBatch_autoeditPref', $.single(this).is(':checked'));
+                localStorage.setItem('Caabie_autoeditPref', $.single(this).is(':checked'));
             });
         }();
 
@@ -1540,7 +1558,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function add_color_select_handler () {
             $.log('Adding handler for language selector.');
             $('#languageSelect').on('change', function change_language_preference_handler (e) {
-                localStorage.setItem('caaBatch_language', $.single(this).find(':selected').val());
+                localStorage.setItem('Caabie_language', $.single(this).find(':selected').val());
             });
         }();
 
@@ -1548,7 +1566,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function add_clear_image_storage_handler () {
             $.log('Adding handler for the clear image storage button.');
             $('#ClearStorageBtn').on('click', function clear_storage_handler (e) {
-                localStorage.setItem('caaBatch_imageCache', '[]');
+                localStorage.setItem('Caabie_imageCache', '[]');
                 $.single(this).prop('disabled', true);
                 cachedImages = [];
             });
@@ -1558,7 +1576,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function add_image_editor_darkness_control_handler () {
             $.log('Adding handler for the image editor darkness control.');
             $('#CAAeditorDarknessControl').on('click', function image_editor_darkness_control_handler (e) {
-                localStorage.setItem('caaBatch_editorDarkness', $.single(this).val());
+                localStorage.setItem('Caabie_editorDarkness', $.single(this).val());
             });
         }();
 
@@ -1573,14 +1591,14 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function add_color_select_handler () {
             $.log('Adding handler for color picker.');
             $('#colorSelect').on('change', function change_color_selection_handler (e) {
-                var color = localStorage.getItem('caaBatch_colors_' + $.single(this).find(':selected').val());
-                $.log('Getting localStorage for ' + 'caaBatch_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
+                var color = localStorage.getItem('Caabie_colors_' + $.single(this).find(':selected').val());
+                $.log('Getting localStorage for ' + 'Caabie_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
                 myPicker.fromString(color);
             });
             /* Store new color value in localStorage. */
             $('#colorPicker').change(function change_color_preference_handler (e) {
-                localStorage.setItem('caaBatch_colors_' + $('#colorSelect').find(':selected').val(), this.value);
-                $.log('Setting localStorage for ' + 'caaBatch_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
+                localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), this.value);
+                $.log('Setting localStorage for ' + 'Caabie_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
             });
             var $firstOption = $('#colorSelect').find('option:first');
             $firstOption.prop('selected', true);
@@ -1596,8 +1614,8 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                                                   var color = $('#colorSelect').find(':selected')
                                                                                .data('default');
                                                   myPicker.fromString(color);
-                                                  $.log('Setting localStorage for ' + 'caaBatch_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + color);
-                                                  localStorage.setItem('caaBatch_colors_' + $('#colorSelect').find(':selected').val(), color);
+                                                  $.log('Setting localStorage for ' + 'Caabie_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + color);
+                                                  localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), color);
                                               });
         }();
 
@@ -1648,6 +1666,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
               , classes = []
               ;
 
+            $.browser.chrome && (INNERCONTEXT.CONSTANTS.CSS['#colorPicker, #CAAeditiorMaskColorControl'].padding = '8px'); // This makes the default box around the color disappear on Chrome
             INNERCONTEXT.CONSTANTS.CSS['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
             $make('link').attr({ rel  : 'stylesheet'
@@ -2185,7 +2204,7 @@ Native support:
                    #2 is important; without it, if you have multiple tabs open, each with this script running, they would create
                    a feedback loop, each triggering a new storage event on the other when they remove the new URL from the key.
                 */
-                if (e.key !== 'caaBatch_imageCache' || cachedImages === e.newValue) {
+                if (e.key !== 'Caabie_imageCache' || cachedImages === e.newValue) {
                     return;
                 }
 
@@ -2194,12 +2213,12 @@ Native support:
                 e.preventDefault();
 
                 if ('undefined' !== e.oldValue && e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
-                    cachedImages = localStorage.getItem('caaBatch_imageCache');
+                    cachedImages = localStorage.getItem('Caabie_imageCache');
                     return false;
                 }
 
                 var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
-                localStorage.setItem('caaBatch_imageCache', e.oldValue || '');
+                localStorage.setItem('Caabie_imageCache', e.oldValue || '');
 
                 var type = supportedImageType(newURL);
                 if (type) {
@@ -2449,7 +2468,7 @@ Native support:
         !function load_stored_images() {
                 var image
                   , type
-                  , imageArray = JSON.parse(localStorage.getItem('caaBatch_imageCache'))
+                  , imageArray = JSON.parse(localStorage.getItem('Caabie_imageCache'))
                   ;
                 null !== imageArray && imageArray.length && imageArray.forEach(function load_stored_images_internal (url) {
                     image = decodeURIComponent(url);
@@ -2998,7 +3017,7 @@ Native support:
         $.log('Screen resize detected, adjusting layout.');
         if ((window.outerHeight - window.innerHeight) > 100) {
             $('#tblStyle1').prop('disabled',true);
-            antiSquish();
+            INNERCONTEXT.UTILITY.antiSquish();
             $('#tblStyle1').prop('disabled',false);
         }
         $('div.caaDiv').each(function window_resize_internal () {
@@ -3015,6 +3034,7 @@ Native support:
                                                              .parent();
         $('ul.links').find('hr:first').before($triggerLink);
     }();
+debugger
 };
 
 OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
@@ -3070,7 +3090,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
         },
         // A very basic version of a gettext function.
         l: function l(str) {
-            return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('caaBatch_language') || 'en'][str]);
+            return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('Caabie_language') || 'en'][str]);
         },
         // Logs a message to the console if debug mode is on.
         log: function log(str, verbose) {
@@ -3201,15 +3221,21 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
         }
       , loadLocal = function loadLocal (fn) {
             makeScript();
-            script.textContent = '(' + OUTERCONTEXT.CONTEXTS[fn].toString() + ')(jQuery, { CONSTANTS:' + JSON.stringify(OUTERCONTEXT.CONSTANTS) + ', UTILITY: { getColor:' + OUTERCONTEXT.UTILITY.getColor.toString() + '}});';
+            script.textContent = [ '(', OUTERCONTEXT.CONTEXTS[fn].toString(), ')'
+                                 , '(jQuery,'
+                                 ,     '{ CONSTANTS:', JSON.stringify(OUTERCONTEXT.CONSTANTS)
+                                 ,     ', UTILITY: { getColor:', OUTERCONTEXT.UTILITY.getColor.toString(), '}'
+                                 ,     '}'
+                                 , ');'
+                                 ].join('');
             head.appendChild(script);
         }
       ;
 
     (function script_loader (i) {
         if ( requires.length === 1 &&
-             localStorage.getItem('caaBatch') !== null &&
-             localStorage.getItem('caaBatch') === OUTERCONTEXT.CONSTANTS.VERSION) {
+             localStorage.getItem('Caabie') !== null &&
+             localStorage.getItem('Caabie') === OUTERCONTEXT.CONSTANTS.VERSION) {
             /* Scripts are cached in localStorage; load them. */
             i++;
             requires[1] = 'jQuery';
@@ -3228,7 +3254,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
             makeScript();
             script.src = requires[0];
             script.addEventListener('load', function loader_move_to_next_script () {
-                localStorage.setItem('caaBatch', OUTERCONTEXT.CONSTANTS.VERSION);
+                localStorage.setItem('Caabie', OUTERCONTEXT.CONSTANTS.VERSION);
                 script_loader(1);
             }, true);
             head.appendChild(script);
