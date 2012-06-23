@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.01.1432
+// @version     0.01.1436
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -52,16 +52,34 @@ if (!document.body) {
     document.body = document.getElementsByTagName('body')[0];
 }
 
-var OUTERCONTEXT = { CONTEXTS : {}
-                   , UTILITY  : { height : function get_client_height (id) {
-                                               'use strict';
-                                               return document.getElementById(id).clientHeight;
-                                           }
-                                }
-                   };
+var OUTERCONTEXT = { CONTEXTS: {}
+                   , UTILITY: { extend : function (objOne, objTwo) {
+                                             'use strict';
+                                             var temp
+                                               , len
+                                               ;
+                                             if (2 < arguments.length) {
+                                                 for (temp = 1, len = arguments.length; temp < len; temp++) {
+                                                     this.extend(objOne, arguments[temp]);
+                                                 }
+                                             } else {
+                                                 for (temp in objTwo) {
+                                                     if (objTwo.hasOwnProperty(temp)) {
+                                                         objOne[temp] = objTwo[temp];
+                                                     }
+                                                 }
+                                             }
+                                             return objOne;
+                                         }
+                              , height : function get_client_height(id) {
+                                             'use strict';
+                                             return document.getElementById(id).clientHeight;
+                                         }
+                   }
+};
 
 OUTERCONTEXT.CONSTANTS = { DEBUGMODE     : true
-                         , VERSION       : '0.1.1432'
+                         , VERSION       : '0.1.1436'
                          , DEBUG_VERBOSE : false
                          , BORDERS       : '1px dotted #808080'
                          , COLORS        : { ACTIVE     : '#B0C4DE'
@@ -297,59 +315,62 @@ OUTERCONTEXT.CONSTANTS = { DEBUGMODE     : true
                          };
          
 /* Special case Canadian English. */
-OUTERCONTEXT.CONSTANTS.TEXT['en-ca']                          = JSON.parse(JSON.stringify(OUTERCONTEXT.CONSTANTS.TEXT.en));
-OUTERCONTEXT.CONSTANTS.TEXT['en-ca'].languageName             += ' (Canadian)';
-OUTERCONTEXT.CONSTANTS.TEXT['en-ca'].Colors                   = 'Colours';
-OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note']   = 'Changes to the colour settings will take effect the next time that this script is run.';
-OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['take effect next time'] = 'Changes to the language and colour settings will take effect the next time that this script is run.';
+OUTERCONTEXT.CONSTANTS.TEXT['en-ca'] = JSON.parse(JSON.stringify(OUTERCONTEXT.CONSTANTS.TEXT.en));
+OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.CONSTANTS.TEXT['en-ca'],
+                            { 'languageName'          : 'English (Canadian)'
+                            , 'Colors'                : 'Colours'
+                            , 'Changed colors note'   : OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note'].replace('color', 'colour')
+                            , 'take effect next time' : OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['take effect next time'].replace('color', 'colour')
+                            });
 
 /* Conditionally add the debug "language". */
 if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
-    OUTERCONTEXT.CONSTANTS.TEXT.test = ({ strings: {}
-                                        , generateMorse: function() {
-                                              'use strict';
-                                              var chars = [' ', '-', '·']
-                                                  , morseString = ''
-                                                  , repeats = Math.random() * 50 >> 0
-                                                  ;
-                                              while (repeats--) {
-                                                  morseString += chars[Math.random() * 3 >> 0];
-                                              }
-                                              return morseString;
-                                          }
-                                        , init: function() {
-                                              'use strict';
-                                              var self = this;
-                                              Object.keys(OUTERCONTEXT.CONSTANTS.TEXT.en).forEach(function(text) {
-                                                  self.strings[text] = self.generateMorse();
-                                              });
-                                              this.strings.languageName = 'pseudo-Morse code';
-                                              return this.strings;
-                                          }
-                                        }).init();
+    OUTERCONTEXT.CONSTANTS.TEXT.test = { strings: {}
+                                       , generateMorse: function() {
+                                             'use strict';
+                                             var chars = [' ', '-', '·']
+                                                 , morseString = ''
+                                                 , repeats = Math.random() * 50 >> 0
+                                                 ;
+                                             while (repeats--) {
+                                                 morseString += chars[Math.random() * 3 >> 0];
+                                             }
+                                             return morseString;
+                                         }
+                                       , init: function() {
+                                             'use strict';
+                                             var self = this;
+                                             Object.keys(OUTERCONTEXT.CONSTANTS.TEXT.en).forEach(function(text) {
+                                                 self.strings[text] = self.generateMorse();
+                                             });
+                                             this.strings.languageName = 'pseudo-Morse code';
+                                             return this.strings;
+                                         }
+                                       }.init();
 }
 
-// Gets a color value stored in localStorage.
-OUTERCONTEXT.UTILITY.getColor = function getColor (color) {
-    'use strict';
-    return localStorage.getItem('caaBatch_colors_' + color);
-};
-
-// Converts a hex color string into an rgba color string
-OUTERCONTEXT.UTILITY.hexToRGBA = function hexToRGBA (hex, opacity) {
-    'use strict';
-    hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
-    var R = parseInt(hex.substring(0, 2), 16)
-      , G = parseInt(hex.substring(2, 4), 16)
-      , B = parseInt(hex.substring(4, 6), 16)
-      ;
-    return 'rgba(' + [R, G, B, opacity].join(',') + ')';
-};
+OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.UTILITY,
+                              // Gets a color value stored in localStorage.
+                            { getColor  : function getColor (color) {
+                                              'use strict';
+                                              return localStorage.getItem('caaBatch_colors_' + color);
+                                          }
+                              // Converts a hex color string into an rgba color string
+                            , hexToRGBA : function hexToRGBA (hex, opacity) {
+                                              'use strict';
+                                              hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
+                                              var R = parseInt(hex.substring(0, 2), 16)
+                                                , G = parseInt(hex.substring(2, 4), 16)
+                                                , B = parseInt(hex.substring(4, 6), 16)
+                                                ;
+                                              return 'rgba(' + [R, G, B, opacity].join(',') + ')';
+                                          }
+                            });
 
 OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
 
 /* Initialize the image editor's background opacity store, if needed. */
-if (localStorage.getItem('caaBatch_editorDarkness') === null) {
+if (null === localStorage.getItem('caaBatch_editorDarkness')) {
     localStorage.setItem('caaBatch_editorDarkness', 75);
 }
 
@@ -956,15 +977,15 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#ColorDefaultBtn, #CAAeditiorSaveImageBtn, #CAAe
    new context loses the special permissions granted to userscripts, and thus does not have access to GM_xmlhttpRequest. */
 
 /* Create a hidden div which will be used to pass messages between javascript security contexts. */
-var messageDiv = document.createElement('div');
-messageDiv.id = 'xhrComlink';
-document.body.appendChild(messageDiv);
+OUTERCONTEXT.COMLINK = { messageDiv : document.createElement('div') };
+OUTERCONTEXT.COMLINK.messageDiv.id = 'xhrComlink';
+document.body.appendChild(OUTERCONTEXT.COMLINK.messageDiv);
 
 /* When a click event alerts the code that a new link is in the communications div, read that link's uri out of the linked span.
    Then convert the binary file into a base64 string, and replace the contents of the linked span with the base64 string.  Finally,
    trigger a doubleclick event to let the other halves of this code, in the other javascript context, know that the file data has
    been retrieved. */
-var getUri = function getURI (e) {
+OUTERCONTEXT.COMLINK.getUri = function getURI (e) {
     'use strict';
 
     // START from http://phpjs.org
@@ -1052,16 +1073,17 @@ var getUri = function getURI (e) {
     gmXHR(gmXOptions);
 };
 
-var getUriWorkaround = function getUriWorkaround (e) { // Works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
+OUTERCONTEXT.COMLINK.getUriWorkaround = function getUriWorkaround (e) { 
+// This works around http://wiki.greasespot.net/0.7.20080121.0_compatibility in Firefox
     'use strict';
     setTimeout(function getUriWorkaround_internal () {
-        getUri(e);
+        OUTERCONTEXT.COMLINK.getUri(e);
     }, 0);
 };
 
 /* Create an event listener, in the priviledged userscript context, which will listen for new uri additions to the xhrComlink div.
    This cannot use custom events, as they would only exist in one of the two javascript contexts. */
-messageDiv.addEventListener('click', getUriWorkaround, true);
+OUTERCONTEXT.COMLINK.messageDiv.addEventListener('click', OUTERCONTEXT.COMLINK.getUriWorkaround, true);
 
 /* END remote file accessor functions. */
 
@@ -1099,10 +1121,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
     /* This forces INNERCONTEXT.CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster. */
     $('body').append($make('img', { src: INNERCONTEXT.CONSTANTS.THROBBER }).hide());
 
-    var $imageContainer
-      , $previewContainer
-      , sizeStatus
-      , $form = $('#h2-discography ~ form:first, #h2-releases ~ form:first');
+    var sizeStatus;
 
     /* This function does a little magic.  It makes sure that the horizontal scrollbar on CAA rows only shows when it needs to. */
     var checkScroll = function checkScroll ($caaDiv) {
@@ -1192,134 +1211,138 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
         !function init_create_mainUI () {
             $.log('Creating main UI and the options menu.');
 
-            $imageContainer      = $make('div', { id: 'imageContainer' });
-            $previewContainer    = $make('div', { id: 'previewContainer' });
             var colorOptions     = []
               , optionsImage     = localStorage.getItem('iconSettings')
               , baseImage        = localStorage.getItem('magnifyingGlassBase')
               , minusImage       = baseImage + localStorage.getItem('magnifyingGlassMinus')
               , plusImage        = baseImage + localStorage.getItem('magnifyingGlassPlus')
               , aboutImage       = localStorage.getItem('infoIcon')
-              , $autoeditControl = $make('input',    { id        : 'caaAutoedit'
-                                                     , type      : 'checkbox'
-                                                     , title     : $.l('Submit as autoedits')
-                                                     })
-              , $autoeditLabel   = $make('label',    { 'for'     : 'caaAutoedit'
-                                                     , id        : 'caaAutoeditLabel'
-                                                     , title     : $.l('Submit as autoedits')
-                                                     })
-                                                     .text($.l('Submit as autoedits'))
-              , $colorDefault    = $make('input',    { id        : 'ColorDefaultBtn'
-                                                     , title     : $.l('Changed colors note')
-                                                     , type      : 'button'
-                                                     , value     : $.l('default')
-                                                     })
-              , $colorField      = $make('fieldset', { id        : 'colorField' })
-              , $colorLegend     = $make('legend',   { id        :'colorLegend'  })
-                                                     .text($.l('Colors'))
-              , $colorPicker     = $make('input',    { id        : 'colorPicker'
-                                                     , title     : $.l('Changed colors note')
-                                                     , type      : 'color'
-                                                     , value     : '66ff00'
-                                                     })
-              , $colorSelect     = $make('select',   { id        : 'colorSelect'
-                                                     , size      : 5
-                                                     , title     : $.l('Changed colors note')
-                                                     })
-              , $ddFilesize      = $make('dd',       { id        : 'previewFilesize' })
-              , $ddResolution    = $make('dd',       { id        : 'previewResolution' })
-              , $dtFilesize      = $make('dt',       { 'class'   : 'previewDT'
-                                                     , id        : 'dtFilesize'
-                                                     })
-                                                     .text($.l('File size'))
-              , $dtResolution    = $make('dt',       { 'class'   : 'previewDT'
-                                                     , id        : 'dtResolution'
-                                                     })
-                                                    .text($.l('(Image) Resolution'))
-              , $editor000Contnr = $make('div',      { id        : 'editor000Container'
-                                                     })
-              , $editor000Ctrl   = $make('input',    { id        : 'CAAeditorDarknessControl'
-                                                     , type      : 'number'
-                                                     , step      : 1
-                                                     , 'min'     : 0
-                                                     , 'max'     : 100
-                                                     , value     : localStorage.getItem('caaBatch_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL
-                                                     , title     : $.l('How dark the bkgrnd')
-                                                     })
-              , $editor000Label  = $make('label',    { 'for'     : 'CAAeditorDarknessControl'
-                                                     , id        : 'CAAeditorDarknessLabel'
-                                                     , title     : $.l('How dark the bkgrnd')
-                                                     })
-                                                    .text($.l('How dark the bkgrnd'))
-              , $imageMagnify    = $make('div',      { 'class'   : 'imageSizeControl'
-                                                     , id        : 'imageMagnify'
-                                                     , title     : $.l('Magnify image')
-                                                     })
-              , $imageShrink     = $make('div',      { 'class'   : 'imageSizeControl'
-                                                     , id        : 'imageShrink'
-                                                     , title     : $.l('Shrink image')
-                                                     })
-              , $langLabel       = $make('label',    { 'for'     : 'languageSelect'
-                                                     , id        : 'languageSelectLabel'
-                                                     , title     : $.l('Changed language note')
-                                                     })
-                                                    .text($.l('Language') + ':')
-              , $langList        = $make('select',   { id        : 'languageSelect'
-                                                     , size      : 3
-                                                     , title     : $.l('Changed language note')
-                                                     })
-              , $aboutControl    = $make('div',      { id        : 'aboutControl'
-                                                     , title     : $.l('About')
-                                                     })
-              , $aboutLegend     = $make('legend',   { id        : 'aboutLegend' })
-                                                     .text($.l('About'))
-              , $aboutHeader     = $make('h4',       { id        : 'aboutHeader' })
-                                                     .text('Cover Art Archive Bulk Image Editor')
-              , $aboutMenu       = $make('fieldset', { id        : 'aboutMenu' })
-                                                     .hide()
-              , $optionsControl  = $make('div',      { id        : 'optionsHeader'
-                                                     , title     : $.l('Options')
-                                                     })
-              , $optionsLegend   = $make('legend',   { id        : 'optionsLegend' })
-                                                     .text($.l('Options'))
-              , $optionsMenu     = $make('fieldset', { id        : 'optionsMenu' })
-                                                     .hide()
-              , $optionsNote     = $make('div',      { id        : 'optionsNote' })
-                                                     .text($.l('take effect next time'))
-              , $parseControl    = $make('input',    { id        : 'caaOptionParse'
-                                                     , title     : $.l('Parse (help)')
-                                                     , type      : 'checkbox'
-                                                     })
-              , $parseLabel      = $make('label',    { 'for'     : 'caaOptionParse'
-                                                     , id        : 'caaOptionParseLabel'
-                                                     , title     : $.l('Parse (help)')
-                                                     })
-                                                     .text($.l('Parse web pages'))
-              , $previewImage    = $make('img',      { id        : 'previewImage'
-                                                     , draggable : false
-                                                     })
-              , $previewInfo     = $make('dl',       { id        : 'previewText' })
-                                                     .hide()
-              , $storageBtn      = $make('input',    { id        : 'ClearStorageBtn'
-                                                     , title     : $.l('Remove stored images nfo')
-                                                     , type      : 'button'
-                                                     , value     : $.l('Remove stored images')
-                                                     , disabled  : localStorage.getItem('caaBatch_imageCache') === '[]'
-                                                     })
-              , $removeControl   = $make('input',    { id        : 'caaOptionRemove'
-                                                     , title     : $.l('Remove (help)')
-                                                     , type      : 'checkbox'
-                                                     })
-              , $removeLabel     = $make('label',    { 'for'     : 'caaOptionRemove'
-                                                     , id        : 'caaOptionRemoveLabel'
-                                                     , title     : $.l('Remove (help)')
-                                                     })
-                                                    .text($.l('Remove images'))
-              , $sizeContainer   = $make('div',      { id        : 'imageSizeControlsMenu' })
-              , $version         = $make('span',     { id        : 'caaVersion' })
-                                                    .text([$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''))
-              , $creditList      = $make('div')
               ;
+
+            INNERCONTEXT.DOM     = { $autoeditControl : $make('input',    { id        : 'caaAutoedit'
+                                                                          , type      : 'checkbox'
+                                                                          , title     : $.l('Submit as autoedits')
+                                                                          })
+                                   , $autoeditLabel   : $make('label',    { 'for'     : 'caaAutoedit'
+                                                                          , id        : 'caaAutoeditLabel'
+                                                                          , title     : $.l('Submit as autoedits')
+                                                                          })
+                                                                          .text($.l('Submit as autoedits'))
+                                   , $colorDefault    : $make('input',    { id        : 'ColorDefaultBtn'
+                                                                          , title     : $.l('Changed colors note')
+                                                                          , type      : 'button'
+                                                                          , value     : $.l('default')
+                                                                          })
+                                   , $colorField      : $make('fieldset', { id        : 'colorField' })
+                                   , $colorLegend     : $make('legend',   { id        :'colorLegend'  })
+                                                                          .text($.l('Colors'))
+                                   , $colorPicker     : $make('input',    { id        : 'colorPicker'
+                                                                          , title     : $.l('Changed colors note')
+                                                                          , type      : 'color'
+                                                                          , value     : '66ff00'
+                                                                          })
+                                   , $colorSelect     : $make('select',   { id        : 'colorSelect'
+                                                                          , size      : 5
+                                                                          , title     : $.l('Changed colors note')
+                                                                          })
+                                   , $ddFilesize      : $make('dd',       { id        : 'previewFilesize' })
+                                   , $ddResolution    : $make('dd',       { id        : 'previewResolution' })
+                                   , $dtFilesize      : $make('dt',       { 'class'   : 'previewDT'
+                                                                          , id        : 'dtFilesize'
+                                                                          })
+                                                                          .text($.l('File size'))
+                                   , $dtResolution    : $make('dt',       { 'class'   : 'previewDT'
+                                                                          , id        : 'dtResolution'
+                                                                          })
+                                                                         .text($.l('(Image) Resolution'))
+                                   , $editor000Contnr : $make('div',      { id        : 'editor000Container'
+                                                                          })
+                                   , $editor000Ctrl   : $make('input',    { id        : 'CAAeditorDarknessControl'
+                                                                          , type      : 'number'
+                                                                          , step      : 1
+                                                                          , 'min'     : 0
+                                                                          , 'max'     : 100
+                                                                          , value     : localStorage.getItem('caaBatch_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL
+                                                                          , title     : $.l('How dark the bkgrnd')
+                                                                          })
+                                   , $editor000Label  : $make('label',    { 'for'     : 'CAAeditorDarknessControl'
+                                                                          , id        : 'CAAeditorDarknessLabel'
+                                                                          , title     : $.l('How dark the bkgrnd')
+                                                                          })
+                                                                         .text($.l('How dark the bkgrnd'))
+                                   , $imageContainer  : $make('div',      { id: 'imageContainer'
+                                                                          })
+                                   , $imageMagnify    : $make('div',      { 'class'   : 'imageSizeControl'
+                                                                          , id        : 'imageMagnify'
+                                                                          , title     : $.l('Magnify image')
+                                                                          })
+                                   , $imageShrink     : $make('div',      { 'class'   : 'imageSizeControl'
+                                                                          , id        : 'imageShrink'
+                                                                          , title     : $.l('Shrink image')
+                                                                          })
+                                   , $langLabel       : $make('label',    { 'for'     : 'languageSelect'
+                                                                          , id        : 'languageSelectLabel'
+                                                                          , title     : $.l('Changed language note')
+                                                                          })
+                                                                         .text($.l('Language') + ':')
+                                   , $langList        : $make('select',   { id        : 'languageSelect'
+                                                                          , size      : 3
+                                                                          , title     : $.l('Changed language note')
+                                                                          })
+                                   , $aboutControl    : $make('div',      { id        : 'aboutControl'
+                                                                          , title     : $.l('About')
+                                                                          })
+                                   , $aboutLegend     : $make('legend',   { id        : 'aboutLegend' })
+                                                                          .text($.l('About'))
+                                   , $aboutHeader     : $make('h4',       { id        : 'aboutHeader' })
+                                                                          .text('Cover Art Archive Bulk Image Editor')
+                                   , $aboutMenu       : $make('fieldset', { id        : 'aboutMenu' })
+                                                                          .hide()
+                                   , $optionsControl  : $make('div',      { id        : 'optionsHeader'
+                                                                          , title     : $.l('Options')
+                                                                          })
+                                   , $optionsLegend   : $make('legend',   { id        : 'optionsLegend' })
+                                                                          .text($.l('Options'))
+                                   , $optionsMenu     : $make('fieldset', { id        : 'optionsMenu' })
+                                                                          .hide()
+                                   , $optionsNote     : $make('div',      { id        : 'optionsNote' })
+                                                                          .text($.l('take effect next time'))
+                                   , $parseControl    : $make('input',    { id        : 'caaOptionParse'
+                                                                          , title     : $.l('Parse (help)')
+                                                                          , type      : 'checkbox'
+                                                                          })
+                                   , $parseLabel      : $make('label',    { 'for'     : 'caaOptionParse'
+                                                                          , id        : 'caaOptionParseLabel'
+                                                                          , title     : $.l('Parse (help)')
+                                                                          })
+                                                                          .text($.l('Parse web pages'))
+                                   , $previewContainer: $make('div',      { id: 'previewContainer' 
+                                                                          })
+                                   , $previewImage    : $make('img',      { id        : 'previewImage'
+                                                                          , draggable : false
+                                                                          })
+                                   , $previewInfo     : $make('dl',       { id        : 'previewText' })
+                                                                          .hide()
+                                   , $storageBtn      : $make('input',    { id        : 'ClearStorageBtn'
+                                                                          , title     : $.l('Remove stored images nfo')
+                                                                          , type      : 'button'
+                                                                          , value     : $.l('Remove stored images')
+                                                                          , disabled  : localStorage.getItem('caaBatch_imageCache') === '[]'
+                                                                          })
+                                   , $removeControl   : $make('input',    { id        : 'caaOptionRemove'
+                                                                          , title     : $.l('Remove (help)')
+                                                                          , type      : 'checkbox'
+                                                                          })
+                                   , $removeLabel     : $make('label',    { 'for'     : 'caaOptionRemove'
+                                                                          , id        : 'caaOptionRemoveLabel'
+                                                                          , title     : $.l('Remove (help)')
+                                                                          })
+                                                                         .text($.l('Remove images'))
+                                   , $sizeContainer   : $make('div',      { id        : 'imageSizeControlsMenu' })
+                                   , $version         : $make('span',     { id        : 'caaVersion' })
+                                                                         .text([$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''))
+                                   , $creditList      : $make('div')
+                                   };
 
             /* Populate the colors list */
             var colors        = Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
@@ -1396,9 +1419,9 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                 var populateCreditListPerRole = function populate_credits_list_per_role (role) {
                     credits = [];
                     INNERCONTEXT.CONSTANTS.CREDITS[role].sort(sortCredits).forEach(populateRoleListPerCredit);
-                    $creditList.appendAll([ $make('h5').text($.l(role))
-                                          , $make('dl').appendAll(credits)
-                                          ]);
+                    INNERCONTEXT.DOM.$creditList.appendAll([ $make('h5').text($.l(role))
+                                                           , $make('dl').appendAll(credits)
+                                                           ]);
                 };
 
                 Object.keys(INNERCONTEXT.CONSTANTS.CREDITS)
@@ -1406,77 +1429,78 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
             }();
 
             /* Populate the languages list */
-            var languages = [];
+            !function populateLanguagesList () {
+                var languages = [];
 
-            Object.keys(INNERCONTEXT.CONSTANTS.TEXT).forEach(function populate_languages_list (key) {
-                languages.push([key, INNERCONTEXT.CONSTANTS.TEXT[key].languageName]);
-            });
-            languages.sort(function sort_languages_list (a, b) {
-                return a[1] === b[1] ? 0                 // a[1] == b[1] ->  0
-                                     : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
-                                                   : -1; // a[1] <  b[1] -> -1
-            });
-            var userLang  = localStorage.getItem('caaBatch_language') || 'en';
-            var $ARRlangs = languages.map(function make_language_options (language) {
+                Object.keys(INNERCONTEXT.CONSTANTS.TEXT).forEach(function populate_languages_list (key) {
+                    languages.push([key, INNERCONTEXT.CONSTANTS.TEXT[key].languageName]);
+                });
+                languages.sort(function sort_languages_list (a, b) {
+                    return a[1] === b[1] ? 0                 // a[1] == b[1] ->  0
+                                         : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
+                                                       : -1; // a[1] <  b[1] -> -1
+                });
+                var userLang  = localStorage.getItem('caaBatch_language') || 'en';
+                var makeLanguageOptions = function make_language_options (language) {
                                               return $make('option', { selected : (language[0] === userLang)
                                                                      , value    : language[0]
                                                                      }).text(language[1]);
-                                          });
+                                          };
+                INNERCONTEXT.DOM.$ARRlangs = languages.map(makeLanguageOptions);
+            }();
 
             /* Populate the DOM */
             document.getElementById('sidebar').innerHTML = '';
             $('#sidebar').detach(function sidebar_internal_detach_handler () {
                 $(this).appendAll(
                         [ $make('h1', { id : 'imageHeader' }).text($.l('Images'))
-                        , $aboutControl.append(
-                                        aboutImage)
-                        , $sizeContainer.appendAll(
-                                         [ $imageMagnify.append(plusImage)
-                                         , $imageShrink.append(minusImage)
-                                         ])
-                        , $optionsControl.append(
-                                          optionsImage)
-                        , $imageContainer.appendAll(
-                                          [ $aboutMenu.appendAll(
-                                                       [ $aboutLegend
-                                                       , $aboutHeader
-                                                       , $version.quickClone().prepend('Caabie ')
-                                                       , $creditList
-                                                       ])
-                                          , $optionsMenu.appendAll(
-                                                         [ $optionsLegend
-                                                         , $version
-                                                         , $removeControl
-                                                         , $removeLabel
-                                                         , $make('br')
-                                                         , $parseControl
-                                                         , $parseLabel
-                                                         , $make('br')
-                                                         , $storageBtn
-                                                         , $make('br')
-                                                         , $langLabel.append($langList.appendAll(
-                                                                                       $ARRlangs))
-                                                         , $colorField.appendAll(
-                                                                       [ $colorLegend
-                                                                       , $colorSelect.appendAll(colorOptions)
-                                                                       , $colorPicker
-                                                                       , $colorDefault
-                                                                       , $editor000Contnr.append($editor000Label.append($editor000Ctrl))
-                                                                       ])
-                                                         , $optionsNote
-                                                         ])
-                                          ])
+                        , INNERCONTEXT.DOM.$aboutControl.append(aboutImage)
+                        , INNERCONTEXT.DOM.$sizeContainer.appendAll(
+                                                          [ INNERCONTEXT.DOM.$imageMagnify.append(plusImage)
+                                                          , INNERCONTEXT.DOM.$imageShrink.append(minusImage)
+                                                          ])
+                        , INNERCONTEXT.DOM.$optionsControl.append(optionsImage)
+                        , INNERCONTEXT.DOM.$imageContainer.appendAll(
+                                                           [ INNERCONTEXT.DOM.$aboutMenu.appendAll(
+                                                                                         [ INNERCONTEXT.DOM.$aboutLegend
+                                                                                         , INNERCONTEXT.DOM.$aboutHeader
+                                                                                         , INNERCONTEXT.DOM.$version.quickClone().prepend('Caabie ')
+                                                                                         , INNERCONTEXT.DOM.$creditList
+                                                                                         ])
+                                                           , INNERCONTEXT.DOM.$optionsMenu.appendAll(
+                                                                                           [ INNERCONTEXT.DOM.$optionsLegend
+                                                                                           , INNERCONTEXT.DOM.$version
+                                                                                           , INNERCONTEXT.DOM.$removeControl
+                                                                                           , INNERCONTEXT.DOM.$removeLabel
+                                                                                           , $make('br')
+                                                                                           , INNERCONTEXT.DOM.$parseControl
+                                                                                           , INNERCONTEXT.DOM.$parseLabel
+                                                                                           , $make('br')
+                                                                                           , INNERCONTEXT.DOM.$storageBtn
+                                                                                           , $make('br')
+                                                                                           , INNERCONTEXT.DOM.$langLabel.append(INNERCONTEXT.DOM.$langList.appendAll(
+                                                                                                                                                           INNERCONTEXT.DOM.$ARRlangs))
+                                                                                           , INNERCONTEXT.DOM.$colorField.appendAll(
+                                                                                                                          [ INNERCONTEXT.DOM.$colorLegend
+                                                                                                                          , INNERCONTEXT.DOM.$colorSelect.appendAll(colorOptions)
+                                                                                                                          , INNERCONTEXT.DOM.$colorPicker
+                                                                                                                          , INNERCONTEXT.DOM.$colorDefault
+                                                                                                                          , INNERCONTEXT.DOM.$editor000Contnr.append(INNERCONTEXT.DOM.$editor000Label.append(INNERCONTEXT.DOM.$editor000Ctrl))
+                                                                                                                          ])
+                                                                                           , INNERCONTEXT.DOM.$optionsNote
+                                                                                           ])
+                                                                            ])
                         , $make('hr').css('border-top', INNERCONTEXT.CONSTANTS.BORDERS)
                         , $make('h1', { id : 'previewHeader' }).text($.l('Preview Image'))
-                        , $previewContainer.appendAll(
-                                            [ $previewImage
-                                            , $previewInfo.appendAll(
-                                                           [ $dtResolution
-                                                           , $ddResolution
-                                                           , $dtFilesize
-                                                           , $ddFilesize
-                                                           ])
-                                            ])
+                        , INNERCONTEXT.DOM.$previewContainer.appendAll(
+                                                             [ INNERCONTEXT.DOM.$previewImage
+                                                             , INNERCONTEXT.DOM.$previewInfo.appendAll(
+                                                                                             [ INNERCONTEXT.DOM.$dtResolution
+                                                                                             , INNERCONTEXT.DOM.$ddResolution
+                                                                                             , INNERCONTEXT.DOM.$dtFilesize
+                                                                                             , INNERCONTEXT.DOM.$ddFilesize
+                                                                                             ])
+                                                             ])
                         ]);
 
                 /* Autoeditor check */
@@ -1487,19 +1511,19 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
                     /* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
                        object, even though it *looks* like it is returning a string. */
                     var autoeditPref = (localStorage.getItem('caaBatch_autoeditPref') === "true");
-                    $autoeditControl[0].checked = autoeditPref;
-                    $autoeditControl.add($autoeditLabel)
-                                    .add($make('br'))
-                                    .insertBefore($parseControl);
+                    INNERCONTEXT.DOM.$autoeditControl[0].checked = autoeditPref;
+                    INNERCONTEXT.DOM.$autoeditControl.add(INNERCONTEXT.DOM.$autoeditLabel)
+                                                     .add($make('br'))
+                                                     .insertBefore(INNERCONTEXT.DOM.$parseControl);
                 }
             });
 
             // Firefox renders slideToggle() incorrectly here; just use toggle() instead in Firefox.
-            $optionsControl.click(function optionsControl_click_handler() {
-                $.browser.mozilla ? $optionsMenu.toggle() : $optionsMenu.slideToggle();
+            INNERCONTEXT.DOM.$optionsControl.click(function optionsControl_click_handler() {
+                $.browser.mozilla ? INNERCONTEXT.DOM.$optionsMenu.toggle() : INNERCONTEXT.DOM.$optionsMenu.slideToggle();
             });
-            $aboutControl.click(function aboutControl_click_handler() {
-                $.browser.mozilla ? $aboutMenu.toggle() : $aboutMenu.slideToggle();
+            INNERCONTEXT.DOM.$aboutControl.click(function aboutControl_click_handler() {
+                $.browser.mozilla ? INNERCONTEXT.DOM.$aboutMenu.toggle() : INNERCONTEXT.DOM.$aboutMenu.slideToggle();
             });
         }();
 
@@ -1727,7 +1751,7 @@ OUTERCONTEXT.CONTEXTS.INNERCONTEXT = function main ($, INNERCONTEXT) {
             dataURLreader.onload = function add_attributes_to_dropped_image(event) {
                 $.log('Running addImageToDropbox -> dataURLreader.onload');
                 $img.prop('src', event.target.result);
-                $imageContainer.append($img);
+                INNERCONTEXT.DOM.$imageContainer.append($img);
             };
             binaryReader.onloadend = function get_exif_for_dropped_image(event) {
                 $.log('Running addImageToDropbox -> binaryReader.onloadend');
@@ -2118,7 +2142,7 @@ Native support:
 
         !function init_activate_dnd_at_dropzone () {
             $.log('Attaching events to drop zone.');
-            $imageContainer.on({
+            INNERCONTEXT.DOM.$imageContainer.on({
                 dragenter: function dragEnter (e) {
                     $.log('imageContainer: dragenter.');
                     $.single(this).addClass('over');
@@ -3181,21 +3205,25 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function thirdParty($, THIRDCONTEXT) {
             head.appendChild(script);
         }
       ;
+
     (function script_loader (i) {
-        var continueLoading = function continueLoading () {
-debugger
-            loadLocal('THIRDPARTY');
-            loadLocal('INNERCONTEXT');
-        };
         if ( requires.length === 1 &&
              localStorage.getItem('caaBatch') !== null &&
              localStorage.getItem('caaBatch') === OUTERCONTEXT.CONSTANTS.VERSION) {
+            /* Scripts are cached in localStorage; load them. */
             i++;
             requires[1] = 'jQuery';
             requires[2] = 'jQueryUI';
             requires[3] = 'jsjpegmeta';
             requires[4] = 'jscolor';
             requires[5] = 'canvasToBlob';
+            requires.forEach(function add_required_scripts (requiredItem) {
+                makeScript();
+                script.textContent = localStorage.getItem(requiredItem);
+                head.appendChild(script);
+            });
+            loadLocal('THIRDPARTY');
+            loadLocal('INNERCONTEXT');
         } else { /* Scripts are not cached in localStorage, go get them and cache them. */
             makeScript();
             script.src = requires[0];
@@ -3206,12 +3234,5 @@ debugger
             head.appendChild(script);
             return;
         }
-        /* Scripts are cached in localStorage; load them. */
-        requires.forEach(function add_required_scripts (requiredItem) {
-            makeScript();
-            script.textContent = localStorage.getItem(requiredItem);
-            head.appendChild(script);
-        });
-        continueLoading();
     })(i || 0);
 }();
