@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0002
+// @version 0.02.0003
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -1248,7 +1248,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		clearImageStore : function clearImageStore () {
 			localStorage.setItem('Caabie_imageCache', '[]');
-			$.single(this).prop('disabled', true);
+			$dom['Options‿input‿button‿clear_storage'].prop('disabled', true);
 			INNERCONTEXT.DATA.cachedImages = [];
 		},
 
@@ -1794,6 +1794,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeUI();
             this.initializeSubscribers();
 
+            delete INNERCONTEXT.TEMPLATES.main;
+            delete INNERCONTEXT.TEMPLATES.image_preview;
+            delete INNERCONTEXT.TEMPLATES.MENUS;
+            delete INNERCONTEXT.UTILITY.AboutElement;
+            delete INNERCONTEXT.UTILITY.OptionsElement;
+            delete INNERCONTEXT.UTILITY.PreviewElement;
 			delete INNERCONTEXT.INIT;
 		}
 	};
