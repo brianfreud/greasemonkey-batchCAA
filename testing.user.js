@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0000
+// @version 0.02.0002
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -35,6 +35,7 @@ Opera: Not compatible, sorry.
 
 */
 
+//TODO: Finish refactoring
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for editing MB's existing CAA image data
@@ -85,14 +86,14 @@ OUTERCONTEXT.CONSTANTS = { DEBUGMODE	 : true
 						 , NAMESPACE	 : 'Caabie'
 						 , DEBUG_VERBOSE : false
 						 , BORDERS	   : '1px dotted #808080'
-						 , COLORS		: { ACTIVE	 : '#B0C4DE'
-										  , CAABOX	 : '#F2F2FC'
+						 , COLORS		: { ACTIVE	   : '#B0C4DE'
+										  , CAABOX	   : '#F2F2FC'
 										  , CAABUTTONS : '#4B0082'
-										  , EDITOR	 : '#F9F9F9'
+										  , EDITOR	   : '#F9F9F9'
 										  , EDITORMENU : '#D5D5FF'
 										  , INCOMPLETE : '#FFFF7A'
 										  , COMPLETE   : '#C1FFC1'
-										  , REMOVE	 : '#B40000'
+										  , REMOVE	   : '#B40000'
 										  , MASK	   : '#000'
 										  }
 						 , COVERTYPES	: [ 'Front' /* The order of items in this array matters! */
@@ -1195,6 +1196,42 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return eles;
 		},
 
+          	changeImageSize : function changeImageSize (change) {
+			var $shrink	   = INNERCONTEXT.DOM['Main‿div‿imageShrink']
+			  , $magnify   = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
+			  , data	   = INNERCONTEXT.DATA
+			  ;
+
+			data.sizeStatus += change;
+
+			switch (data.sizeStatus) {
+				case 0: data.sizeStatus = 1;
+						/* falls through */
+				case 1:
+						$shrink.vis(0);
+						$magnify.vis(1);
+						$.imagesTiny();
+						break;
+				case 2:
+						$shrink.add($magnify)
+							   .vis(1);
+						$.imagesSmall();
+						break;
+				case 3:
+						$shrink.add($magnify)
+							   .vis(1);
+						$.imagesMedium();
+						break;
+				case 5: data.sizeStatus = 4;
+						/* falls through */
+				case 4:
+						$shrink.vis(1);
+						$magnify.vis(0);
+						$.imagesLarge();
+						break;
+			}
+		},
+
 		checkScroll : function checkScroll ($caaDiv) {
 			// This function ensures that the horizontal scrollbar on CAA rows only shows when it needs to.
 			$.log('Adjusting negative right margin.', 1);
@@ -1207,6 +1244,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			$caaDiv.css('margin-right', Math.min(0, $caaDiv.data('width') - divWidth - 115) + 'px');
 			$parents.filter('td.imageRow').css('width', $parents.filter('.tbl:first').outerWidth(true) + 'px');
+		},
+
+		clearImageStore : function clearImageStore () {
+			localStorage.setItem('Caabie_imageCache', '[]');
+			$.single(this).prop('disabled', true);
+			INNERCONTEXT.DATA.cachedImages = [];
 		},
 
 		getEditColor : function getEditColor ($ele) {
@@ -1343,9 +1386,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				  , color	   = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
 				  , lsItemName  = 'Caabie_colors_' + colorItem
 				  , $thisOption = $.make('option', { 'class' : 'colorOption'
-												  , value   : colorItem
-												  }).data('default', color)
-													.text($.l(colorItem));
+												   , value   : colorItem
+												   }).data('default', color)
+													 .text($.l(colorItem));
 				if (null === localStorage.getItem(lsItemName)) {
 					$.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
 					localStorage.setItem(lsItemName, color);
@@ -1587,6 +1630,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		initializePage : function initializePage () {
 			$.make('base').appendTo(document.head);
 
+			$(document.body).css({ 'background-color': '#FFF' });
+
+			document.getElementById('sidebar').innerHTML = '';
+
 			// Resize the sidebar
 			$('#sidebar').addClass('CAAsidebar');
 			$('#content').css('margin-right', (INNERCONTEXT.CONSTANTS.SIDEBARWIDTH + 20) + 'px');
@@ -1656,9 +1703,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				,	INNERCONTEXT.UI.$makeIcon('about')
 				, { ele: 'div', id: 'image_size' }
 				,	[ { ele: 'div', 'class': 'imageSizeControl', id: 'imageMagnify', title: $.l('Magnify image') }
-					,	INNERCONTEXT.UI.$makeIcon('zoomIn')
-					, { ele: 'div', 'class': 'imageSizeControl', id: 'imageShrink', title: $.l('Shrink image') }
 					,	INNERCONTEXT.UI.$makeIcon('zoomOut')
+					, { ele: 'div', 'class': 'imageSizeControl', id: 'imageShrink', title: $.l('Shrink image') }
+					,	INNERCONTEXT.UI.$makeIcon('zoomIn')
 					]
 				, { ele: 'div', id: 'options_control', title: $.l('Options') }
 				,	INNERCONTEXT.UI.$makeIcon('options')
@@ -1672,18 +1719,70 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				];
 		},
 
-		createUI : function createUI () {
-			var $sidebar = $('#sidebar');
-
-			$(document.body).css({ 'background-color': '#FFF' });
-
+		initializeUI : function initializeUI () {
 			/* Create the UI */
-			$sidebar[0].innerHTML = '';
 			this.defineMainTemplate();
-			$sidebar.appendAll( INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.main) );
+			$('#sidebar').appendAll( INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.main) );
 
 			/* Adjust the height of the image area based on the height of the preview area.  */
 			INNERCONTEXT.UTILITY.adjustContainerHeights();
+
+			/* Autoeditor check */
+			var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
+				thisEditor = $('.account > a:first').text();
+			if (-1 !== $.inArray(thisEditor, autoeditorList)) {
+				/* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
+				   object, even though it *looks* like it is returning a string. */
+				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (localStorage.getItem('Caabie_autoeditPref') === "true");
+				$('.autoedit').show();
+			}
+		},
+
+		initializeSubscribers : function initializeSubscribers () {
+			var $dom  = INNERCONTEXT.DOM
+			  , $util = INNERCONTEXT.UTILITY
+			  ;
+
+			// Firefox renders slideToggle() badly; use toggle() instead.
+			$dom['Main‿div‿options_control'].on('click', function options_control_click_event_handler() {
+				$dom['Options‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
+			});
+			$dom['Main‿div‿about_control'].on('click', function about_control_click_event_handler() {
+				$dom['About‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
+			});
+
+			// Image size controls
+			$dom['Main‿div‿imageShrink'].on('click', function imageShrink_click_event_handler () {
+				$util.changeImageSize(-1);
+			});
+			$dom['Main‿div‿imageMagnify'].on('click', function imageMagnify_click_event_handler () {
+				$util.changeImageSize(1);
+			});
+
+			// remember preferences: parse webpages checkbox
+			$dom['Options‿input‿checkbox‿parse'].on('click', function autoeditor_preference_click_event_handler (e) {
+				localStorage.setItem('Caabie_parsePref', $.single(this).is(':checked'));
+			});
+
+			// remember preferences: autoedit checkbox
+			$dom['Options‿input‿checkbox‿autoedit'].on('click', function autoeditor_preference_click_event_handler (e) {
+				localStorage.setItem('Caabie_autoeditPref', $.single(this).is(':checked'));
+			});
+
+			// Clear image storage button
+			$dom['Options‿input‿button‿clear_storage'].on('click', function clear_storage_event_handler (e) {
+				$util.clearImageStore();
+			});
+
+			// remember preferences: language selector
+			$dom['Options‿select‿language'].on('change', function language_preference_change_event_handler (e) {
+				localStorage.setItem('Caabie_language', $.single(this).find(':selected').val());
+			});
+
+			// remember preferences: image editor shadow level
+			$dom['Options‿input‿number‿darkness'].on('change', function image_editor_shadow_level_preference_change_event_handler (e) {
+				localStorage.setItem('Caabie_editorDarkness', $.single(this).val());
+			});
 		},
 
 		init : function init () {
@@ -1692,33 +1791,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeImages();
 			this.initializeRegexps();
 			this.initializeFileSystem();
-			this.createUI();
+			this.initializeUI();
+            this.initializeSubscribers();
 
 			delete INNERCONTEXT.INIT;
 		}
-	};
-
-	var init = function init () {
-		INNERCONTEXT.INIT.init();
-
-			/* Autoeditor check */
-			var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
-				thisEditor = $('.account > a:first').text();
-			if (-1 !== $.inArray(thisEditor, autoeditorList)) {
-				$.log('The stored autoeditor preference is set to: ' + localStorage.getItem('Caabie_autoeditPref'));
-				/* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
-				   object, even though it *looks* like it is returning a string. */
-				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (localStorage.getItem('Caabie_autoeditPref') === "true");
-				$('.autoedit').show();
-			}
-
-		// Firefox renders slideToggle() badly; use toggle() instead.
-		INNERCONTEXT.DOM['Main‿div‿options_control'].click(function options_control_click_handler() {
-			INNERCONTEXT.DOM['Options‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
-		});
-		INNERCONTEXT.DOM['Main‿div‿about_control'].click(function about_control_click_handler() {
-			INNERCONTEXT.DOM['About‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
-		});
 	};
 
 	!function add_manual_starter_for_init () {
@@ -1726,7 +1803,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		var $triggerLink = $.make('a', { id : 'triggerLink' }).text($.l('Add cover art'))
 															 .wrap('<li>')
-															 .on('click', function start_cover_art_script () { init(); })
+															 .on('click', function start_cover_art_script () {
+															                  INNERCONTEXT.INIT.init();
+															              })
 															 .parent();
 		$('ul.links').find('hr:first').before($triggerLink);
 	}();
@@ -2046,40 +2125,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 }();
 
 /*
-		// Add remember preferences capability to the autoedit checkbox. 
-		!function autoedit_checkbox_handler () {
-			$.log('Adding handler for remembering preferences of the autoedit checkbox.');
-			$('#Main➤input➤autoedit').on('click', function change_autoeditor_preference_handler (e) {
-				$.log('Autoeditor pref now set to: ' + $.single(this).is(':checked'));
-				localStorage.setItem('Caabie_autoeditPref', $.single(this).is(':checked'));
-			});
-		}();
 
-		// Add functionality to the language selector. 
-		!function add_language_select_handler () {
-			$.log('Adding handler for language selector.');
-			$('#languageSelect').on('change', function change_language_preference_handler (e) {
-				localStorage.setItem('Caabie_language', $.single(this).find(':selected').val());
-			});
-		}();
-
-		// Add functionality to the clear image storage button. 
-		!function add_clear_image_storage_handler () {
-			$.log('Adding handler for the clear image storage button.');
-			$('#ClearStorageBtn').on('click', function clear_storage_handler (e) {
-				localStorage.setItem('Caabie_imageCache', '[]');
-				$.single(this).prop('disabled', true);
-				INNERCONTEXT.DATA.cachedImages = [];
-			});
-		}();
-
-		// Add functionality to the image editor darkness control. 
-		!function add_image_editor_darkness_control_handler () {
-			$.log('Adding handler for the image editor darkness control.');
-			$('#CAAeditorDarknessControl').on('click', function image_editor_darkness_control_handler (e) {
-				localStorage.setItem('Caabie_editorDarkness', $.single(this).val());
-			});
-		}();
 
 		// Create the color picker. 
 		$.log('Creating color picker');
@@ -2158,48 +2204,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								});
 		}();
 
-		var imageSize = function imageSize (change) {
-			var $shrink	= $('#imageShrink')
-			  , $magnify   = $('#imageMagnify')
-			  , data	   = INNERCONTEXT.DATA
-			  ;
 
-			data.sizeStatus += change;
 
-			switch (data.sizeStatus) {
-				case 0: data.sizeStatus = 1;
-						  // falls through 
-				case 1:
-						$shrink.vis(0);
-						$magnify.vis(1);
-						$.imagesTiny();
-						break;
-				case 2:
-						$shrink.add($magnify)
-							   .vis(1);
-						$.imagesSmall();
-						break;
-				case 3:
-						$shrink.add($magnify)
-							   .vis(1);
-						$.imagesMedium();
-						break;
-				case 5: data.sizeStatus = 4;
-						  // falls through 
-				case 4:
-						$shrink.vis(1);
-						$magnify.vis(0);
-						$.imagesLarge();
-						break;
-			}
-		};
-
-		$('#imageShrink').on('click', function imageShrink_click_handler () {
-			imageSize(-1);
-		});
-		$('#imageMagnify').on('click', function imageMagnify_click_handler () {
-			imageSize(1);
-		});
 
 		var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
 			$.log('Running addImageToDropbox');
