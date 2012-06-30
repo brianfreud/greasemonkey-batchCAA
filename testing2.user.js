@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 2
-// @version     0.02.0004
+// @version     0.02.0005
 // @description 
 // @include     http://*
 // ==/UserScript==
@@ -15,13 +15,13 @@ var outerCAA = { DEBUG : true
 
 outerCAA.storeURL = function () {
     'use strict';
-    var imageArray = JSON.parse(localStorage.getItem('caaBatch_imageCache')),
+    var imageArray = JSON.parse(localStorage.getItem('Caabie_imageCache')),
         newURL = window.location.hash.slice(1);
     if (null === imageArray) {
         imageArray = [];
     }
     newURL.length && imageArray.push(encodeURIComponent(newURL));
-    localStorage.setItem('caaBatch_imageCache', JSON.stringify(imageArray));
+    localStorage.setItem('Caabie_imageCache', JSON.stringify(imageArray));
     outerCAA.DEBUG && console.log('Stored image url: ' + newURL);
     return true;
 };
