@@ -1,29 +1,27 @@
 // ==UserScript==
-// @name		Testing 1
-// @version 0.02.0007
+// @name        Testing 1
+// @version     0.02.0008
 // @description
-// @include http://musicbrainz.org/artist/*
-// @include http://beta.musicbrainz.org/artist/*
-// @include http://test.musicbrainz.org/artist/*
-// @include http://musicbrainz.org/artist/*/releases
-// @include http://beta.musicbrainz.org/artist/*/releases
-// @include http://test.musicbrainz.org/artist/*/releases
-// @include http://musicbrainz.org/release-group/*
-// @include http://beta.musicbrainz.org/release-group/*
-// @include http://test.musicbrainz.org/release-group/*
-// @include http://musicbrainz.org/label/*
-// @exclude	http://musicbrainz.org/label/*/*
-// @include http://beta.musicbrainz.org/label/*
-// @include http://test.musicbrainz.org/label/*
+// @include     http://musicbrainz.org/artist/*
+// @include     http://beta.musicbrainz.org/artist/*
+// @include     http://test.musicbrainz.org/artist/*
+// @include     http://musicbrainz.org/artist/*/releases
+// @include     http://beta.musicbrainz.org/artist/*/releases
+// @include     http://test.musicbrainz.org/artist/*/releases
+// @include     http://musicbrainz.org/release-group/*
+// @include     http://beta.musicbrainz.org/release-group/*
+// @include     http://test.musicbrainz.org/release-group/*
+// @include     http://musicbrainz.org/label/*
+// @include     http://beta.musicbrainz.org/label/*
+// @include     http://test.musicbrainz.org/label/*
+// @exclude     http://musicbrainz.org/label/*/*
 // ==/UserScript==
-
-// Translations handled at https://www.transifex.net/projects/p/CAABatch/
-
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY */
-// See https://github.com/jshint/jshint/issues/541
 /*jshint smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
-/* Installation and requirements:
+/* ----------------------------------------------------------------------------
+
+Installation and requirements:
 
 Firefox: Requires a minimum of version 11.  Install as normal.  When the script is run the first time, a prompt will come up.  Make sure to click "accept"!
 
@@ -33,7 +31,12 @@ need to restart the browser before the script works again.
 
 Opera: Not compatible, sorry.
 
-*/
+
+----------------------------------------------------------------------------
+
+Translations are handled at https://www.transifex.net/projects/p/CAABatch/
+
+---------------------------------------------------------------------------- */
 
 //TODO: Refactor: handleURIs
 //TODO: Finish refactoring
@@ -56,338 +59,369 @@ if (!document.body) {
 }
 
 /* Initialize constants. */
-var OUTERCONTEXT = { CONTEXTS: {}
-				   , UTILITY: { extend : function (objOne, objTwo) {
-											 'use strict';
-											 var temp
-											   , len
-											   ;
-											 if (!Object.keys(objOne).length) {
-												 return objTwo;
-											 }
-											 if (2 < arguments.length) {
-												 for (temp = 1, len = arguments.length; temp < len; temp++) {
-													 this.extend(objOne, arguments[temp]);
-												 }
-											 } else {
-												 Object.keys(objTwo).forEach(function (key) {
-													 objOne[key] = objTwo[key];
-												 });
-											 }
-											 return objOne;
-										 }
-							  , height : function get_client_height(id) {
-											 'use strict';
-											 return document.getElementById(id).clientHeight;
-										 }
-							  }
-				   };
+var OUTERCONTEXT = 
+	{ CONTEXTS: {}
+	, UTILITY:
+		{ extend :
+			function (objOne, objTwo) {
+				'use strict';
+				var temp
+				  , len
+				  ;
+				if (!Object.keys(objOne).length) {
+					return objTwo;
+				}
+				if (2 < arguments.length) {
+					for (temp = 1, len = arguments.length; temp < len; temp++) {
+						this.extend(objOne, arguments[temp]);
+					}
+				} else {
+					Object.keys(objTwo).forEach(function (key) {
+						objOne[key] = objTwo[key];
+					});
+				}
+				return objOne;
+			}
+		, height :
+			function get_client_height(id) {
+				'use strict';
+				return document.getElementById(id).clientHeight;
+			}
+		}
+	};
 
-OUTERCONTEXT.CONSTANTS = { DEBUGMODE	 : true
-						 , VERSION	   : '0.1.1438'
-						 , NAMESPACE	 : 'Caabie'
-						 , DEBUG_VERBOSE : false
-						 , BORDERS	   : '1px dotted #808080'
-						 , COLORS		: { ACTIVE	   : '#B0C4DE'
-										  , CAABOX	   : '#F2F2FC'
-										  , CAABUTTONS : '#4B0082'
-										  , EDITOR	   : '#F9F9F9'
-										  , EDITORMENU : '#D5D5FF'
-										  , INCOMPLETE : '#FFFF7A'
-										  , COMPLETE   : '#C1FFC1'
-										  , REMOVE	   : '#B40000'
-										  , MASK	   : '#000'
-										  }
-						 , COVERTYPES	: [ 'Front' /* The order of items in this array matters! */
-										  , 'Back'
-										  , 'Booklet'
-										  , 'Medium'
-										  , 'Obi'
-										  , 'Spine'
-										  , 'Track'
-										  , 'Other'
-										  ]
-						 , CREDITS	   : { 'Developer and programmer' :
-															[ { name : 'Brian Schweitzer (“BrianFreud”)'
-															  , mb   : 'brianfreud'
-															  , urlN : 'userscripts.org/users/28107'
-															  }
-															]
-										   , Translations : [ { name : 'Calvin Walton (“kepstin”)'
-															  , what : 'Canadian English'
-															  , urlN : 'www.kepstin.ca'
-															  , mb   : 'kepstin'
-															  }]
-										   , Icons		: [ { name : '“Mapto”'
-															, what : 'Magnifying glass icons'
-															, urlN : 'commons.wikimedia.org/wiki/User:Mapto'
-															, urlW : 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
-															}
-														  , { name : '“Inductiveload”'
-															, what : 'Magnifying glass icons'
-															, urlN : 'commons.wikimedia.org/wiki/User:Inductiveload'
-															, urlW : 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
-															}
-														  , { name : '“ablonevn”'
-															, what : 'Gear icon'
-															, urlW : 'www.clker.com/clipart-169255.html'
-															}
-														  , { name : '“El T”'
-															, what : 'Information icon'
-															, urlN : 'en.wikipedia.org/wiki/User:El_T'
-															, urlW : 'en.wikipedia.org/wiki/File:Information_icon.svg'
-														  }
-														  , { name : 'Timur Gafforov & Avraam Makhmudov'
-															, what : 'Throbber image'
-															, urlW : 'preloaders.net'
-															}
-														  ]
-										   , Plugins	: [ { name : 'Ben Barnett'
-														    , what : 'jQuery.animate-enhanced v0.91'
-															, urlN : 'benbarnett.net'
-															, urlW : 'github.com/benbarnett/jQuery-Animate-Enhanced'
-															}
-														  , { name : 'Ryan Wheale & Tim Banks'
-															, what : 'jQuery.getHiddenDimensions'
-															, urlN : 'www.foliotek.com/devblog/author/timlanit'
-															, urlW : 'www.foliotek.com/devblog/getting-the-width-of-a-hidden-element-with-jquery-using-width'
-															}
-														  , { name : 'Brian Schweitzer & Naftali Lubin'
-															, what : 'jQuery.appendAll'
-															}
-														  , { name : 'James Padolsey'
-															, what : 'jQuery.single'
-															, urlN : 'james.padolsey.com'
-															, urlW : 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
-															}
-														  , { name : '“Cowboy” Ben Alman'
-															, what : 'jQuery.detach+ v0.1pre'
-															, urlN : 'benalman.com'
-															, urlW : 'gist.github.com/978520'
-															}
-														  ]
-										   , Polyfills	: [ { name : 'Eric Bidelman'
-															, what : 'idb.filesystem.js v0.0.1'
-															, urlN : 'ericbidelman.tumblr.com'
-															, urlW : 'github.com/ebidel/idb.filesystem.js'
-															}
-														  , { name : 'Jan Odvarko'
-															, what : 'jscolor v1.3.13'
-															, urlW : 'jscolor.com'
-															}
-														  , { name : 'Jonathan Stipe'
-															, what : 'number polyfill'
-															, urlW : 'github.com/jonstipe/number-polyfill'
-															}
-														  , { name : 'Sebastian Tschan (“blueimp”)'
-															, what : 'javaScript canvas to blob 2.0'
-															, urlN : 'blueimp.net'
-															, urlW : 'github.com/blueimp/JavaScript-Canvas-to-Blob'
-														    }
-														  ]
-										   , Tools		: [ { name : 'Jeff Schiller'
-															, what : 'Scour'
-															, urlW : 'www.codedread.com/scour'
-															}
-														  , { name : 'Google'
-															, what : 'Google Closure Compiler'
-															, urlW : 'closure-compiler.appspot.com/home'
-															}
-														  , { name : 'Site Project ApS'
-															, what : 'JavaScript string encoder'
-															, urlW : 'www.htmlescape.net/stringescape_tool.html'
-															}
-														  , { name : 'Yahoo!'
-															, what : 'Yahoo! Query Language'
-															, urlW : 'developer.yahoo.com/yql/'
-															}
-														  ]
-										   , Libraries	: [ { name : 'Tim Smart'
-															, what : 'data_string function'
-															, urlN : 'github.com/Tim-Smart'
-															, urlW : 'pastebin.ca/1425789'
-															}
-														  , { name : 'Tyler Akins, Bayron Guevara, Thunder.m, Kevin van Zonneveld, Pellentesque Malesuada, Rafał Kukawski & Brian Schweitzer'
-															, what : 'base64_encode function from PHPJS'
-															, urlN : 'rumkin.com'
-															, urlW : 'phpjs.org/functions/base64_encode'
-															}
-														  , { name : 'Steven Thurlow (“Stoive”)'
-															, what : 'dataURItoBlob'
-															, urlN : 'github.com/stoive'
-															, urlW : 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
-															}
-														  , { name : 'Ben Leslie'
-															, what : 'jsjpegmeta'
-															, urlN : 'benno.id.au/'
-															, urlW : 'code.google.com/p/jsjpegmeta/'
-															}
-														  , { name : 'John Resig and the rest of the jQuery team'
-															, what : 'jQuery 1.7.2'
-															, urlN : 'jquery.org/team'
-															, urlW : 'jquery.com'
-															}
-														  , { name : 'The jQueryUI team'
-															, what : 'jQuery UI 1.8.19'
-															, urlN : 'jqueryui.com/about'
-															, urlW : 'jqueryui.com'
-															}
-														  ]
-										   }
-						 , IESHADOWLVL   : 75
-						 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
-						 , IMAGESIZES	 : [50, 100, 150, 300]
-						 , LANGUAGE	     : 'en'
-						 , SIDEBARWIDTH  : (Math.max(window.innerWidth/500 << 0, 3) * 107) + 15
-						 , SIDEBARHEIGHT : window.innerHeight - OUTERCONTEXT.UTILITY.height('header') - OUTERCONTEXT.UTILITY.height('footer') - 25
-						 , THROBBER	     : localStorage.getItem('throbber')
-						 , PREVIEWSIZE   : 300
-						 , IMAGEFORMATS  : ['bmp', 'gif', 'jpg', 'png']
-						 , BEINGDRAGGED  : { OPACITY : '0.4'
-										   , SHRINK  : '0.7'
-										   }
-						 , TEXT		  : {
-										   en : { 'languageName'			: 'English'
-												, 'Add cover art'		    : 'Add cover art'
-												, 'Add image one release'   : 'Add a box for another image.'
-												, 'Bottom'				    : 'Bottom'
-												, 'bytes'				    : 'bytes'
-												, 'Changed colors note'	    : 'Changes to the color settings will take effect the next time that this script is run.'
-												, 'Changed language note'   : 'Changes to the language setting will take effect the next time that this script is run.'
-												, 'Click to edit this image': 'Left click to edit this image'
-												, 'Colors'				    : 'Colors'
-												, 'Crop image'			    : 'Crop'
-												, 'default'				    : 'default'
-												, 'degrees'				    : 'degrees'
-												, 'File size'			    : 'File size'
-												, 'Flip image'			    : 'Flip'
-												, 'How dark the bkgrnd'	    : 'Image editor shadow'
-												, 'How many degrees'		: 'How many degrees to rotate the image'
-												, '(Image) Resolution'	    : 'Resolution'
-												, 'Images'				    : 'Images'
-												, 'Language'				: 'Language'
-												, 'Left'					: 'Left'
-												, 'Load CAA images for all' : 'Load image data for all releases'
-												, 'Load CAA images'		    : 'Load image data for this release'
-												, 'loading'				    : 'Loading data from the Cover Art Archive, please wait...'
-												, 'Load text all releases'  : 'Loads images for all displayed releases.'
-												, 'Load text one release'   : 'Loads any images already in the Cover Art Archive for this release.'
-												, 'Crop mask color'		    : 'Mask color'
-												, 'Magnify image'		    : 'Zoom in'
-												, 'Options'				    : 'Options'
-												, 'Parse (help)'			: 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
-												, 'Parse web pages'		    : 'Parse web pages'
-												, 'Preview Image'		    : 'Preview'
-												, 'Remove (help)'		    : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
-												, 'Remove image'			: 'Click to remove this image'
-												, 'Remove images'		    : 'Remove images mode'
-												, 'Remove stored images nfo': 'This removes any images from other websites that you have stored while this script was not running.'
-												, 'Remove stored images'	: 'Remove stored images'
-												, 'Right'				    : 'Right'
-												, 'Rotate image'			: 'Rotate'
-												, 'Shrink image'			: 'Zoom out'
-												, 'Submit as autoedits'	    : 'Submit edits as autoedits'
-												, 'Submit edits'			: 'Submit edits'
-												, 'take effect next time'   : 'Changes to the language and color settings will take effect the next time that this script is run.'
-												, 'Top'					    : 'Top'
-												, 'Version'				    : 'Version'
-												, 'coverType:Back'		    : 'Back'
-												, 'coverType:Booklet'	    : 'Booklet'
-												, 'coverType:Front'		    : 'Front'
-												, 'coverType:Medium'		: 'Medium'
-												, 'coverType:Obi'		    : 'Obi'
-												, 'coverType:Other'		    : 'Other'
-												, 'coverType:Spine'		    : 'Spine'
-												, 'coverType:Track'		    : 'Track'
-												, 'About'				    : 'About'
-												, 'Developer and programmer': 'Developer and programmer'
-												, 'Icons'				    : 'Icons'
-												, 'Plugins'				    : 'Plugins'
-												, 'Polyfills'			    : 'Polyfills'
-												, 'Translations'			: 'Translations'
-												, 'Tools'				    : 'Tools'
-												, 'Libraries'			    : 'Libraries'
-												, 'Save'					: 'Save'
-												, 'Save changes'			: 'Save changes'
-												, 'Cancel'				    : 'Cancel'
-												, 'Error'				    : 'Error'
-												, 'Error too much cropping' : 'Cropping this much would remove the entire image!'
-												, 'Apply'				    : 'Apply'
-																			/* Try to keep the text for these last few very short. */
-												, 'ACTIVE'				    : 'Droppable area'
-												, 'CAABOX'				    : 'Empty CAA box'
-												, 'CAABUTTONS'			    : 'Load CAA buttons'
-												, 'EDITOR'				    : 'Image editor background'
-												, 'EDITORMENU'			    : 'Image editor menu'
-												, 'INCOMPLETE'			    : 'Incomplete edits'
-												, 'COMPLETE'				: 'Edits ready to submit'
-												, 'REMOVE'				    : 'Remove image highlight'
-												, 'MASK'					: 'Default crop mask color'
-												}
-										   }
-						 };
+OUTERCONTEXT.CONSTANTS = 
+	{ DEBUGMODE: true
+	, VERSION: '0.1.1438'
+	, NAMESPACE: 'Caabie'
+	, DEBUG_VERBOSE: false
+	, BORDERS: '1px dotted #808080'
+	, COLORS:
+		{ ACTIVE     : '#B0C4DE'
+		, CAABOX     : '#F2F2FC'
+		, CAABUTTONS : '#4B0082'
+		, EDITOR     : '#F9F9F9'
+		, EDITORMENU : '#D5D5FF'
+		, INCOMPLETE : '#FFFF7A'
+		, COMPLETE   : '#C1FFC1'
+		, REMOVE     : '#B40000'
+		, MASK       : '#000'
+		}
+	, COVERTYPES: /* The order of items in this array matters! */
+		[ 'Front'
+		, 'Back'
+		, 'Booklet'
+		, 'Medium'
+		, 'Obi'
+		, 'Spine'
+		, 'Track'
+		, 'Other'
+		]
+	, IESHADOWLVL: 75
+	, FILESYSTEMSIZE: 50 /* This indicates the number of megabytes to use for the temporary local file system. */
+	, IMAGESIZES: [ 50, 100, 150, 300 ]
+	, LANGUAGE: 'en'
+	, SIDEBARWIDTH: ( Math.max(window.innerWidth / 500 << 0, 3) * 107 ) + 15
+	, SIDEBARHEIGHT: window.innerHeight - OUTERCONTEXT.UTILITY.height( 'header' ) - OUTERCONTEXT.UTILITY.height( 'footer' ) - 25
+	, THROBBER: localStorage.getItem( 'throbber' )
+	, PREVIEWSIZE: 300
+	, IMAGEFORMATS: [ 'bmp', 'gif', 'jpg', 'png' ]
+	, BEINGDRAGGED: 
+		{ OPACITY : '0.4'
+		, SHRINK  : '0.7'
+		}
+	, CREDITS: 
+		{ 'Developer and programmer': 
+			[
+			  { name: 'Brian Schweitzer (“BrianFreud”)'
+			  , urlN: 'userscripts.org/users/28107'
+			  , mb  : 'brianfreud'
+			  }
+			]
+		, Translations:
+			[
+			  { name: 'Calvin Walton (“kepstin”)'
+			  , what: 'Canadian English'
+			  , urlN: 'www.kepstin.ca'
+			  , mb  : 'kepstin'
+			  }
+			]
+		, Icons:
+			[
+			  { name: '“Mapto”'
+			  , what: 'Magnifying glass icons'
+			  , urlN: 'commons.wikimedia.org/wiki/User:Mapto'
+			  , urlW: 'commons.wikimedia.org/wiki/File:View-zoom-in.svg'
+			  }
+			, { name: '“Inductiveload”'
+			  , what: 'Magnifying glass icons'
+			  , urlN: 'commons.wikimedia.org/wiki/User:Inductiveload'
+			  , urlW: 'commons.wikimedia.org/wiki/File:View-zoom-out.svg'
+			  }
+			, { name: '“ablonevn”'
+			  , what: 'Gear icon'
+			  , urlW: 'www.clker.com/clipart-169255.html'
+			  }
+			, { name: '“El T”'
+			  , what: 'Information icon'
+			  , urlN: 'en.wikipedia.org/wiki/User:El_T'
+			  , urlW: 'en.wikipedia.org/wiki/File:Information_icon.svg'
+			  }
+			, { name: 'Timur Gafforov & Avraam Makhmudov'
+			  , what: 'Throbber image'
+			  , urlW: 'preloaders.net'
+			  }
+			]
+		, Plugins:
+			[
+			  { name: 'Ben Barnett'
+			  , what: 'jQuery.animate-enhanced v0.91'
+			  , urlN: 'benbarnett.net'
+			  , urlW: 'github.com/benbarnett/jQuery-Animate-Enhanced'
+			  }
+			, { name: 'Ryan Wheale & Tim Banks'
+			  , what: 'jQuery.getHiddenDimensions'
+			  , urlN: 'www.foliotek.com/devblog/author/timlanit'
+			  , urlW: 'www.foliotek.com/devblog/getting-the-width-of-a-hidden-element-with-jquery-using-width'
+			  }
+			, { name: 'Brian Schweitzer & Naftali Lubin'
+			  , what: 'jQuery.appendAll'
+			  }
+			, { name: 'James Padolsey'
+			  , what: 'jQuery.single'
+			  , urlN: 'james.padolsey.com'
+			  , urlW: 'james.padolsey.com/javascript/76-bytes-for-faster-jquery'
+			  }
+			, { name: '“Cowboy” Ben Alman'
+			  , what: 'jQuery.detach+ v0.1pre'
+			  , urlN: 'benalman.com'
+			  , urlW: 'gist.github.com/978520'
+			  }
+			]
+		, Polyfills:
+			[
+			  { name: 'Eric Bidelman'
+			  , what: 'idb.filesystem.js v0.0.1'
+			  , urlN: 'ericbidelman.tumblr.com'
+			  , urlW: 'github.com/ebidel/idb.filesystem.js'
+			  }
+			, { name: 'Jan Odvarko'
+			  , what: 'jscolor v1.3.13'
+			  , urlW: 'jscolor.com'
+			  }
+			  , { name: 'Jonathan Stipe'
+			  , what: 'number polyfill'
+			  , urlW: 'github.com/jonstipe/number-polyfill'
+			  }
+			, { name: 'Sebastian Tschan (“blueimp”)'
+			  , what: 'javaScript canvas to blob 2.0'
+			  , urlN: 'blueimp.net'
+			  , urlW: 'github.com/blueimp/JavaScript-Canvas-to-Blob'
+			  }
+			]
+		, Tools: 
+			[
+			  { name: 'Jeff Schiller'
+			  , what: 'Scour'
+			  , urlW: 'www.codedread.com/scour'
+			  }
+			, { name: 'Google'
+			  , what: 'Google Closure Compiler'
+			  , urlW: 'closure-compiler.appspot.com/home'
+			  }
+			  , { name: 'Site Project ApS'
+			  , what: 'JavaScript string encoder'
+			  , urlW: 'www.htmlescape.net/stringescape_tool.html'
+			  }
+			, { name: 'Yahoo!'
+			  , what: 'Yahoo! Query Language'
+			  , urlW: 'developer.yahoo.com/yql/'
+			  }
+			]
+		, Libraries:
+			[
+			  { name: 'Tim Smart'
+			  , what: 'data_string function'
+			  , urlN: 'github.com/Tim-Smart'
+			  , urlW: 'pastebin.ca/1425789'
+			  }
+			, { name: 'Tyler Akins, Bayron Guevara, Thunder.m, Kevin van Zonneveld, Pellentesque Malesuada, Rafał Kukawski & Brian Schweitzer'
+			  , what: 'base64_encode function from PHPJS'
+			  , urlN: 'rumkin.com'
+			  , urlW: 'phpjs.org/functions/base64_encode'
+			  }
+			, { name: 'Steven Thurlow (“Stoive”)'
+			  , what: 'dataURItoBlob'
+			  , urlN: 'github.com/stoive'
+			  , urlW: 'stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata'
+			  }
+			, { name: 'Ben Leslie'
+			  , what: 'jsjpegmeta'
+			  , urlN: 'benno.id.au/'
+			  , urlW: 'code.google.com/p/jsjpegmeta/'
+			  }
+			, { name: 'John Resig and the rest of the jQuery team'
+			  , what: 'jQuery 1.7.2'
+			  , urlN: 'jquery.org/team'
+			  , urlW: 'jquery.com'
+			  }
+			, { name: 'The jQueryUI team'
+			  , what: 'jQuery UI 1.8.19'
+			  , urlN: 'jqueryui.com/about'
+			  , urlW: 'jqueryui.com'
+			  }
+			]
+		}
+	, TEXT: {
+		en: {
+			'languageName'               : 'English'
+			, 'Add cover art'            : 'Add cover art'
+			, 'Add image one release'    : 'Add a box for another image.'
+			, 'Bottom'                   : 'Bottom'
+			, 'bytes'                    : 'bytes'
+			, 'Changed colors note'      : 'Changes to the color settings will take effect the next time that this script is run.'
+			, 'Changed language note'    : 'Changes to the language setting will take effect the next time that this script is run.'
+			, 'Click to edit this image' : 'Left click to edit this image'
+			, 'Colors'                   : 'Colors'
+			, 'Crop image'               : 'Crop'
+			, 'default'                  : 'default'
+			, 'degrees'                  : 'degrees'
+			, 'File size'                : 'File size'
+			, 'Flip image'               : 'Flip'
+			, 'How dark the bkgrnd'      : 'Image editor shadow'
+			, 'How many degrees'         : 'How many degrees to rotate the image'
+			, '(Image) Resolution'       : 'Resolution'
+			, 'Images'                   : 'Images'
+			, 'Language'                 : 'Language'
+			, 'Left'                     : 'Left'
+			, 'Load CAA images for all'  : 'Load image data for all releases'
+			, 'Load CAA images'          : 'Load image data for this release'
+			, 'loading'                  : 'Loading data from the Cover Art Archive, please wait...'
+			, 'Load text all releases'   : 'Loads images for all displayed releases.'
+			, 'Load text one release'    : 'Loads any images already in the Cover Art Archive for this release.'
+			, 'Crop mask color'          : 'Mask color'
+			, 'Magnify image'            : 'Zoom in'
+			, 'Options'                  : 'Options'
+			, 'Parse (help)'             : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
+			, 'Parse web pages'          : 'Parse web pages'
+			, 'Preview Image'            : 'Preview'
+			, 'Remove (help)'            : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
+			, 'Remove image'             : 'Click to remove this image'
+			, 'Remove images'            : 'Remove images mode'
+			, 'Remove stored images nfo' : 'This removes any images from other websites that you have stored while this script was not running.'
+			, 'Remove stored images'     : 'Remove stored images'
+			, 'Right'                    : 'Right'
+			, 'Rotate image'             : 'Rotate'
+			, 'Shrink image'             : 'Zoom out'
+			, 'Submit as autoedits'      : 'Submit edits as autoedits'
+			, 'Submit edits'             : 'Submit edits'
+			, 'take effect next time'    : 'Changes to the language and color settings will take effect the next time that this script is run.'
+			, 'Top'                      : 'Top'
+			, 'Version'                  : 'Version'
+			, 'coverType:Back'           : 'Back'
+			, 'coverType:Booklet'        : 'Booklet'
+			, 'coverType:Front'          : 'Front'
+			, 'coverType:Medium'         : 'Medium'
+			, 'coverType:Obi'            : 'Obi'
+			, 'coverType:Other'          : 'Other'
+			, 'coverType:Spine'          : 'Spine'
+			, 'coverType:Track'          : 'Track'
+			, 'About'                    : 'About'
+			, 'Developer and programmer' : 'Developer and programmer'
+			, 'Icons'                    : 'Icons'
+			, 'Plugins'                  : 'Plugins'
+			, 'Polyfills'                : 'Polyfills'
+			, 'Translations'             : 'Translations'
+			, 'Tools'                    : 'Tools'
+			, 'Libraries'                : 'Libraries'
+			, 'Save'                     : 'Save'
+			, 'Save changes'             : 'Save changes'
+			, 'Cancel'                   : 'Cancel'
+			, 'Error'                    : 'Error'
+			, 'Error too much cropping'  : 'Cropping this much would remove the entire image!'
+			, 'Apply'                    : 'Apply'
+			, 'ACTIVE'                   : 'Droppable area'
+			, 'CAABOX'                   : 'Empty CAA box'
+			, 'CAABUTTONS'               : 'Load CAA buttons'
+			, 'EDITOR'                   : 'Image editor background'
+			, 'EDITORMENU'               : 'Image editor menu'
+			, 'INCOMPLETE'               : 'Incomplete edits'
+			, 'COMPLETE'                 : 'Edits ready to submit'
+			, 'REMOVE'                   : 'Remove image highlight'
+			, 'MASK'                     : 'Default crop mask color'
+		}
+	}
+};
 
 /* Special case Canadian English. */
 OUTERCONTEXT.CONSTANTS.TEXT['en-ca'] = JSON.parse(JSON.stringify(OUTERCONTEXT.CONSTANTS.TEXT.en));
-OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.CONSTANTS.TEXT['en-ca'],
-							{ 'languageName'		  : 'English (Canadian)'
-							, 'Colors'				  : 'Colours'
-							, 'Changed colors note'   : OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note'].replace('color', 'colour')
-							, 'take effect next time' : OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['take effect next time'].replace('color', 'colour')
-							});
+OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.CONSTANTS.TEXT['en-ca'], 
+	                         { 'languageName': 'English (Canadian)'
+	                         , 'Colors': 'Colours'
+	                         , 'Changed colors note': OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note'].replace('color', 'colour')
+	                         , 'take effect next time': OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['take effect next time'].replace('color', 'colour')
+	                         }
+	                       );
+
 
 /* Conditionally add the debug "language". */
 if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
-	OUTERCONTEXT.CONSTANTS.TEXT.test = { strings: {}
-									   , generateMorse: function() {
-											 'use strict';
-											 var chars = [' ', '-', '·']
-												 , morseString = ''
-												 , repeats = Math.random() * 50 >> 0
-												 ;
-											 while (repeats--) {
-												 morseString += chars[Math.random() * 3 >> 0];
-											 }
-											 return morseString;
-										 }
-									   , init: function() {
-											 'use strict';
-											 var self = this;
-											 Object.keys(OUTERCONTEXT.CONSTANTS.TEXT.en).forEach(function(text) {
-												 self.strings[text] = self.generateMorse();
-											 });
-											 this.strings.languageName = 'pseudo-Morse code';
-											 return this.strings;
-										 }
-									   }.init();
+	OUTERCONTEXT.CONSTANTS.TEXT.test = 
+		{ strings: {}
+		, generateMorse:
+			function() {
+				'use strict';
+				var chars = [' ', '-', '·']
+					, morseString = ''
+					, repeats = Math.random() * 50 >> 0;
+				while (repeats--) {
+					morseString += chars[Math.random() * 3 >> 0];
+				}
+				return morseString;
+			}
+		, init: 
+			function() {
+				'use strict';
+				var self = this;
+				Object.keys(OUTERCONTEXT.CONSTANTS.TEXT.en).forEach(function(text) {
+					self.strings[text] = self.generateMorse();
+				});
+				this.strings.languageName = 'pseudo-Morse code';
+				return this.strings;
+			}
+		}.init();
 }
 
-/* Define utility functions used while defining the CSS constants. */
-OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.UTILITY,
-							  // Gets a color value stored in localStorage.
-							{ getColor  : function getColor (colors, color) {
-											  'use strict';
-											  var thisColor = localStorage.getItem('Caabie_colors_' + color);
+OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
+	                         { getColor: 
+		                         // Gets a color value stored in localStorage.
+		                         function getColor(colors, color) {
+			                         'use strict';
+			                         var thisColor = localStorage.getItem('Caabie_colors_' + color);
 
-											  if (arguments.length === 1) {
-												  color = colors;
-												  colors = OUTERCONTEXT.CONSTANTS.COLORS;
-											  }
+			                         if (arguments.length === 1) {
+				                         color = colors;
+				                         colors = OUTERCONTEXT.CONSTANTS.COLORS;
+			                         }
 
-											  thisColor === null && (thisColor = colors[color]);
-											  return thisColor;
-							}
-							  // Converts a hex color string into an rgba color string
-							, hexToRGBA : function hexToRGBA (hex, opacity) {
-											  'use strict';
-											  hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
-											  var R = parseInt(hex.substring(0, 2), 16)
-												, G = parseInt(hex.substring(2, 4), 16)
-												, B = parseInt(hex.substring(4, 6), 16)
-												;
-											  return 'rgba(' + [R, G, B, opacity].join(',') + ')';
-										  }
-							});
+									thisColor === null && (thisColor = colors[color]);
+									return thisColor;
+								}
+							 , hexToRGBA: 
+		                         // Converts a hex color string into an rgba color string
+		                         function hexToRGBA(hex, opacity) {
+			                         'use strict';
+			                         hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
+
+			                         var R = parseInt(hex.substring(0, 2), 16)
+			                           , G = parseInt(hex.substring(2, 4), 16)
+			                           , B = parseInt(hex.substring(4, 6), 16)
+			                           ;
+			                           
+			                         return 'rgba(' + [R, G, B, opacity || 1].join(',') + ')';
+		                         }
+	                         }
+	                       );
 
 /* Define repeated css strings used while defining the CSS constants. */
 OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
@@ -395,621 +429,576 @@ OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEING
 /* Initialize CSS constants which are persistantly stored in localStorage. */
 null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Caabie_editorShadow', 75);
 
-/* Define the CSS constants. */
-OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
-								   { 'background-color'	     : '#DDD'
-								   },
-							   '.CAAversion':
-								   { 'float'				 : 'right'
-								   , 'font-size'			 : '75%'
-								   , 'margin-top'			 : '-15px'
-								   },
-							   '#Options‿input‿color‿colors, #CAAeditorMaskColorControl':
-								   {  border				 : '1px outset #D3D3D3'
-								   },
-							   '#Options‿select‿colors':
-								   { 'float'				 : 'left'
-								   ,  padding				 : '5px'
-								   ,  width				     : '202px'
-								   },
-							   '#Options‿input‿number‿shadow':
-								   { 'margin-left'		     : '5px'
-								   ,  width				     : '3.5em'
-								   },
-							   '#Options‿label‿shadow::after':
-								   {  content				 : '"%"'
-								   },
-							   '#CAAeditorCanvas':
-								   { 'background-color'	     : '#FFF'
-								   },
-							   '#CAAeditorRotateControl':
-								   { 'margin-right'		     : '2px'
-								   ,  width				     : '4em'
-								   },
-							   '#CAAeditorMenu':
-								   { 'background-color'	  : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
-								   , 'border-radius'		 : '20px'
-								   ,  border				 : '1px dotted navy'
-								   ,  height				 : '60%'
-								   ,  padding				 : '16px'
-								   ,  position			     : 'absolute'
-								   ,  right				     : '40px'
-								   ,  top					 : '20%'
-								   },
-							   '#CAAeditorCanvasDiv':
-								   {  position			     : 'relative'
-								   },
-							   '.CAAmask':
-								   {  position			     : 'absolute'
-								   ,  height				 : '0'
-								   ,  width				     : '0'
-								   },
-							   '#CAAmaskLeft, #CAAmaskRight':
-								   {  height				 : '100%'
-								   },
-							   '#CAAmaskTop, #CAAmaskBottom':
-								   {  width				     : '100%'
-								   },
-							   '#CAAmaskLeft':
-								   { 'z-index'			     : 300
-								   ,  left				     : 0
-								   ,  top					 : 0
-								   },
-							   '#CAAmaskRight':
-								   { 'z-index'			     : 301
-								   ,  right				     : 0
-								   ,  top					 : 0
-								   },
-							   '#CAAmaskTop':
-								   { 'z-index'			     : 302
-								   ,  left				     : 0
-								   ,  top					 : 0
-								   },
-							   '#CAAmaskBottom':
-								   { 'z-index'			     : 303
-								   ,  left				     : 0
-								   ,  bottom				 : 0
-								   },
-							   '.cropLabel':
-								   {  clear				     : 'both'
-								   ,  display				 : 'block'
-								   , 'margin-bottom'		 : '4px'
-								   },
-							   '.cropControl':
-								   {  height				 : '24px'
-								   ,  margin				 : '0 4px 2px 0!important'
-								   , 'vertical-align'		 : 'middle'
-								   , width				     : '45px'
-								   },
-							   '.flipControl':
-								   { 'border-radius'		 : '21px'
-								   , 'border-width'		     : '1px'
-								   , 'font-size'			 : '130%'
-								   , 'font-weight'		     : '600'
-								   ,  padding				 : '0px 15px'
-								   },
-							   '#Options‿div‿shadow':
-								   {  display				 : 'inline-block'
-								   },
-							   '#Main‿div‿imageContainer':
-								   {  height				 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 25) + 'px'
-								   , 'max-height'			 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 25) + 'px'
-								   },
-							   '#Main‿div‿imageHolder':
-								   { 'margin-bottom'		 : '1em'
-								   , 'overflow-y'			 : 'auto'
-								   ,  width				     : '100%'
-								   },
-							   '#Main‿h1‿imageHeader':
-								   { 'float'				 : 'left'
-								   ,  width				     : '30%'
-								   },
-							   '#Main‿div‿image_size':
-								   { 'float'				 : 'right'
-								   , 'height'				 : '24px'
-								   ,  width				     : '25%'
-								   },
-							   '#Options‿select‿language':
-								   {  height				 : '5em'
-								   ,  margin				 : '10px 10px -27px 6px'
-								   ,  padding				 : '6px'
-								   },
-							   '#Main‿div‿options_control, #Main‿div‿about_control':
-								   {  display				 : 'inline-block'
-								   , 'float'				 : 'right'
-								   ,  filter				 : 'alpha(opacity=40)'
-								   , '-moz-opacity'		     : '0.4'
-								   ,  opacity				 : '0.4'
-								   },
-							   '#Main‿div‿options_control':
-								   { 'margin-right'		     : '-26px'
-								   , 'margin-top'			 : '-3px'
-								   },
-							   '#Main‿div‿about_control':
-								   { 'margin-top'			 : '-1px'
-								   ,  height				 : '23px'
-								   ,  width				     : '23px'
-								   },
-							   '#Options‿fieldset‿main, #About‿fieldset‿main':
-								   {  border				 : '1px solid #D3D3D3'
-								   ,	'-moz-border-radius' : '8px'
-								   , '-webkit-border-radius' : '8px'
-								   ,		 'border-radius' : '8px'
-								   , 'line-height'		     : '2!important'
-								   ,  margin				 : '10px 3px'
-								   ,  padding				 : '8px'
-								   },
-							   '#Options‿fieldset‿main * select':
-								   { 'font-size'			 : '105%'
-								   },
-							   '#Options‿fieldset‿main > label > select':
-								   {  padding				 : '3px'
-								   },
-							   '#Options‿fieldset‿main > label, #Options‿fieldset‿main > label > select':
-								   { 'margin-left'		     : '5px'
-								   , 'margin-top'			 : '5px'
-								   },
-							   '#Options‿div‿note':
-								   { 'font-size'			 : '85%'
-								   , 'font-style'			 : 'oblique'
-								   },
-							   '#page':
-								   { 'min-height'			 : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
-								   },
-							   '#Preview‿dl‿info':
-								   { 'line-height'		     : '140%'
-								   ,  margin				 : '0 auto'
-								   , 'padding-top'		     : '10px'
-								   ,  width				     : '60%'
-								   },
-							   '#Preview‿dl‿info > dd':
-								   { 'float'				 : 'right'
-								   },
-							   '#triggerLink':
-								   { 'cursor'				 : 'pointer'
-								   },
-							   '#xhrComlink':
-								   {  display				 : 'none'
-								   },
-							   '#CAAoverlay':
-								   {  background			 : 'black'
-								   ,  bottom				 : 0
-								   ,  filter				 : 'alpha(opacity=' + localStorage.getItem('Caabie_editorShadow') + ')'
-								   ,  left				     : 0
-								   , '-moz-opacity'		     : localStorage.getItem('Caabie_editorShadow') / 100
-								   ,	   opacity		     : localStorage.getItem('Caabie_editorShadow') / 100
-								   ,  position			     : 'fixed'
-								   ,  top					 : 0
-								   ,  width				     : '100%'
-								   ,  'z-index'			     : 400
-								   },
-							   '#CAAimageEditor':
-								   { 'background-color'	  : OUTERCONTEXT.UTILITY.getColor('EDITOR')
-								   ,	'-moz-box-shadow'	 : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-								   , '-webkit-box-shadow'	 : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-								   ,		 'box-shadow'	 : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
-								   ,  border				 : '1px outset grey'
-								   , 'border-radius'		 : '20px'
-								   ,  height				 : '86%'
-								   ,  left				     : '50%'
-								   ,  margin				 : '0 auto'
-								   , 'margin-left'		     : '-43%'
-								   , 'margin-top'			 : '5%'
-								   ,  padding				 : '2%'
-								   ,  position			     : 'fixed'
-								   ,  width				     : '86%'
-								   , 'z-index'			     : 500
-								   },
-							   '#CAAeditorDiv':
-								   {  height				 : '96%'
-								   ,  margin				 : '2%'
-								   ,  width				     : '96%'
-								   },
-							   '.beingDragged':
-								   {  filter				 : 'alpha(opacity=' + (100 * OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY) + ')'
-								   , '-moz-opacity'		     : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
-								   ,  opacity				 : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
-								   ,	'-moz-transform'	 : OUTERCONTEXT.CSSSTRINGS.SHRINK
-								   , '-webkit-transform'	 : OUTERCONTEXT.CSSSTRINGS.SHRINK
-								   ,	  '-o-transform'	 : OUTERCONTEXT.CSSSTRINGS.SHRINK
-								   ,		  transform	     : OUTERCONTEXT.CSSSTRINGS.SHRINK
-								   },
-							   '.CAAdropbox':
-								   {	'-moz-border-radius' : '6px'
-								   , '-webkit-border-radius' : '6px'
-								   ,		 'border-radius' : '6px'
-								   ,  display				 : 'inline-block'
-								   ,  margin				 : '6px'
-								   , 'min-height'			 : '126px'
-								   ,  padding				 : '3px'
-								   , 'vertical-align'		 : 'middle'
-								   ,  width				     : '126px'
-								   },
-							   '.CAAdropbox > div':
-								   {  display				 : 'block'
-								   ,  height				 : '120px'
-								   ,  margin				 : '3px auto'
-								   },
-							   '.CAAdropbox > div > img':
-								   { display				 : 'block'
-								   , 'image-rendering'	     : 'optimizeQuality'
-								   ,  margin				 : '0 auto'
-								   , 'max-height'			 : '120px'
-								   , 'max-width'			 : '120px'
-								   },
-							   '.CAAdropbox > figcaption':
-								   {  height				 : '15em'
-								   ,  position			     : 'relative'
-								   , 'text-align'			 : 'center'
-								   },
-							   '.CAAdropbox > figcaption > div':
-								   { 'font-size'			 : '80%'
-								   ,  height				 : '2.5em'
-								   },
-							   '.CAAdropbox > figcaption > input':
-								   { 'font-size'			 : '12px'
-								   ,  width				     : '90%'
-								   },
-							   '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
-								   {  clear				     : 'both'
-								   },
-							   '.CAAdropbox > figcaption > select':
-								   { 'background-color'	     : 'transparent'
-								   ,  clear				     : 'both'
-								   ,  clip				     : 'rect(2px, 49px, 145px, 2px)'
-								   ,  color				     : '#555'
-								   , 'font-size'			 : 'inherit'
-								   ,  left				     : '36px'
-								   , 'padding-bottom'		 : '20px'
-								   , 'padding-right'		 : '20px'
-								   , 'padding-top'		     : '8px'
-								   ,  position			     : 'absolute'
-								   , 'text-align'			 : 'center'
-								   },
-							   '.caaAdd':
-								   { 'background-color'	  : 'green!important'
-								   ,  border				 : '0 none #FAFAFA!important'
-								   ,	'-moz-border-radius' : '7px'
-								   , '-webkit-border-radius' : '7px'
-								   ,		 'border-radius' : '7px'
-								   ,  color				     : '#FFF!important'
-								   , 'float'				 : 'left'
-								   , 'font-size'			 : '175%'
-								   , 'font-weight'		     : '900!important'
-								   ,  left				     : '2em'
-								   , 'margin-left'		     : '-1.2em'
-								   ,  filter				 : 'alpha(opacity=30)'
-								   , '-moz-opacity'		     : '0.3'
-								   ,  opacity				 : '0.3'
-								   , 'padding-bottom'		 : 0
-								   , 'padding-top'		     : 0
-								   ,  position			     : 'absolute'
-								   },
-							   '.caaAdd:active, .caaAll:active, .caaLoad:active':
-								   { 'border-style'		     : 'inset!important'
-								   ,  color				     : '#FFF'
-								   ,  filter				 : 'alpha(opacity=100)'
-								   , '-moz-opacity'		     : '1'
-								   ,  opacity				 : 1
-								   },
-							   '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
-								   {  color				     : '#D3D3D3'
-								   ,  filter				 : 'alpha(opacity=90)'
-								   , '-moz-opacity'		     : '0.9'
-								   ,  opacity				 : '.9'
-								   },
-							   '.caaDiv':
-								   {  display				 : 'inline-block'
-								   , 'overflow-x'			 : 'auto!important'
-								   , 'padding-left'		     : '25px'
-								   , 'white-space'		     : 'nowrap'
-								   ,  width				     : '100%'
-								   },
-							   '.caaLoad, .caaAll':
-								   { 'background-color'	     : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
-								   ,  border				 : '1px outset #FAFAFA!important'
-								   , 'border-radius'		 : '7px'
-								   ,  color				     : '#FFF!important'
-								   , 'font-size'			 : '90%'
-								   , 'margin-bottom'		 : '16px'
-								   , 'margin-top'			 : '1px!important'
-								   ,  filter				 : 'alpha(opacity=35)'
-								   , '-moz-opacity'		     : '0.35'
-								   ,  opacity				 : '.35'
-								   ,  padding				 : '3px 8px'
-								   },
-							   '.caaMBCredit':
-								   { 'font-size'			 : '85%'
-								   , 'white-space'		     : 'nowrap'
-								   },
-							   '.newCAAimage':
-								   { 'background-color'	     : OUTERCONTEXT.UTILITY.getColor('CAABOX')
-								   },
-							   '.newCAAimage > div':
-								   { 'background-color'	     : '#E0E0FF'
-								   ,  border				 : OUTERCONTEXT.CONSTANTS.BORDERS
-								   , 'margin-bottom'		 : '6px!important'
-								   },
-							   '.tintWrapper':
-								   { 'background-color'	     : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
-								   , 'border-radius'		 : '5px'
-								   ,  display				 : 'inline-block'
-								   ,  margin				 : 0
-								   ,  filter				 : 'alpha(opacity=80)'
-								   , '-moz-opacity'		     : '0.8'
-								   ,  opacity				 : '0.8'
-								   ,  outline				 : 0
-								   ,  padding				 : 0
-								   , 'vertical-align'		 : 'baseline'
-								   },
-							   '#Main‿div‿previewContainer':
-								   {  bottom				 : 0
-								   , 'border-top'			 : OUTERCONTEXT.CONSTANTS.BORDERS
-								   ,  height				 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 59) + 'px'
-								   , 'max-height'			 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 59) + 'px'
-								   , 'padding-top'		     : '1em'
-								   ,  position			     : 'absolute'
-								   },
-							   '#Preview‿img‿preview_image':
-								   {  cursor				 : 'pointer'
-								   ,  display				 : 'block'
-								   ,  height				 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
-								   ,  margin				 : '0 auto'
-								   , 'max-height'			 : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
-								   ,  padding				 : '15px 0 0 0'
-								   },
-							   '.CAAsidebar':
-								   { 'border-left'		     : OUTERCONTEXT.CONSTANTS.BORDERS
-								   , 'padding-left'		     : '8px'
-								   ,  position			     : 'fixed'
-								   ,  right				     : '20px'
-								   ,  width				     : OUTERCONTEXT.CONSTANTS.SIDEBARWIDTH + 'px!important'
-								   },
-							   '.CAAcreditWho':
-								   { 'text-indent'		     : '-2em'
-								   },
-							   '.closeButton':
-								   { 'background-color'	     : '#FFD0DB'
-								   ,  border				 : '1px solid #EEC9C8'
-								   ,	'-moz-border-radius' : '8px'
-								   , '-webkit-border-radius' : '8px'
-								   ,		 'border-radius' : '8px'
-								   ,  cursor				 : 'pointer'
-								   , 'float'				 : 'right'
-								   , 'line-height'		     : '.8em'
-								   , 'margin-right'		     : '-1em'
-								   , 'margin-top'			 : '-.95em'
-								   ,  filter				 : 'alpha(opacity=90)'
-								   , '-moz-opacity'		     : '0.9'
-								   ,  opacity				 : '0.9'
-								   ,  padding				 : '2px 4px 5px'
-								   },
-							   '.closeButton:hover':
-								   { 'background-color'	     : '#FF82AB'
-								   , 'font-weight'		     : '900'
-								   ,  filter				 : 'alpha(opacity=100)'
-								   , '-moz-opacity'		     : '1.0'
-								   ,  opacity				 : '1.0'
-								   },
-							   '.existingCAAimage':
-								   { 'background-color'	     : '#FFF'
-								   ,  border				 : '0 none'
-								   },
-							   '.existingCAAimage > div > img':
-								   {  border				 : '0 none'
-								   , 'image-rendering'	     : 'optimizeQuality'
-								   },
-							   '.imageRow':
-								   { 'padding-bottom'		 : '1em!important'
-							 },
-							   '.imageSizeControl, #Main‿div‿options_control, #Main‿div‿about_control':
-								   {  cursor				 : 'pointer'
-								   , 'float'				 : 'right'
-								   },
-							   '.imageSizeControl, #Main‿div‿options_control':
-								   {  height				 : '26px'
-								   ,  width				     : '26px'
-								   },
-							   '.imageSizeControl:hover, #Main‿div‿options_control:hover, #Main‿div‿about_control:hover':
-								   {  filter				 : 'alpha(opacity=100)'
-								   , '-moz-opacity'		     : 1
-								   ,  opacity				 : 1
-								   },
-							   '.localImage':
-								   {  padding				 : '3px'
-								   , 'vertical-align'		 : 'top'
-								   },
-							   '.newCAAimage > div > img':
-								   { 'min-height'			 : '120px'
-								   , 'image-rendering'	     : 'optimizeQuality'
-								   },
-							   '.over':
-								   { 'background-color'	     : OUTERCONTEXT.UTILITY.getColor('ACTIVE')
-								   },
-							   '.previewDT':
-								   {  clear				     : 'left'
-								   , 'float'				 : 'left'
-								   , 'font-weight'		     : '700'
-								   },
-							   '.previewDT::after, #About‿fieldset‿main * dt::after':
-								   {  color				     : '#000'
-								   ,  content				 : '": "'
-								   },
-							   '#About‿fieldset‿main * dt::before':
-								   {  color				     : '#000'
-								   ,  content				 : '" • "'
-								   },
-							   '.tintImage, .imageSizeControl':
-								   {  filter				 : 'alpha(opacity=40)'
-								   , '-moz-opacity'		     : '0.4'
-								   ,  opacity				 : '0.4'
-								   },
-							   '.workingCAAimage':
-								   { 'padding-left'		     : '1px'
-								   , 'padding-right'		 : '1px'
-								   },
-							   '.workingCAAimage > div':
-								   { 'margin-bottom'		 : '8px!important'
-								   },
-							   'div.loadingDiv > img':
-								   {  height				 : '30px'
-								   , 'image-rendering'	     : 'optimizeQuality'
-								   , 'padding-right'		 : '10px'
-								   ,  width				     : '30px'
-								   },
-							   'fieldset':
-								   {  border				 : '1px solid #D3D3D3'
-								   ,	'-moz-border-radius' : '8px'
-								   , '-webkit-border-radius' : '8px'
-								   ,		 'border-radius' : '8px'
-								   ,  margin				 : '30px -4px 7px'
-								   ,  padding				 : '6px'
-								   },
-							   '#CAAeditorMenu > fieldset':
-								   {  border				 : 'none'
-								   ,  margin				 : '16px -4px 7px'
-								   },
-							   'figure':
-								   {  border				 : OUTERCONTEXT.CONSTANTS.BORDERS
-								   },
-							   'input[type="color"]':
-								   {  padding				 : 0
-								   },
-							   'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿clear_storage, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
-								   {  border				 : '1px outset #EEE!important'
-								   ,	'-moz-border-radius' : '6px'
-								   , '-webkit-border-radius' : '6px'
-								   ,		 'border-radius' : '6px'
-								   ,  cursor				 : 'pointer'
-								   , 'font-family'		     : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
-								   , 'font-size'			 : '100%'
-								   , 'margin-right'		     : '0'
-								   , 'outline'			     : 'none'
-								   ,  padding				 : '3px'
-								   , 'text-align'			 : 'center'
-								   },
-							   '#Options‿input‿button‿clear_storage':
-								   { 'background-color'	     : 'red'
-								   ,  color				     : '#FFF'
-								   , 'font-weight'		     : 700
-								   ,  filter				 : 'alpha(opacity=70)'
-								   , '-moz-opacity'		     : '0.7'
-								   ,  opacity				 : '.7'
-								   ,  width				     : '190px'
-								   },
-							   '#Options‿input‿button‿colors':
-								   { 'background-color'	     : 'lightgray'
-								   },
-							   '#Options‿input‿button‿clear_storage:disabled':
-								   { 'background-color'	     : 'grey'
-								   ,  color				     : '#000'
-								   , 'text-decoration'	     : 'line-through'
-								   },
-							   '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
-								   { 'float'				 : 'right'
-								   ,  width				     : '79px'
-								   },
-							   '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿clear_storage:active, #CAAeditorMaskColorControl:active, #CAAeditorSaveImageBtn:active, #CAAeditorCancelBtn:active, #CAAeditorApplyCropBtn:active':
-								   {  border				 : '1px inset #D3D3D3'
-								   ,  filter				 : 'alpha(opacity=100)'
-								   , '-moz-opacity'		     : '1'
-								   ,  opacity				 : '1'
-								   },
-							   'legend':
-								   {  color				     : '#000!important'
-								   , 'font-size'			 : '110%!important'
-								   , 'font-variant'		     : 'small-caps'
-								   },
-							   'table.tbl * table, #Main‿div‿imageContainer, #Main‿div‿previewContainer':
-								   {  width				     : '100%'
-								   },
-							   'table.tbl .count':
-								   {  width				     : '6em!important'
-								   },
-							   'h4':
-								   { 'font-size'			 : '115%'
-								   },
-							   'h5':
-								   { '-webkit-margin-after'  : '0'
-								   , '-webkit-margin-before' : '1em'
-								   },
-							   '#About‿fieldset‿main * h5':
-								   { 'font-size'			 : '100%'
-								   },
-							   '#About‿fieldset‿main * dd':
-								   { 'padding-bottom'		: '5px'
-								   },
-							   '#About‿h4‿1':
-								   { 'margin-top'			: '0'
-								   },
-							   /* css for the number polyfill */
-							   'div.number-spin-btn-container':
-								   {  display				: 'inline-block'
-								   ,  margin				: '0'
-								   ,  padding				: '0'
-								   ,  position			    : 'relative'
-								   , 'vertical-align'		: 'bottom'
-								   },
-							   'div.number-spin-btn':
-								   { 'background-color'	    : '#CCCCCC'
-								   ,  border				: '2px outset #CCCCCC'
-								   ,  height				: '11.5px!important'
-								   ,  width				    : '1.2em'
-								   },
-							   'div.number-spin-btn-up':
-								   {  'border-bottom-width'  : '1px'
-								   ,  '-webkit-border-radius': '3px 3px 0px 0px'
-								   ,		  'border-radius': '3px 3px 0px 0px'
-								   },
-							   'div.number-spin-btn-up:before':
-								   {  content				: '""'
-								   , 'border-color'		    : 'transparent transparent black transparent'
-								   , 'border-style'		    : 'solid'
-								   , 'border-width'		    : '0 0.3em 0.3em 0.3em'
-								   ,  height				: '0'
-								   ,  left				    : '50%'
-								   ,  margin				: '-0.15em 0 0 -0.3em'
-								   ,  padding				: '0'
-								   ,  position			    : 'absolute'
-								   ,  top					: '25%'
-								   ,  width				    : '0'
-								   },
-							   'div.number-spin-btn-down':
-								   { '-webkit-border-radius' : '0px 0px 3px 3px'
-								   ,		 'border-radius' : '0px 0px 3px 3px'
-								   , 'border-top-width'	     : '1px'
-								   },
-							   'div.number-spin-btn-down:before':
-								   {  content				: '""'
-								   ,  width				    : '0'
-								   ,  height				: '0'
-								   , 'border-width'		    : '0.3em 0.3em 0 0.3em'
-								   , 'border-style'		    : 'solid'
-								   , 'border-color'		    : 'black transparent transparent transparent'
-								   ,  position			    : 'absolute'
-								   ,  top					: '75%'
-								   ,  left				    : '50%'
-								   ,  margin				: '-0.15em 0 0 -0.3em'
-								   ,  padding				: '0'
-								   },
-							   'div.number-spin-btn:hover':
-								   {  cursor				: 'pointer'
-								   },
-							   'div.number-spin-btn:active':
-								   { 'background-color'	    : '#999999'
-								   ,  border				: '2px inset #999999'
-								   },
-							   'div.number-spin-btn-up:active:before':
-								   { 'border-color'		    : 'transparent transparent white transparent'
-								   ,  left				    : '51%'
-								   ,  top					: '26%'
-								   },
-							   'div.number-spin-btn-down:active:before':
-								   { 'border-color'		    : 'white transparent transparent transparent'
-								   ,  left				    : '51%'
-								   ,  top					: '76%'
-								   }
-	   };
+/* Define the CSS constants. */	
+OUTERCONTEXT.CONSTANTS.CSS = 
+	{ '#Options‿input‿color‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
+		{ 'background-color'       : '#DDD'
+		}
+	, '.CAAversion':
+		{ 'float'                  : 'right'
+		, 'font-size'              : '75%'
+		, 'margin-top'             : '-15px'
+		}
+	, '#Options‿input‿color‿colors, #CAAeditorMaskColorControl':
+		{  border                  : '1px outset #D3D3D3'
+		}
+	, '#Options‿select‿colors':
+		{ 'float'                  : 'left'
+		,  padding                 : '5px'
+		,  width                   : '202px'
+		}
+	, '#Options‿input‿number‿shadow':
+		{ 'margin-left'            : '5px'
+		,  width                   : '3.5em'
+		}
+	, '#Options‿label‿shadow::after':
+		{  content                 : '"%"'
+		}
+	, '#CAAeditorCanvas':
+		{ 'background-color'       : '#FFF'
+		}
+	, '#CAAeditorRotateControl':
+		{ 'margin-right'           : '2px'
+		,  width                   : '4em'
+		}
+	, '#CAAeditorMenu':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
+		, 'border-radius'          : '20px'
+		,  border                  : '1px dotted navy'
+		,  height                  : '60%'
+		,  padding                 : '16px'
+		,  position                : 'absolute'
+		,  right                   : '40px'
+		,  top                     : '20%'
+		}
+	, '#CAAeditorCanvasDiv':
+		{  position                : 'relative'
+		}
+	, '.CAAmask':
+		{  position                : 'absolute'
+		,  height                  : 0
+		,  width                   : 0
+		}
+	, '#CAAmaskLeft, #CAAmaskRight':
+		{  height                  : '100%'
+		}
+	, '#CAAmaskTop, #CAAmaskBottom':
+		{  width                   : '100%'
+		}
+	, '#CAAmaskLeft':
+		{ 'z-index'                : 300
+		,  left                    : 0
+		,  top                     : 0
+		}
+	, '#CAAmaskRight':
+		{ 'z-index'                : 301
+		,  right                   : 0
+		,  top                     : 0
+		}
+	, '#CAAmaskTop':
+		{ 'z-index'                : 302
+		,  left                    : 0
+		,  top                     : 0
+		}
+	, '#CAAmaskBottom':
+		{ 'z-index'                : 303
+		,  left                    : 0
+		,  bottom                  : 0
+		}
+	, '.cropLabel':
+		{  clear                   : 'both'
+		,  display                 : 'block'
+		, 'margin-bottom'          : '4px'
+		}
+	, '.cropControl':
+		{  height                  : '24px'
+		,  margin                  : '0 4px 2px 0!important'
+		, 'vertical-align'         : 'middle'
+		,  width                   : '45px'
+		}
+	, '.flipControl':
+		{ 'border-radius'          : '21px'
+		, 'border-width'           : '1px'
+		, 'font-size'              : '130%'
+		, 'font-weight':            600
+		,  padding                 : '0px 15px'
+		}
+	, '#Options‿div‿shadow':
+		{  display                 : 'inline-block'
+		}
+	, '#Main‿div‿imageContainer':
+		{  height                  : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 25) + 'px'
+		, 'max-height'             : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 25) + 'px'
+		}
+	, '#Main‿div‿imageHolder':
+		{ 'margin-bottom'          : '1em'
+		, 'overflow-y'             : 'auto'
+		,  width                   : '100%'
+		}
+	, '#Main‿h1‿imageHeader':
+		{ 'float'                  : 'left'
+		,  width                   : '30%'
+		}
+	, '#Main‿div‿image_size':
+		{ 'float'                  : 'right'
+		, 'height'                 : '24px'
+		,  width                   : '25%'
+		}
+	, '#Options‿select‿language':
+		{  height                  : '5em'
+		,  margin                  : '10px 10px -27px 6px'
+		,  padding                 : '6px'
+		}
+	, '#Main‿div‿options_control, #Main‿div‿about_control':
+		{  display                 : 'inline-block'
+		, 'float'                  : 'right'
+		,  opacity                 : '0.4'
+		}
+	, '#Main‿div‿options_control':
+		{ 'margin-right'           : '-26px'
+		, 'margin-top'             : '-3px'
+		}
+	, '#Main‿div‿about_control':
+		{ 'margin-top'             : '-1px'
+		,  height                  : '23px'
+		,  width                   : '23px'
+		}
+	, '#Options‿fieldset‿main, #About‿fieldset‿main':
+		{  border                  : '1px solid #D3D3D3'
+		, 'border-radius'          : '8px'
+		, 'line-height'            : '2!important'
+		,  margin                  : '10px 3px'
+		,  padding                 : '8px'
+		}
+	, '#Options‿fieldset‿main * select':
+		{ 'font-size'              : '105%'
+		}
+	, '#Options‿fieldset‿main > label > select':
+		{  padding                 : '3px'
+		}
+	, '#Options‿fieldset‿main > label, #Options‿fieldset‿main > label > select':
+		{ 'margin-left'            : '5px'
+		, 'margin-top'             : '5px'
+		}
+	, '#Options‿div‿note':
+		{ 'font-size'              : '85%'
+		, 'font-style'             : 'oblique'
+		}
+	, '#page':
+		{ 'min-height'             : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 50) + 'px'
+		}
+	, '#Preview‿dl‿info':
+		{ 'line-height'            : '140%'
+		,  margin                  : '0 auto'
+		, 'padding-top'            : '10px'
+		,  width                   : '60%'
+		}
+	, '#Preview‿dl‿info > dd':
+		{ 'float'                  : 'right'
+		}
+	, '#triggerLink':
+		{ 'cursor'                 : 'pointer'
+		}
+	, '#xhrComlink':
+		{  display                 : 'none'
+		}
+	, '#CAAoverlay':
+		{  background              : '#000'
+		,  bottom                  : 0
+		,  left                    : 0
+		,  opacity                 : localStorage.getItem('Caabie_editorShadow') / 100
+		,  position                : 'fixed'
+		,  top                     : 0
+		,  width                   : '100%'
+		, 'z-index'                : 400
+		}
+	, '#CAAimageEditor':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('EDITOR')
+		, 'box-shadow'             : 'inset 0 0 10px #FFF, 2px 2px 8px 3px #111'
+		,  border                  : '1px outset grey'
+		, 'border-radius'          : '20px'
+		,  height                  : '86%'
+		,  left                    : '50%'
+		,  margin                  : '0 auto'
+		, 'margin-left'            : '-43%'
+		, 'margin-top'             : '5%'
+		,  padding                 : '2%'
+		,  position                : 'fixed'
+		,  width                   : '86%'
+		, 'z-index'                : 500
+		}
+	, '#CAAeditorDiv':
+		{  height                  : '96%'
+		,  margin                  : '2%'
+		,  width                   : '96%'
+		}
+	, '.beingDragged':
+		{  opacity                 : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
+		,  transform               : OUTERCONTEXT.CSSSTRINGS.SHRINK
+		}
+	, '.CAAdropbox':
+		{ 'border-radius'          : '6px'
+		,  display                 : 'inline-block'
+		,  margin                  : '6px'
+		, 'min-height'             : '126px'
+		,  padding                 : '3px'
+		, 'vertical-align'         : 'middle'
+		,  width                   : '126px'
+		}
+	, '.CAAdropbox > div':
+		{  display                 : 'block'
+		,  height                  : '120px'
+		,  margin                  : '3px auto'
+		}
+	, '.CAAdropbox > div > img':
+		{  display                 : 'block'
+		, 'image-rendering'        : 'optimizeQuality'
+		,  margin                  : '0 auto'
+		, 'max-height'             : '120px'
+		, 'max-width'              : '120px'
+		}
+	, '.CAAdropbox > figcaption':
+		{  height                  : '15em'
+		,  position                : 'relative'
+		, 'text-align'             : 'center'
+		}
+	, '.CAAdropbox > figcaption > div':
+		{ 'font-size'              : '80%'
+		,  height                  : '2.5em'
+		}
+	, '.CAAdropbox > figcaption > input':
+		{ 'font-size'              : '12px'
+		,  width                   : '90%'
+		}
+	, '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
+		{  clear                   : 'both'
+		}
+	, '.CAAdropbox > figcaption > select':
+		{ 'background-color'       : 'transparent'
+		,  clear                   : 'both'
+		,  clip                    : 'rect(2px, 49px, 145px, 2px)'
+		,  color                   : '#555'
+		, 'font-size'              : 'inherit'
+		,  left                    : '36px'
+		, 'padding-bottom'         : '20px'
+		, 'padding-right'          : '20px'
+		, 'padding-top'            : '8px'
+		,  position                : 'absolute'
+		, 'text-align'             : 'center'
+		}
+	, '.caaAdd':
+		{ 'background-color'       : 'green!important'
+		,  border                  : '0 none #FAFAFA!important'
+		, 'border-radius'          : '7px'
+		,  color                   : '#FFF!important'
+		, 'float'                  : 'left'
+		, 'font-size'              : '175%'
+		, 'font-weight'            : '900!important'
+		,  left                    : '2em'
+		, 'margin-left'            : '-1.2em'
+		,  opacity                 : '0.3'
+		, 'padding-bottom'         : 0
+		, 'padding-top'            : 0
+		,  position                : 'absolute'
+		}
+	, '.caaAdd:active, .caaAll:active, .caaLoad:active':
+		{ 'border-style'           : 'inset!important'
+		,  color                   : '#FFF'
+		,  opacity                 : 1
+		}
+	, '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
+		{  color                   : '#D3D3D3'
+		,  opacity                 : '.9'
+		}
+	, '.caaDiv':
+		{  display                 : 'inline-block'
+		, 'overflow-x'             : 'auto!important'
+		, 'padding-left'           : '25px'
+		, 'white-space'            : 'nowrap'
+		,  width                   : '100%'
+		}
+	, '.caaLoad, .caaAll':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
+		,  border                  : '1px outset #FAFAFA!important'
+		, 'border-radius'          : '7px'
+		,  color                   : '#FFF!important'
+		, 'font-size'              : '90%'
+		, 'margin-bottom'          : '16px'
+		, 'margin-top'             : '1px!important'
+		,  opacity                 : '.35'
+		,  padding                 : '3px 8px'
+		}
+	, '.caaMBCredit':
+		{ 'font-size'              : '85%'
+		, 'white-space'            : 'nowrap'
+		}
+	, '.newCAAimage':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABOX')
+		}
+	, '.newCAAimage > div':
+		{ 'background-color'       : '#E0E0FF'
+		,  border                  : OUTERCONTEXT.CONSTANTS.BORDERS
+		, 'margin-bottom'          : '6px!important'
+		}
+	, '.tintWrapper':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
+		, 'border-radius'          : '5px'
+		,  display                 : 'inline-block'
+		,  margin                  : 0
+		,  opacity                 : '0.8'
+		,  outline                 : 0
+		,  padding                 : 0
+		, 'vertical-align'         : 'baseline'
+		}
+	, '#Main‿div‿previewContainer':
+		{  bottom                  : 0
+		, 'border-top'             : OUTERCONTEXT.CONSTANTS.BORDERS
+		,  height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 59) + 'px'
+		, 'max-height'             : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 59) + 'px'
+		, 'padding-top'            : '1em'
+		,  position                : 'absolute'
+		}
+	, '#Preview‿img‿preview_image':
+		{  cursor                  : 'pointer'
+		,  display                 : 'block'
+		,  height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+		,  margin                  : '0 auto'
+		, 'max-height'             : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+		,  padding                 : '15px 0 0 0'
+		}
+	, '.CAAsidebar':
+		{ 'border-left'            : OUTERCONTEXT.CONSTANTS.BORDERS
+		, 'padding-left'           : '8px'
+		,  position                : 'fixed'
+		,  right                   : '20px'
+		,  width                   : OUTERCONTEXT.CONSTANTS.SIDEBARWIDTH + 'px!important'
+		}
+	, '.CAAcreditWho':
+		{ 'text-indent'            : '-2em'
+		}
+	, '.closeButton':
+		{ 'background-color'       : '#FFD0DB'
+		,  border                  : '1px solid #EEC9C8'
+		, 'border-radius'          : '8px'
+		,  cursor                  : 'pointer'
+		, 'float'                  : 'right'
+		, 'line-height'            : '.8em'
+		, 'margin-right'           : '-1em'
+		, 'margin-top'             : '-.95em'
+		,  opacity                 : '0.9'
+		,  padding                 : '2px 4px 5px'
+		}
+	, '.closeButton:hover':
+		{ 'background-color'       : '#FF82AB'
+		, 'font-weight'            : 900
+		,  opacity                 : 1
+		}
+	, '.existingCAAimage':
+		{ 'background-color'       : '#FFF'
+		,  border                  : '0 none'
+		}
+	, '.existingCAAimage > div > img':
+		{  border                  : '0 none'
+		, 'image-rendering'        : 'optimizeQuality'
+		}
+	, '.imageRow':
+		{ 'padding-bottom'         : '1em!important'
+		}
+	, '.imageSizeControl, #Main‿div‿options_control, #Main‿div‿about_control':
+		{  cursor                  : 'pointer'
+		, 'float'                  : 'right'
+		}
+	, '.imageSizeControl, #Main‿div‿options_control':
+		{  height                  : '26px'
+		,  width                   : '26px'
+		}
+	, '.imageSizeControl:hover, #Main‿div‿options_control:hover, #Main‿div‿about_control:hover':
+		{  opacity                 : 1
+		}
+	, '.localImage':
+		{  padding                 : '3px'
+		, 'vertical-align'         : 'top'
+		}
+	, '.newCAAimage > div > img':
+		{ 'min-height'             : '120px'
+		, 'image-rendering'        : 'optimizeQuality'
+		}
+	, '.over':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('ACTIVE')
+		}
+	, '.previewDT':
+		{  clear                   : 'left'
+		, 'float'                  : 'left'
+		, 'font-weight'            : 700
+		}
+	, '.previewDT::after, #About‿fieldset‿main * dt::after':
+		{  color                   : '#000'
+		,  content                 : '": "'
+		}
+	, '#About‿fieldset‿main * dt::before':
+		{  color                   : '#000'
+		,  content                 : '" • "'
+		}
+	, '.tintImage, .imageSizeControl':
+		{  opacity                 : '0.4'
+		}
+	, '.workingCAAimage':
+		{ 'padding-left'           : '1px'
+		, 'padding-right'          : '1px'
+		}
+	, '.workingCAAimage > div':
+		{ 'margin-bottom'          : '8px!important'
+		}
+	, 'div.loadingDiv > img':
+		{  height                  : '30px'
+		, 'image-rendering'        : 'optimizeQuality'
+		, 'padding-right'          : '10px'
+		,  width                   : '30px'
+		}
+	, 'fieldset':
+		{  border                  : '1px solid #D3D3D3'
+		, 'border-radius'          : '8px'
+		,  margin                  : '30px -4px 7px'
+		,  padding                 : '6px'
+		}
+	, '#CAAeditorMenu > fieldset':
+		{  border                  : 'none'
+		,  margin                  : '16px -4px 7px'
+		}
+	, 'figure':
+		{  border                  : OUTERCONTEXT.CONSTANTS.BORDERS
+		}
+	, 'input[type="color"]':
+		{  padding                 : 0
+		}
+	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿clear_storage, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
+		{  border                  : '1px outset #EEE!important'
+		, 'border-radius'          : '6px'
+		,  cursor                  : 'pointer'
+		, 'font-family'            : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
+		, 'font-size'              : '100%'
+		, 'margin-right'           : 0
+		, 'outline'                : 'none'
+		,  padding                 : '3px'
+		, 'text-align'             : 'center'
+		}
+	, '#Options‿input‿button‿clear_storage':
+		{ 'background-color'       : 'red'
+		,  color                   : '#FFF'
+		, 'font-weight'            : 700
+		,  opacity                 : '.7'
+		,  width                   : '190px'
+		}
+	, '#Options‿input‿button‿colors':
+		{ 'background-color'       : 'lightgray'
+		}
+	, '#Options‿input‿button‿clear_storage:disabled':
+		{ 'background-color'       : 'grey'
+		,  color                   : '#000'
+		, 'text-decoration'        : 'line-through'
+		}
+	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
+		{ 'float'                  : 'right'
+		,  width                   : '79px'
+		}
+	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿clear_storage:active, #CAAeditorMaskColorControl:active, #CAAeditorSaveImageBtn:active, #CAAeditorCancelBtn:active, #CAAeditorApplyCropBtn:active':
+		{  border                  : '1px inset #D3D3D3'
+		,  opacity                 : 1
+		}
+	, 'legend':
+		{ color                    : '#000!important'
+		, 'font-size'              : '110%!important'
+		, 'font-variant'           : 'small-caps'
+		}
+	, 'table.tbl * table, #Main‿div‿imageContainer, #Main‿div‿previewContainer':
+		{  width                   : '100%'
+		}
+	, 'table.tbl .count':
+		{  width                   : '6em!important'
+		}
+	, 'h4':
+		{ 'font-size'              : '115%'
+		}
+	, 'h5':
+		{ 'margin-after'           : 0
+		, 'margin-before'          : '1em'
+		}
+	, '#About‿fieldset‿main * h5':
+		{ 'font-size'              : '100%'
+		}
+	, '#About‿fieldset‿main * dd':
+		{ 'padding-bottom'         : '5px'
+		}
+	, '#About‿h4‿1':
+		{ 'margin-top'             : 0
+		}
+
+	/* css for the number polyfill */
+	, 'div.number-spin-btn-container':
+		{  display                 : 'inline-block'
+		,  margin                  : 0
+		,  padding                 : 0
+		,  position                : 'relative'
+		, 'vertical-align'         : 'bottom'
+		}
+	, 'div.number-spin-btn':
+		{ 'background-color'       : '#CCCCCC'
+		,  border                  : '2px outset #CCCCCC'
+		,  height                  : '11.5px!important'
+		,  width                   : '1.2em'
+		}
+	, 'div.number-spin-btn-up':
+		{ 'border-bottom-width'    : '1px'
+		, 'border-radius'          : '3px 3px 0px 0px'
+		}
+	, 'div.number-spin-btn-up:before':
+		{  content                 : '""'
+		, 'border-color'           : 'transparent transparent #000 transparent'
+		, 'border-style'           : 'solid'
+		, 'border-width'           : '0 0.3em 0.3em 0.3em'
+		,  height                  : 0
+		,  left                    : '50%'
+		,  margin                  : '-0.15em 0 0 -0.3em'
+		,  padding                 : 0
+		,  position                : 'absolute'
+		,  top                     : '25%'
+		,  width                   : 0
+		}
+	, 'div.number-spin-btn-down':
+		{ 'border-radius'          : '0px 0px 3px 3px'
+		, 'border-top-width'       : '1px'
+		}
+	, 'div.number-spin-btn-down:before':
+		{  content                 : '""'
+		,  width                   : 0
+		,  height                  : 0
+		, 'border-width'           : '0.3em 0.3em 0 0.3em'
+		, 'border-style'           : 'solid'
+		, 'border-color'           : '#000 transparent transparent transparent'
+		,  position                : 'absolute'
+		,  top                     : '75%'
+		,  left                    : '50%'
+		,  margin                  : '-0.15em 0 0 -0.3em'
+		,  padding                 : 0
+		}
+	, 'div.number-spin-btn:hover':
+		{  cursor                  : 'pointer'
+		}
+	, 'div.number-spin-btn:active':
+		{ 'background-color'       : '#999999'
+		,  border                  : '2px inset #999999'
+		}
+	, 'div.number-spin-btn-up:active:before':
+		{ 'border-color'           : 'transparent transparent #FFF transparent'
+		,  left                    : '51%'
+		,  top                     : '26%'
+		}
+	, 'div.number-spin-btn-down:active:before':
+		{ 'border-color'           : '#FFF transparent transparent transparent'
+		,  left                    : '51%'
+		,  top                     : '76%'
+	}
+};
 
 /* START remote file accessor functions.  This *has* to happen before main_loader() starts the rest of the script, so that the
    event handler already exists when the other javascript context is created.  It cannot happen as part of main() itself, as that
@@ -1292,8 +1281,59 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
 		},
 
+		handleURIs : function handleURIs (uris) {
+			switch (!0) {
+				case (void 0 !== uris.file_list && !!uris.file_list.length): // local file(s)
+					$.log('imageContainer: drop ==> local file');
+					INNERCONTEXT.UTILITY.loadLocalFile(uris.e);  // TODO: Not yet migrated!
+					break;
+				case (void 0 !== uris.uri && !!uris.uri.length): // remote image drag/dropped
+					$.log('imageContainer: drop ==> uri');
+					uris.text = [uris.uri];
+					/* falls through */
+				case (void 0 !== uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
+					$.log('imageContainer: drop ==> list of uris');
+
+				var walkURIArray = function walkURIArray (uri) {
+						//var type = supportedImageType(uri);
+						//$.log('imageContainer: ' + type + ' detected at ' + uri);
+						//if (type) {
+							//loadRemoteFile(uri, type);  // TODO: Not yet migrated!
+						//} else {
+						//	$.log(uri + ' does not appear to be an image; trying it as a webpage.');
+							//getRemotePage(uri);  // TODO: Not yet migrated!
+						//}
+					};
+
+					uris.text.forEach(walkURIArray);
+					break;
+				default:
+					$.log('This is not something which can provide a usable image.');
+			}
+		},
+
 		inherit : function inherit (child, parent) {
 		   child.prototype = parent.prototype;
+		},
+
+		 loadLocalFile : function loadLocalFile (e) {
+			for (var debugMsg = ''
+			       , files = (e.files || e.dataTransfer.files || e.file_list)
+			       , len = files.length
+			       , i = len
+			       , file, name, type; 0 < i--;) {
+				file = files[i];
+				name = file.name;
+				//type = supportedImageType(name);
+				INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
+				if (!type) {
+					$.log(debugMsg + ', unusable file type detected');
+					continue;
+				}
+				$.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
+//				"jpg" === type ? addImageToDropbox(file, "local")
+//							   : convertImage(file, type, name);
+			}
 		},
 
 		makeEleName : function makeEleName (prefix, eleType, disambig, type) {
@@ -1881,17 +1921,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				              , e         : e
 				              };
 				$.log(dropped);
-				handleURIs(dropped);  // TODO: Not yet migrated!
+				INNERCONTEXT.UTILITY.handleURIs(dropped);
 			};
 
-			$dom['#Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
-			                                 .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
-			                                 .on({ dragenter : $util.addClass // Highlight field
-			                                     , dragleave : $util.removeClass // Unhighlight field
-			                                     }, { 'class': 'over' })
-			                                 .on({ dragover : $util.preventDefault // Required for drag events to work
-			                                     , drop     : dropHandler // Handle drops into the drop area
-			                                     });
+			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
+			                                .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
+			                                .on({ dragenter : $util.addClass // Highlight field
+			                                    , dragleave : $util.removeClass // Unhighlight field
+			                                    }, { 'class': 'over' })
+			                                .on({ dragover : $util.preventDefault // Required for drag events to work
+			                                    , drop     : dropHandler // Handle drops into the drop area
+			                                    });
 		},
 
 		init : function init () {
@@ -2138,8 +2178,9 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , sizes   = CSSCONTEXT.CONSTANTS.IMAGESIZES
 	  , classes = []
 	  , theseRules
+	  , cssStr
 	  ;
-
+	  
 	CSSObj['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
 	$.make('link').attr({ rel  : 'stylesheet'
@@ -2150,8 +2191,27 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	$.log('Adding css for the CAA batch script.');
 	$.make('style', { type : 'text/css' }).text(Object.keys(CSSObj).map(function create_css_rules (key) {
+		var prefixed = 
+			[ 'box-shadow'
+			, 'border-radius'
+			, 'margin-after'
+			, 'opacity'
+			, 'transform'
+			];
+			
 		theseRules = Object.keys(CSSObj[key]).map(function create_css_rules_internal (rule) {
-			return [rule, ':', CSSObj[key][rule]].join('');
+			cssStr = CSSObj[key][rule];
+			if ($.inArray(rule, prefixed) === -1) {
+				return [rule, ':', cssStr].join('');
+			} else {
+				return [
+					'-khtml-', rule, ':', cssStr, ';',
+					'-moz-', rule, ':', cssStr, ';',
+					'-webkit-', rule, ':', cssStr, ';',
+					'-o-', rule, ':', cssStr, ';',
+					rule, ':', cssStr
+				].join('');
+			}			
 		}).join(';');
 		return [key, '{', theseRules, ';}'].join('');
 	}).join('')).appendTo('head');
@@ -2428,27 +2488,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				return;
 			};
 
-		 var loadLocalFile = function load_local_file (e) {
-			for (var debugMsg = ''
-				   , files = (e.files || e.dataTransfer.files || e.file_list)
-				   , len = files.length
-				   , file
-				   , name
-				   , type
-				   , i = len; i-- > 0;) {
-				file = files[i];
-				name = file.name;
-				type = supportedImageType(name);
-				INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
-				if (!type) {
-					$.log(debugMsg + ', unusable file type detected');
-					continue;
-				}
-				$.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
-				"jpg" === type ? addImageToDropbox(file, "local")
-							   : convertImage(file, type, name);
-			}
-		};
+
 
 		var addRemoteImage = function add_remote_image (e) {
 			$.log('dblclick detected on comlink; creating file and thumbnail.');
@@ -2561,7 +2601,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 											return links.indexOf(uri) === index;
 										}
 									, sendLinksToHandler = function getRemotePage_sendLinksToHandler (base) {
-											links.length && handleURIs({ base: base
+											links.length && INNERCONTEXT.UTILITY.handleURIs({ base: base
 																	   , text: links.filter(unique)
 																	   });
 										}
@@ -2617,35 +2657,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				   });
 		};
 
-		var handleURIs = function handleURIs (uris) {
-			switch (!0) {
-				case (void 0 !== uris.file_list && !!uris.file_list.length): // local file(s)
-					$.log('imageContainer: drop ==> local file');
-					loadLocalFile(uris.e);
-					break;
-				case (void 0 !== uris.uri && !!uris.uri.length): // remote image drag/dropped
-					$.log('imageContainer: drop ==> uri');
-					uris.text = [uris.uri];
-					// falls through 
-				case (void 0 !== uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
-					$.log('imageContainer: drop ==> list of uris');
-					var type;
-
-					uris.text.forEach(function handleURIs_walkArray (uri) {
-						type = supportedImageType(uri);
-						$.log('imageContainer: ' + type + ' detected at ' + uri);
-						if (type) {
-							loadRemoteFile(uri, type);
-						} else {
-							$.log(uri + ' does not appear to be an image; trying it as webpage.');
-							getRemotePage(uri);
-						}
-					});
-					break;
-				default:
-					$.log('This is not something which can provide a usable image.');
-			}
-		};
 
 
 
