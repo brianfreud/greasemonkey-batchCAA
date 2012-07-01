@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0009
+// @version     0.02.0011
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -38,9 +38,12 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 ---------------------------------------------------------------------------- */
 
+//TODO: Finish refactoring:
 //TODO: Refactor: $util.getRemotePage
 //TODO: Refactor: $util.loadRemoteFile
-//TODO: Finish refactoring
+//TODO: Refactor: addImageToDropbox
+//TODO: Refactor: convertImage
+//------------------------------------
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
@@ -1161,14 +1164,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			   This prevents those columns getting squished when the table-layout is set to fixed layout. */
 			$.log('AntiSquishing...', 1);
 
+			var rules = [];
+
 			void 0 !== init && $('.CAAantiSquish').remove();
 			$('th.pos').remove();
 			for (var $th = $(document.getElementsByTagName('th')), i = 0, len = $th.length; i < len; i++) {
-				$.addRule( ['thead > tr > th:nth-child(', (i + 1), ')'].join('')
-						 , ['{width:', ($th.quickWidth(i) + 10), 'px!important;}'].join('')
-						 , { 'class': 'CAAantiSquish' }
-						 );
-				}
+				rules.push(
+					[ 'thead > tr > th:nth-child(', (i + 1), ')'
+					, '{ width:', ($th.quickWidth(i) + 10), 'px!important;}'
+					].join('')
+				);
+			}
+			$.addRule(rules.join(''), '', { 'class': 'CAAantiSquish' });
 		},
 
 		adjustContainerHeights : function adjustContainerHeights () {
@@ -1849,9 +1856,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$.addRule('table.tbl', '{ table-layout: fixed; }', { id : 'tblStyle1' });
 
 			// Change the page to use border-box layout
-			$.addRule('*', [ '{	-moz-box-sizing: border-box;'
+			$.addRule('*', [ '{ -moz-box-sizing: border-box;'
 						   , '  -webkit-box-sizing: border-box;'
-						   , '		  box-sizing: border-box;'
+						   , '          box-sizing: border-box;'
 						   , '}'
 						   ].join('')
 					 );
@@ -1973,13 +1980,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric )
 			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor );
 
-			var handleRemote = function handleRemote ( e, type ) {
-				if ( type ) { // remote image file
-					$util.loadRemoteFile( e.data.uri, type );
-				} else { // remote webpage
-					$util.getRemotePage( e.data.uri );
-				}
-			};
+
 
 			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
 			                                .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
@@ -1988,9 +1989,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                    }, { 'class': 'over' })
 			                                .on({  dragover    : $util.preventDefault // Required for drag events to work
 			                                    ,  drop        : $util.handleDroppedResources // Handle drops into the drop area
-												, 'haveRemote' : handleRemote // Handle remote non-image resources to be loaded
-			                                    })
-			                                .on( 'haveLocalFileList', function (e) { $util.loadLocalFile(e.list); } ); // Handle local images to be loaded
+			                                    , 'haveRemote' : // Handle remote non-image resources to be loaded
+			                                        function ( e, type ) {
+			                                            type ? $util.loadRemoteFile( e.data.uri, type ) : $util.getRemotePage( e.data.uri );
+			                                        }
+			                                    , 'haveLocalFileList' : // Handle local images to be loaded
+			                                        function (e) {
+			                                            $util.loadLocalFile(e.list);
+			                                        }
+			                                    });
 		},
 
 		init : function init () {
@@ -2359,7 +2366,112 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 }();
 
 /*
+	// Adjust the table layout and CAA rows after a screen resize event occurs. 
+	window.onresize = function adjust_table_after_window_resize () {
+		$.log('Screen resize detected, adjusting layout.');
+		if ((window.outerHeight - window.innerHeight) > 100) {
+			$('#tblStyle1').prop('disabled',true);
+			INNERCONTEXT.UTILITY.antiSquish();
+			$('#tblStyle1').prop('disabled',false);
+		}
+		$('div.caaDiv').each(function window_resize_internal () {
+			INNERCONTEXT.UTILITY.checkScroll($.single(this));
+		});
+	};
 
+//---------------------------------------------------------------------------------------------------------
+
+	// Preview functionality 
+	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
+		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
+			$.log('Setting new image for preview box.');
+			$('#previewImage').prop('src', $.single(this).prop('src'))
+							  .prop('title', $.l('Click to edit this image'));
+			$('#previewResolution').text($.single(this).data('resolution'));
+			$('#previewFilesize').text($.single(this).data('size') + ' ' + $.l('bytes'));
+			$('#previewText').show();
+		}
+	});
+
+//---------------------------------------------------------------------------------------------------------
+
+	// Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
+	   testing for completeness after an image is added is tested within that drop handler. 
+	$('body').on('change', '.caaSelect', function select_change_handler (e) {
+		var $figure = $(e.target).parents('figure:first');
+		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
+	});
+
+//---------------------------------------------------------------------------------------------------------
+
+	// START: functionality to allow dragging from the Images box to a specific caa image box. 
+	var $draggedImage = null,
+		inChild	   = false;
+
+	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/ 
+	jQuery.event.props.push('dataTransfer');
+
+	$('body').on({
+				 dragstart : function localImage_dragStart (e) {
+								 $.log('localImage: dragstart');
+								 $draggedImage = $(this).addClass('beingDragged');
+								 e.dataTransfer.dropEffect='move';
+								 e.dataTransfer.effectAllowed = 'move';
+							 },
+				 dragend   : function localImage_dragEnd (e) {
+								 $.log('localImage: dragend');
+								 if ($draggedImage !== null) {
+									 $draggedImage.removeClass('beingDragged');
+									 $('figure').removeClass('over');
+								 }
+								 $draggedImage = null;
+							 }
+	}, '.localImage');
+
+	$('body').on({
+				dragover : function newCAAimage_dragOver (e) {
+								$.log('newCAAimage: dragover');
+								e.preventDefault();
+								return false;
+							},
+				dragenter : function newCAAimage_dragEnter (e) {
+								$.log('newCAAimage: dragenter');
+								e.preventDefault();
+								if ($draggedImage !== null) {
+									inChild = !$(e.target).hasClass('newCAAimage');
+									$('figure').removeClass('over');
+									$.single(this).addClass('over');
+								}
+								return false;
+							},
+				dragleave : function newCAAimage_dragLeave (e) {
+								$.log('loadingDiv: dragleave');
+								e.preventDefault();
+								if ($draggedImage !== null) {
+									// https://bugs.webkit.org/show_bug.cgi?id=66547 
+									if (!inChild) {
+										$.single(this).removeClass('over');
+									}
+								}
+								return false;
+							},
+				drop	  : function newCAAimage_drop (e) {
+								$.log('newCAAimage: drop');
+								e.preventDefault();
+								if ($draggedImage !== null) {
+									$.single(this).find('.dropBoxImage').replaceWith($draggedImage);
+									$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
+												 .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
+																		 .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(this)));
+									$('figure').removeClass('over');
+									$draggedImage = null;
+								}
+								return false;
+				}
+	}, '.newCAAimage');
+	// END: functionality to allow dragging from the Images box to a specific caa image box. 
+
+//---------------------------------------------------------------------------------------------------------
 
 		// Create the color picker. 
 		$.log('Creating color picker');
@@ -2387,6 +2499,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 							   INNERCONTEXT.UTILITY.getColor( $firstOption.val() )
 							   );
 		}();
+		
+//---------------------------------------------------------------------------------------------------------
 
 		// Add functionality to the default color button. 
 		!function add_default_color_handler () {
@@ -2400,10 +2514,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 											  });
 		}();
 
-
-
-
-
+//---------------------------------------------------------------------------------------------------------
 
 		var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
 			$.log('Running addImageToDropbox');
@@ -2447,6 +2558,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			return;
 		};
 
+//---------------------------------------------------------------------------------------------------------
 
 		var convertImage = function convertImage (inputImage, type, source) {
 				$.log(['convertImage: received ', type, ' file: "', source, '"'].join(''));
@@ -2495,7 +2607,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				return;
 			};
 
-
+//---------------------------------------------------------------------------------------------------------
 
 		var addRemoteImage = function add_remote_image (e) {
 			$.log('dblclick detected on comlink; creating file and thumbnail.');
@@ -2577,6 +2689,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			}, handleError);
 		};
 
+//---------------------------------------------------------------------------------------------------------
+
 		var loadRemoteFile = function load_remote_file (uri, imageType) {
 			'undefined' === typeof imageType && (imageType = 'jpg');
 
@@ -2589,6 +2703,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 											  .on('dblclick', { imageType: imageType, uri: uri }, addRemoteImage);
 			return;
 		};
+		
+//---------------------------------------------------------------------------------------------------------
 
 		var getRemotePage = function getRemotePage (uri) {
 			$.log('Loading ' + uri);
@@ -2664,8 +2780,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				   });
 		};
 
-
-
+//---------------------------------------------------------------------------------------------------------
 
 		!function init_storage_event_handling () {
 			$.log('Attaching listener for storage events.');
@@ -2703,6 +2818,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			};
 			window.addEventListener("storage", handleStorage, false);
 		}();
+		
+//---------------------------------------------------------------------------------------------------------
 
 		!function init_add_caa_row_controls () {
 			$.log('Adding CAA controls and event handlers.');
@@ -2875,6 +2992,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			$thisForm.find('tbody')
 					 .each(handleInsertedReleaseRow);
 		}();
+		
+//---------------------------------------------------------------------------------------------------------
 
 		!function init_add_caa_table_controls () {
 			$.log('Adding CAA load all releases button.');
@@ -2895,6 +3014,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			});
 		}();
 
+//---------------------------------------------------------------------------------------------------------
+
 		!function load_stored_images() {
 				var image
 				  , type
@@ -2905,6 +3026,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					(type = supportedImageType(image)) && loadRemoteFile(image, type);
 				});
 			}();
+
+//---------------------------------------------------------------------------------------------------------
 
 		// Create image editor. 
 		!function create_image_editor_handler () {
@@ -3046,7 +3169,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				});
 				$.polyfillInputNumber();
 
-//TODO: The css here isn't correct in Firefox.
 				$.make('div', { 'class' : 'ui-state-error'
 							 , id	  : 'CAAimageEditorCropError'
 							 }).text($.l('Error too much cropping'))
@@ -3093,7 +3215,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					$('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', img.height);
 					$('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', img.width);
 
-//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
+					//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
 
 					// Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. 
 					canvas.style.height = c.height + 'px';
@@ -3355,113 +3477,5 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		}();
 	};
 
-	// Preview functionality 
-	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
-		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
-			$.log('Setting new image for preview box.');
-			$('#previewImage').prop('src', $.single(this).prop('src'))
-							  .prop('title', $.l('Click to edit this image'));
-			$('#previewResolution').text($.single(this).data('resolution'));
-			$('#previewFilesize').text($.single(this).data('size') + ' ' + $.l('bytes'));
-			$('#previewText').show();
-		}
-	});
 
-	// Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
-	   testing for completeness after an image is added is tested within that drop handler. 
-	$('body').on('change', '.caaSelect', function select_change_handler (e) {
-		var $figure = $(e.target).parents('figure:first');
-		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
-	});
-
-	// START: functionality to allow dragging from the Images box to a specific caa image box. 
-	var $draggedImage = null,
-		inChild	   = false;
-
-	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/ 
-	jQuery.event.props.push('dataTransfer');
-
-	$('body').on({
-				 dragstart : function localImage_dragStart (e) {
-								 $.log('localImage: dragstart');
-								 $draggedImage = $(this).addClass('beingDragged');
-								 e.dataTransfer.dropEffect='move';
-								 e.dataTransfer.effectAllowed = 'move';
-							 },
-				 dragend   : function localImage_dragEnd (e) {
-								 $.log('localImage: dragend');
-								 if ($draggedImage !== null) {
-									 $draggedImage.removeClass('beingDragged');
-									 $('figure').removeClass('over');
-								 }
-								 $draggedImage = null;
-							 }
-	}, '.localImage');
-
-	$('body').on({
-				dragover : function newCAAimage_dragOver (e) {
-								$.log('newCAAimage: dragover');
-								e.preventDefault();
-								return false;
-							},
-				dragenter : function newCAAimage_dragEnter (e) {
-								$.log('newCAAimage: dragenter');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									inChild = !$(e.target).hasClass('newCAAimage');
-									$('figure').removeClass('over');
-									$.single(this).addClass('over');
-								}
-								return false;
-							},
-				dragleave : function newCAAimage_dragLeave (e) {
-								$.log('loadingDiv: dragleave');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									// https://bugs.webkit.org/show_bug.cgi?id=66547 
-									if (!inChild) {
-										$.single(this).removeClass('over');
-									}
-								}
-								return false;
-							},
-				drop	  : function newCAAimage_drop (e) {
-								$.log('newCAAimage: drop');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									$.single(this).find('.dropBoxImage').replaceWith($draggedImage);
-									$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
-												 .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-																		 .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(this)));
-									$('figure').removeClass('over');
-									$draggedImage = null;
-								}
-								return false;
-				}
-	}, '.newCAAimage');
-	// END: functionality to allow dragging from the Images box to a specific caa image box. 
-
-	// Adjust the table layout and CAA rows after a screen resize event occurs. 
-	window.onresize = function adjust_table_after_window_resize () {
-		$.log('Screen resize detected, adjusting layout.');
-		if ((window.outerHeight - window.innerHeight) > 100) {
-			$('#tblStyle1').prop('disabled',true);
-			INNERCONTEXT.UTILITY.antiSquish();
-			$('#tblStyle1').prop('disabled',false);
-		}
-		$('div.caaDiv').each(function window_resize_internal () {
-			INNERCONTEXT.UTILITY.checkScroll($.single(this));
-		});
-	};
 */
-
-
-
-
-
-
-
-
-
-
-
