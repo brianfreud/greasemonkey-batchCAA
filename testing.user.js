@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0008
+// @version     0.02.0009
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -38,7 +38,8 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 ---------------------------------------------------------------------------- */
 
-//TODO: Refactor: handleURIs
+//TODO: Refactor: $util.getRemotePage
+//TODO: Refactor: $util.loadRemoteFile
 //TODO: Finish refactoring
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
@@ -1281,30 +1282,43 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
 		},
 
+		handleDroppedResources : function handleDroppedResources (e) {
+			var $util        = INNERCONTEXT.UTILITY
+			  , dataTransfer = e.dataTransfer
+			  , getData      = dataTransfer.getData
+			  , getText      = getData( 'Text' )
+			  ;
+
+			$util.removeClass( e, 'over' );
+			$util.preventDefault( e );
+			e = e.originalEvent || e;
+
+			var dropped = { file_list : dataTransfer.files
+			              , base      : $( getText ).find( 'base' ).attr( 'href' ) || ''
+			              , text      : getText.match( INNERCONTEXT.CONSTANTS.REGEXP.uri ) || ''
+			              , uri       : getData( 'text/uri-list' )
+			              , e         : e
+			              };
+
+			$.log(dropped);
+			$util.handleURIs( dropped );
+		},
+
 		handleURIs : function handleURIs (uris) {
+			var $domIC = INNERCONTEXT.DOM['Main‿div‿imageContainer'];
+
+			var walkURIArray = function walkURIArray (uri) {
+				$domIC.trigger({ type: 'haveRemote', uri: uri }, [INNERCONTEXT.UTILITY.supportedImageType(uri)]);
+			};
+			
 			switch (!0) {
-				case (void 0 !== uris.file_list && !!uris.file_list.length): // local file(s)
-					$.log('imageContainer: drop ==> local file');
-					INNERCONTEXT.UTILITY.loadLocalFile(uris.e);  // TODO: Not yet migrated!
+				case (!!uris.file_list && !!uris.file_list.length): // local file(s)
+					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.e });
 					break;
-				case (void 0 !== uris.uri && !!uris.uri.length): // remote image drag/dropped
-					$.log('imageContainer: drop ==> uri');
-					uris.text = [uris.uri];
-					/* falls through */
-				case (void 0 !== uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
-					$.log('imageContainer: drop ==> list of uris');
-
-				var walkURIArray = function walkURIArray (uri) {
-						//var type = supportedImageType(uri);
-						//$.log('imageContainer: ' + type + ' detected at ' + uri);
-						//if (type) {
-							//loadRemoteFile(uri, type);  // TODO: Not yet migrated!
-						//} else {
-						//	$.log(uri + ' does not appear to be an image; trying it as a webpage.');
-							//getRemotePage(uri);  // TODO: Not yet migrated!
-						//}
-					};
-
+				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
+					uris.uri.forEach(walkURIArray);
+					break;
+				case (!!uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
 					uris.text.forEach(walkURIArray);
 					break;
 				default:
@@ -1316,15 +1330,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		   child.prototype = parent.prototype;
 		},
 
-		 loadLocalFile : function loadLocalFile (e) {
-			for (var debugMsg = ''
-			       , files = (e.files || e.dataTransfer.files || e.file_list)
-			       , len = files.length
-			       , i = len
-			       , file, name, type; 0 < i--;) {
+		 loadLocalFile : function loadLocalFile (event) {
+			var file, name, type
+			  , e = event.data.e
+			  , debugMsg = ''
+		      , files = (e.files || e.dataTransfer.files || e.file_list)
+		      , len = files.length
+		      , i = len
+		      , $util = INNERCONTEXT.UTILITY
+		      ;
+			while (0 < i--) {
 				file = files[i];
 				name = file.name;
-				//type = supportedImageType(name);
+				type = $util.supportedImageType(name);
 				INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
 				if (!type) {
 					$.log(debugMsg + ', unusable file type detected');
@@ -1380,6 +1398,58 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		removeWrappedElement : function removeWrappedItem (e) {
 			$(e.target).parent().remove();
+		},
+
+		supportedImageType : function supportedImageType (uri) {
+			var matches = INNERCONTEXT.CONSTANTS.REGEXP.image.exec(uri);
+			if (matches === null) {
+				return false;
+			}
+			var matched = matches[0];
+			$.log('Testing file with extension "' + matched + '" to see if it is a supported extension.');
+			switch (matched) {
+				// JPEG 
+				case '.jpg'   : // falls through 
+				case '.jpeg'  : // falls through 
+				case '.jpe'   : // falls through 
+				case '.jfif'  : // falls through 
+				case '.jif'   : // falls through 
+				// Progressive JPEG 
+				case '.pjp'   : // falls through 
+				case '.pjpeg' : return 'jpg';
+				// Portable Network Graphics 
+				case '.png'   : return 'png';
+				// GIF 
+				case '.gif'   : return 'gif';
+				// Bitmap 
+				case '.bmp'   : return 'bmp';
+				// Google WebP 
+				case '.webp'  : return 'webp';
+				// Icon 
+				case '.ico'   : return 'ico';
+				// JPEG Network Graphics 
+				case '.jng'   : return 'jng';
+				// JPEG2000 
+				case '.j2c'   : // falls through 
+				case '.j2k'   : // falls through 
+				case '.jp2'   : // falls through 
+				case '.jpc'   : // falls through 
+				case '.jpt'   : return 'jp2';
+				// ZSoft IBM PC Paintbrush 
+				case '.pcx'   : return 'pcx';
+				// Lotus Picture 
+				case '.pic'   : return 'pic';
+				// Macintosh 
+				case '.pict'   : return 'pict';
+				// MacPaint file format 
+				case '.pnt'   : return 'pnt';
+				// Targa file format 
+				case '.tga'   : return 'tga';
+				// Aldus Tagged Image File Format 
+				case '.tif'   : // falls through 
+				case '.tiff'  : return 'tiff';
+				default       : return false;
+			}
 		},
 
         toggleRedTint : function toggleRedTint (e) {
@@ -1900,28 +1970,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$dom['Options‿input‿button‿clear_storage'].on( click, $util.clearImageStore );
 
 			// Add functionality to close buttons
-			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric)
-			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor);
+			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric )
+			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor );
 
-			var dropHandler = function dropHandler (e) {
-				var $util        = INNERCONTEXT.UTILITY
-				  , dataTransfer = e.dataTransfer
-				  , getData      = dataTransfer.getData
-				  , getText      = getData('Text')
-				  ;
-
-				$util.removeClass(e, 'over');
-				$util.preventDefault(e);
-				e = e.originalEvent || e;
-
-				var dropped = { file_list : dataTransfer.files
-				              , base      : $(getText).find('base').attr('href') || ''
-				              , text      : getText.match(INNERCONTEXT.CONSTANTS.REGEXP.uri) || ''
-				              , uri       : getData('text/uri-list')
-				              , e         : e
-				              };
-				$.log(dropped);
-				INNERCONTEXT.UTILITY.handleURIs(dropped);
+			var handleRemote = function handleRemote ( e, type ) {
+				if ( type ) { // remote image file
+					$util.loadRemoteFile( e.data.uri, type );
+				} else { // remote webpage
+					$util.getRemotePage( e.data.uri );
+				}
 			};
 
 			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
@@ -1929,9 +1986,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                .on({ dragenter : $util.addClass // Highlight field
 			                                    , dragleave : $util.removeClass // Unhighlight field
 			                                    }, { 'class': 'over' })
-			                                .on({ dragover : $util.preventDefault // Required for drag events to work
-			                                    , drop     : dropHandler // Handle drops into the drop area
-			                                    });
+			                                .on({  dragover    : $util.preventDefault // Required for drag events to work
+			                                    ,  drop        : $util.handleDroppedResources // Handle drops into the drop area
+												, 'haveRemote' : handleRemote // Handle remote non-image resources to be loaded
+			                                    })
+			                                .on( 'haveLocalFileList', function (e) { $util.loadLocalFile(e.list); } ); // Handle local images to be loaded
 		},
 
 		init : function init () {
@@ -2388,58 +2447,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			return;
 		};
 
-		var supportedImageType = function supportedImageType (uri) {
-			var matches = INNERCONTEXT.CONSTANTS.REGEXP.image.exec(uri)
-			  ;
-			if (matches === null) {
-				return false;
-			}
-			var matched = matches[0];
-			$.log('Testing file with extension "' + matched + '" to see if it is a supported extension.');
-			switch (matched) {
-				// JPEG 
-				case '.jpg'   : // falls through 
-				case '.jpeg'  : // falls through 
-				case '.jpe'   : // falls through 
-				case '.jfif'  : // falls through 
-				case '.jif'   : return 'jpg';
-				// Progressive JPEG 
-				case '.pjp'   : // falls through 
-				case '.pjpeg' : return 'jpg';
-				// Portable Network Graphics 
-				case '.png'   : return 'png';
-				// GIF 
-				case '.gif'   : return 'gif';
-				// Bitmap 
-				case '.bmp'   : return 'bmp';
-				// Google WebP 
-				case '.webp'  : return 'webp';
-				// Icon 
-				case '.ico'   : return 'ico';
-				// JPEG Network Graphics 
-				case '.jng'   : return 'jng';
-				// JPEG2000 
-				case '.j2c'   : // falls through 
-				case '.j2k'   : // falls through 
-				case '.jp2'   : // falls through 
-				case '.jpc'   : // falls through 
-				case '.jpt'   : return 'jp2';
-				// ZSoft IBM PC Paintbrush 
-				case '.pcx'   : return 'pcx';
-				// Lotus Picture 
-				case '.pic'   : return 'pic';
-				// Macintosh 
-				case '.pict'   : return 'pict';
-				// MacPaint file format 
-				case '.pnt'   : return 'pnt';
-				// Targa file format 
-				case '.tga'   : return 'tga';
-				// Aldus Tagged Image File Format 
-				case '.tif'   : // falls through 
-				case '.tiff'  : return 'tiff';
-				default	 : return false;
-			}
-		};
 
 		var convertImage = function convertImage (inputImage, type, source) {
 				$.log(['convertImage: received ', type, ' file: "', source, '"'].join(''));
@@ -3447,3 +3454,14 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		});
 	};
 */
+
+
+
+
+
+
+
+
+
+
+
