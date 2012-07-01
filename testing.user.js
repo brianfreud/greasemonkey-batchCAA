@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0003
+// @version 0.02.0004
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -36,6 +36,7 @@ Opera: Not compatible, sorry.
 */
 
 //TODO: Finish refactoring
+//TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for editing MB's existing CAA image data
@@ -232,7 +233,7 @@ OUTERCONTEXT.CONSTANTS = { DEBUGMODE	 : true
 															}
 														  ]
 										   }
-						 , IEDARKNESSLVL : 75
+						 , IESHADOWLVL   : 75
 						 , FILESYSTEMSIZE: 50  /* This indicates the number of megabytes to use for the temporary local file system. */
 						 , IMAGESIZES	 : [50, 100, 150, 300]
 						 , LANGUAGE	     : 'en'
@@ -391,7 +392,7 @@ OUTERCONTEXT.UTILITY.extend(OUTERCONTEXT.UTILITY,
 OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
 
 /* Initialize CSS constants which are persistantly stored in localStorage. */
-null === localStorage.getItem('Caabie_editorDarkness') && localStorage.setItem('Caabie_editorDarkness', 75);
+null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Caabie_editorShadow', 75);
 
 /* Define the CSS constants. */
 OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
@@ -410,9 +411,12 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSav
 								   ,  padding				 : '5px'
 								   ,  width				     : '202px'
 								   },
-							   '#Options‿input‿number‿darkness':
+							   '#Options‿input‿number‿shadow':
 								   { 'margin-left'		     : '5px'
 								   ,  width				     : '3.5em'
+								   },
+							   '#Options‿label‿shadow::after':
+								   {  content				 : '"%"'
 								   },
 							   '#CAAeditorCanvas':
 								   { 'background-color'	     : '#FFF'
@@ -483,7 +487,7 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSav
 								   , 'font-weight'		     : '600'
 								   ,  padding				 : '0px 15px'
 								   },
-							   '#Options‿div‿darkness':
+							   '#Options‿div‿shadow':
 								   {  display				 : 'inline-block'
 								   },
 							   '#Main‿div‿imageContainer':
@@ -569,10 +573,10 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSav
 							   '#CAAoverlay':
 								   {  background			 : 'black'
 								   ,  bottom				 : 0
-								   ,  filter				 : 'alpha(opacity=' + localStorage.getItem('Caabie_editorDarkness') + ')'
+								   ,  filter				 : 'alpha(opacity=' + localStorage.getItem('Caabie_editorShadow') + ')'
 								   ,  left				     : 0
-								   , '-moz-opacity'		     : localStorage.getItem('Caabie_editorDarkness') / 100
-								   ,	   opacity		     : localStorage.getItem('Caabie_editorDarkness') / 100
+								   , '-moz-opacity'		     : localStorage.getItem('Caabie_editorShadow') / 100
+								   ,	   opacity		     : localStorage.getItem('Caabie_editorShadow') / 100
 								   ,  position			     : 'fixed'
 								   ,  top					 : 0
 								   ,  width				     : '100%'
@@ -1196,13 +1200,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return eles;
 		},
 
-          	changeImageSize : function changeImageSize (change) {
+		changeImageSize : function changeImageSize (e) {
 			var $shrink	   = INNERCONTEXT.DOM['Main‿div‿imageShrink']
-			  , $magnify   = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
+			  , $magnify       = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
 			  , data	   = INNERCONTEXT.DATA
 			  ;
 
-			data.sizeStatus += change;
+			data.sizeStatus += e.data.change;
 
 			switch (data.sizeStatus) {
 				case 0: data.sizeStatus = 1;
@@ -1248,7 +1252,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		clearImageStore : function clearImageStore () {
 			localStorage.setItem('Caabie_imageCache', '[]');
-			$dom['Options‿input‿button‿clear_storage'].prop('disabled', true);
+			INNERCONTEXT.DOM['Options‿input‿button‿clear_storage'].prop('disabled', true);
 			INNERCONTEXT.DATA.cachedImages = [];
 		},
 
@@ -1271,6 +1275,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 			name.push(disambig);
 			return name.join('‿');
+		},
+
+		setLSValue : function setLSValue (e) {
+ 			var value = ''
+			  , $self = $.single(this)
+			  ;
+
+			switch (e.data.type) {
+				case 'text'     : value = $self.val(); break;
+				case 'checkbox' : value = $self.is(':checked'); break;
+				case 'select'   : value = $self.find(':selected').val();
+			}
+			localStorage.setItem('Caabie_' + e.data.key, value);
 		},
 
 		tintImageRed : function tintImageRed (image) {
@@ -1602,9 +1619,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				,	INNERCONTEXT.UI.$makeColorsList()
 				, { ele: 'input', id: 'colors', title: $.l('Changed colors note'), type: 'color', value: '66ff00', 'class': 'CAAbutton' }
 				, { ele: 'input', id: 'colors', title: $.l('Changed colors note'), type: 'button', value: $.l('default'), 'class': 'CAAbutton' }
-				, { ele: 'div', id: 'darkness' }
-				,	[ { ele: 'label', 'for': 'Options‿input‿number‿darkness', id: 'darkness', title: $.l('How dark the bkgrnd'), text: $.l('How dark the bkgrnd') }
-					,	[ { ele: 'input', id: 'darkness', type: 'number', step: 1, 'min': 0, 'max': 100, value: localStorage.getItem('Caabie_editorDarkness') || INNERCONTEXT.CONSTANTS.IEDARKNESSLVL, title: $.l('How dark the bkgrnd') }
+				, { ele: 'div', id: 'shadow' }
+				,	[ { ele: 'label', 'for': 'Options‿input‿number‿shadow', id: 'shadow', title: $.l('How dark the bkgrnd'), text: $.l('How dark the bkgrnd') }
+					,	[ { ele: 'input', id: 'shadow', type: 'number', step: 1, 'min': 0, 'max': 100, value: localStorage.getItem('Caabie_editorShadow') || INNERCONTEXT.CONSTANTS.IESHADOWLVL, title: $.l('How dark the bkgrnd') }
 						]
 					]
 				  ]
@@ -1733,56 +1750,48 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			if (-1 !== $.inArray(thisEditor, autoeditorList)) {
 				/* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
 				   object, even though it *looks* like it is returning a string. */
-				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (localStorage.getItem('Caabie_autoeditPref') === "true");
+				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (localStorage.getItem('Caabie_autoedit') === "true");
 				$('.autoedit').show();
 			}
 		},
 
 		initializeSubscribers : function initializeSubscribers () {
-			var $dom  = INNERCONTEXT.DOM
-			  , $util = INNERCONTEXT.UTILITY
+			var $dom   = INNERCONTEXT.DOM
+			  , $util  = INNERCONTEXT.UTILITY
+              , change = 'change'
+              , click  = 'click'
 			  ;
 
-			// Firefox renders slideToggle() badly; use toggle() instead.
-			$dom['Main‿div‿options_control'].on('click', function options_control_click_event_handler() {
+            // Toggle control for options menu
+			$dom['Main‿div‿options_control'].on( click, function options_control_click_event_handler() {
+				// Firefox renders slideToggle() badly; use toggle() instead.
 				$dom['Options‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
 			});
-			$dom['Main‿div‿about_control'].on('click', function about_control_click_event_handler() {
+
+            // Toggle control for about menu
+			$dom['Main‿div‿about_control'].on( click, function about_control_click_event_handler() {
+				// Firefox renders slideToggle() badly; use toggle() instead.
 				$dom['About‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
 			});
 
 			// Image size controls
-			$dom['Main‿div‿imageShrink'].on('click', function imageShrink_click_event_handler () {
-				$util.changeImageSize(-1);
-			});
-			$dom['Main‿div‿imageMagnify'].on('click', function imageMagnify_click_event_handler () {
-				$util.changeImageSize(1);
-			});
+			$dom['Main‿div‿imageShrink'].on( click, { change: -1 }, $util.changeImageSize );
+			$dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, $util.changeImageSize);
 
-			// remember preferences: parse webpages checkbox
-			$dom['Options‿input‿checkbox‿parse'].on('click', function autoeditor_preference_click_event_handler (e) {
-				localStorage.setItem('Caabie_parsePref', $.single(this).is(':checked'));
-			});
+			// remember preference: parse webpages checkbox
+			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, $util.setLSValue )
 
-			// remember preferences: autoedit checkbox
-			$dom['Options‿input‿checkbox‿autoedit'].on('click', function autoeditor_preference_click_event_handler (e) {
-				localStorage.setItem('Caabie_autoeditPref', $.single(this).is(':checked'));
-			});
+			// remember preference: autoedit checkbox
+			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, $util.setLSValue )
+
+			// remember preference: language selector
+			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, $util.setLSValue )
+
+			// remember preference: image editor shadow level
+			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, $util.setLSValue )
 
 			// Clear image storage button
-			$dom['Options‿input‿button‿clear_storage'].on('click', function clear_storage_event_handler (e) {
-				$util.clearImageStore();
-			});
-
-			// remember preferences: language selector
-			$dom['Options‿select‿language'].on('change', function language_preference_change_event_handler (e) {
-				localStorage.setItem('Caabie_language', $.single(this).find(':selected').val());
-			});
-
-			// remember preferences: image editor shadow level
-			$dom['Options‿input‿number‿darkness'].on('change', function image_editor_shadow_level_preference_change_event_handler (e) {
-				localStorage.setItem('Caabie_editorDarkness', $.single(this).val());
-			});
+			$dom['Options‿input‿button‿clear_storage'].on( click, $util.clearImageStore );
 		},
 
 		init : function init () {
