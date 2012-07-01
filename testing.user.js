@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0004
+// @version 0.02.0005
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -534,7 +534,7 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSav
 								   ,	'-moz-border-radius' : '8px'
 								   , '-webkit-border-radius' : '8px'
 								   ,		 'border-radius' : '8px'
-								   , 'line-height'		     : 2
+								   , 'line-height'		     : '2!important'
 								   ,  margin				 : '10px 3px'
 								   ,  padding				 : '8px'
 								   },
@@ -871,8 +871,11 @@ OUTERCONTEXT.CONSTANTS.CSS = { '#Options‿input‿color‿colors, #CAAeditorSav
 							   'figure':
 								   {  border				 : OUTERCONTEXT.CONSTANTS.BORDERS
 								   },
+							   'input[type="color"]':
+								   {  padding				 : 0
+								   },
 							   'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿clear_storage, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
-								   {  border				 : '1px outset #EEE'
+								   {  border				 : '1px outset #EEE!important'
 								   ,	'-moz-border-radius' : '6px'
 								   , '-webkit-border-radius' : '6px'
 								   ,		 'border-radius' : '6px'
@@ -1127,8 +1130,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	$.log('Script initializing.');
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT,
-		{ DATA	  : {}
-		, DOM	   : {}
+		{ DATA      : {}
+		, DOM       : { body : $(document.body)
+		              , head : $(document.head)
+                      }
 		, TEMPLATES : { MENUS : {} }
 		, WIDGETS   : { IMAGES : { about   : localStorage.getItem('infoIcon')
 								 , zoomIn  : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassMinus')
@@ -1202,7 +1207,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		changeImageSize : function changeImageSize (e) {
 			var $shrink	   = INNERCONTEXT.DOM['Main‿div‿imageShrink']
-			  , $magnify       = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
+			  , $magnify   = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
 			  , data	   = INNERCONTEXT.DATA
 			  ;
 
@@ -1256,6 +1261,24 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			INNERCONTEXT.DATA.cachedImages = [];
 		},
 
+		closeDialogGeneric : function closeDialogGeneric (e) {
+			$.single(this).parent()
+			              .find('.dropBoxImage') // Any image in the drop box 
+			              .appendTo($('#Main‿div‿imageContainer'))
+			              .addClass('localImage')
+			              .removeClass('dropBoxImage');
+			INNERCONTEXT.UTILITY.removeWrappedElement(e);
+		},
+
+		closeDialogImageEditor : function closeDialogImageEditor (e) {
+			$('#CAAimageEditor').animate({ height  : 'toggle'
+			                             , opacity : 'toggle'
+			                             }, 'slow');
+			$('#CAAoverlay').fadeOut('fast');
+			$('#CAAimageEditor, #CAAoverlay').remove();
+			INNERCONTEXT.UTILITY.closeDialogGeneric(e);
+		},
+
 		getEditColor : function getEditColor ($ele) {
 			// Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status.
 			$.log('Testing edit status to determine background color for dropbox.');
@@ -1278,7 +1301,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		setLSValue : function setLSValue (e) {
- 			var value = ''
+			var value = ''
 			  , $self = $.single(this)
 			  ;
 
@@ -1290,17 +1313,46 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			localStorage.setItem('Caabie_' + e.data.key, value);
 		},
 
-		tintImageRed : function tintImageRed (image) {
+		redTintImage : function redTintImage ($image) {
 			$.log('Tinting image');
 
-			var $image = $(image);
-			return $image.wrap($.make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.quickHeight(0) + 6) + 'px'
-																				, width  : ($image.quickWidth(0) + 6) + 'px'
-																				}))
-						 .data('oldtitle', $image.prop('title'))
-						 .prop('title', $.l('Remove image'))
-						 .addClass('tintImage');
+			var $tint = $.make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.quickHeight(0) + 6) + 'px'
+			                                                             , width  : ($image.quickWidth(0) + 6) + 'px'
+			                                                             });
+			$image.wrap($tint)
+				  .data('oldtitle', $image.prop('title'))
+				  .prop('title', $.l('Remove image'))
+				  .addClass('tintImage');
+		},
+
+		removeWrappedElement : function removeWrappedItem (e) {
+			$(e.target).parent().remove();
+		},
+
+        toggleRedTint : function toggleRedTint (e) {
+			if (INNERCONTEXT.DOM['Options‿input‿checkbox‿remove_images'].prop('checked')) {
+				var $target = $(e.target)
+				  , type    = e.type
+				  ;
+
+				if (type === 'mouseenter') {
+					INNERCONTEXT.UTILITY.redTintImage($target);
+				} else if (type === 'mouseleave') {
+					INNERCONTEXT.UTILITY.unTintImage($target);
+				}
+			}
+		},
+
+		unTintImage : function unTintImage ($image) {
+			$.log('Untinting image');
+
+			if ($image.parents('.tintWrapper:first').length) {
+				$image.removeClass('tintImage')
+				      .prop('title', $image.data('oldtitle'))
+				      .unwrap();
+			}
 		}
+
 	});
 
 	INNERCONTEXT.UI = {
@@ -1638,6 +1690,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Polyfill to add FileSystem API support to Firefox.
 			'undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem) && $.addScript('idbFileSystem');
 			window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+
+			// Firefox renders slideToggle() badly; use toggle() instead.
+			$.browser.mozilla && ( $.fn.slideToggle = $.fn.toggle );
 		}(),
 
 		initializeLocalStorage : function initializelocalStorage () {
@@ -1756,42 +1811,48 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		initializeSubscribers : function initializeSubscribers () {
-			var $dom   = INNERCONTEXT.DOM
-			  , $util  = INNERCONTEXT.UTILITY
-              , change = 'change'
-              , click  = 'click'
+			var $dom    = INNERCONTEXT.DOM
+			  , $util   = INNERCONTEXT.UTILITY
+			  , change  = 'change'
+			  , click   = 'click'
 			  ;
 
+			var slideToggle = function (e) {
+				$dom[e.data.element].slideToggle();
+			};
+
             // Toggle control for options menu
-			$dom['Main‿div‿options_control'].on( click, function options_control_click_event_handler() {
-				// Firefox renders slideToggle() badly; use toggle() instead.
-				$dom['Options‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
-			});
+			$dom['Main‿div‿options_control'].on( click, { element: 'Options‿fieldset‿main' }, slideToggle );
 
             // Toggle control for about menu
-			$dom['Main‿div‿about_control'].on( click, function about_control_click_event_handler() {
-				// Firefox renders slideToggle() badly; use toggle() instead.
-				$dom['About‿fieldset‿main'][$.browser.mozilla ? 'toggle' : 'slideToggle']();
-			});
+			$dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, slideToggle );
 
 			// Image size controls
 			$dom['Main‿div‿imageShrink'].on( click, { change: -1 }, $util.changeImageSize );
 			$dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, $util.changeImageSize);
 
 			// remember preference: parse webpages checkbox
-			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, $util.setLSValue )
+			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, $util.setLSValue );
 
 			// remember preference: autoedit checkbox
-			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, $util.setLSValue )
+			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, $util.setLSValue );
 
 			// remember preference: language selector
-			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, $util.setLSValue )
+			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, $util.setLSValue );
 
 			// remember preference: image editor shadow level
-			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, $util.setLSValue )
+			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, $util.setLSValue );
 
 			// Clear image storage button
 			$dom['Options‿input‿button‿clear_storage'].on( click, $util.clearImageStore );
+
+			// Add functionality to close buttons
+			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric)
+			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor);
+
+			// Add handler for tinting images in remove image mode
+			$dom['#Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )
+			                                 .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint );
 		},
 
 		init : function init () {
@@ -2181,43 +2242,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 											  });
 		}();
 
-		// Add functionality to close buttons. 
-		!function add_close_button_handler () {
-			$.log('Adding handlers for close buttons.');
-			$('body').on('click', '.closeButton, #CAAeditiorCancelBtn', function close_button_click_handler (e) {
-				$.log('Removing drop box/image editor');
-				$.single(this).parent()
-							  .find('.dropBoxImage') // Any image in the drop box 
-							  .appendTo($('#imageContainer'))
-							  .addClass('localImage')
-							  .removeClass('dropBoxImage');
-				$('#CAAimageEditor').animate({ height  : 'toggle'
-											 , opacity : 'toggle'
-											 }, 'slow');
-				$('#CAAoverlay').fadeOut('fast');
-				$.single(this).parent() // -> drop boxes
-							  .add('#CAAimageEditor, #CAAoverlay') // -> image editor
-							  .remove();
-			});
-		}();
 
-		// Add functionality for remove image mode. 
-		!function add_remove_image_handlers () {
-			$.log('Adding handlers for remove image mode.');
-			$('#imageContainer').on('mouseenter', '.localImage', function localImage_hover_in_handler (e) {
-									$('#caaOptionRemove').prop('checked') && INNERCONTEXT.UTILITY.tintImageRed(e.target);
-								})
-								.on('mouseleave', '.localImage', function localImage_hover_out_handler (e) {
-									var $e = $(e.target);
-									$e.parents('.tintWrapper:first').length && $e.removeClass('tintImage')
-																				   .prop('title', $e.data('oldtitle'))
-																				   .unwrap();
-								})
-								.on('click', '.tintImage', function remove_image_click_handler (e) {
-									$(e.target).parent()
-											   .remove();
-								});
-		}();
 
 
 
@@ -3307,7 +3332,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	// Preview functionality 
 	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
-		if (!$('#caaOptionRemove').prop('checked')) {
+		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
 			$.log('Setting new image for preview box.');
 			$('#previewImage').prop('src', $.single(this).prop('src'))
 							  .prop('title', $.l('Click to edit this image'));
