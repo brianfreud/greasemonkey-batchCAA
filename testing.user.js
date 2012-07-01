@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0012
+// @version     0.02.0013
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -408,10 +408,10 @@ OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
 				                         colors = OUTERCONTEXT.CONSTANTS.COLORS;
 			                         }
 
-									thisColor === null && (thisColor = colors[color]);
-									return thisColor;
-								}
-							 , hexToRGBA:
+			                         thisColor === null && (thisColor = colors[color]);
+			                         return thisColor;
+		                         }
+		                     , hexToRGBA:
 		                         // Converts a hex color string into an rgba color string
 		                         function hexToRGBA(hex, opacity) {
 			                         'use strict';
@@ -1023,16 +1023,16 @@ OUTERCONTEXT.COMLINK.getUri = function getURI (e) {
 	// START from http://phpjs.org
 	var base64_encode = function base64_encode(data) {
 		// http://kevin.vanzonneveld.net
-		// +   original by: Tyler Akins (http://rumkin.com)
-		// +   improved by: Bayron Guevara
-		// +   improved by: Thunder.m
-		// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-		// +   bugfixed by: Pellentesque Malesuada
-		// +   improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
-		// +   improved by: Rafał Kukawski (http://kukawski.pl)
-		// +   improved by: Brian Schweitzer
-		// *	 example 1: base64_encode('Kevin van Zonneveld');
-		// *	 returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
+		// + original by: Tyler Akins (http://rumkin.com)
+		// + improved by: Bayron Guevara
+		// + improved by: Thunder.m
+		// + improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+		// + bugfixed by: Pellentesque Malesuada
+		// + improved by: Kevin van Zonneveld (http://kevin.vanzonneveld.net)
+		// + improved by: Rafał Kukawski (http://kukawski.pl)
+		// + improved by: Brian Schweitzer
+		// * example 1: base64_encode('Kevin van Zonneveld');
+		// * returns 1: 'S2V2aW4gdmFuIFpvbm5ldmVsZA=='
 		// mozilla has this native
 		// - but breaks in 2.0.0.12!
 		//}
@@ -1082,26 +1082,22 @@ OUTERCONTEXT.COMLINK.getUri = function getURI (e) {
 	var storeRetrievedFile = function storeRetrievedFile(response) {
 		var base64File
 		  , thisComlink = e.target
-		  , evt		 = document.createEvent("MouseEvents")
+		  , evt         = document.createEvent("MouseEvents")
 		  ;
 
 		thisComlink.innerHTML = '';
-		thisComlink.appendChild(
-							   document.createTextNode(
-													  bin2base64(response.responseText)
-													  )
-							   );
+		thisComlink.appendChild( document.createTextNode( bin2base64(response.responseText) ) );
 
 		evt.initMouseEvent("dblclick", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
 		thisComlink.dispatchEvent(evt);
 	};
 
 	var gm_xmlhttpRequest = GM_xmlhttpRequest; // Workaround to jshint, since GM_xmlhttpRequest looks like a constructor to jshint.
-	gm_xmlhttpRequest({ method		   : 'GET'
-					  , overrideMimeType : 'text/plain; charset=x-user-defined'
-					  , onload		   : storeRetrievedFile
-					  , url			  : e.target.innerHTML
-					  });
+	gm_xmlhttpRequest({ method           : 'GET'
+	                  , overrideMimeType : 'text/plain; charset=x-user-defined'
+	                  , onload           : storeRetrievedFile
+	                  , url              : e.target.innerHTML
+	                  });
 };
 
 OUTERCONTEXT.COMLINK.getUriWorkaround = function getUriWorkaround (e) {
@@ -1130,12 +1126,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		              , xhrComlink : $('#xhrComlink')
                       }
 		, TEMPLATES : { MENUS : {} }
-		, WIDGETS   : { IMAGES : { about   : localStorage.getItem('infoIcon')
-								 , zoomIn  : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassMinus')
-								 , zoomOut : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassPlus')
-								 , options : localStorage.getItem('iconSettings')
-								 }
-					  }
+		, WIDGETS   : {
+			IMAGES : { about   : localStorage.getItem('infoIcon')
+			         , zoomIn  : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassMinus')
+			         , zoomOut : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassPlus')
+			         , options : localStorage.getItem('iconSettings')
+			         }
+			}
 		}
 	);
 
@@ -1181,9 +1178,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		adjustContainerHeights : function adjustContainerHeights () {
 			var containerHeight = $('#Main‿div‿imageContainer').height() - $('#Main‿div‿previewContainer').height() - 42 + 'px';
-			$('#Main‿div‿imageHolder').css({ 'height'	 : containerHeight
-											, 'max-height' : containerHeight
-											});
+			$('#Main‿div‿imageHolder').css({ 'height'     : containerHeight
+			                                , 'max-height' : containerHeight
+			                                });
 		},
 
 		assemble : function assemble (constructor, components) {
@@ -1209,9 +1206,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		changeImageSize : function changeImageSize (e) {
-			var $shrink	   = INNERCONTEXT.DOM['Main‿div‿imageShrink']
+			var $shrink    = INNERCONTEXT.DOM['Main‿div‿imageShrink']
 			  , $magnify   = INNERCONTEXT.DOM['Main‿div‿imageMagnify']
-			  , data	   = INNERCONTEXT.DATA
+			  , data       = INNERCONTEXT.DATA
 			  ;
 
 			data.sizeStatus += e.data.change;
@@ -1291,10 +1288,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 		
 		getRemoteFile : function getRemoteFile (uri, imageType) {
-			$.make('pre', { 'class'     : 'image'
-			              , 'data-uri'  : uri
-			              , 'data-type' : imageType || 'jpg'
-			              })
+			$.make('pre', { 'class'     : 'image' })
+			 .data({ 'uri'  : uri
+			       , 'type' : imageType || 'jpg'
+			       })
 			 .text(uri)
 			 .appendTo('#xhrComlink')
 			 .trigger('click');
@@ -1505,10 +1502,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$addDropboxButton) {
 				widgets.$addDropboxButton = $.make('input', { 'class' : 'caaAdd'
-																		  , title   : $.l('Add image one release')
-																		  , type	: 'button'
-																		  , value   : '+'
-																		  });
+				                                            , title   : $.l('Add image one release')
+				                                            , type    : 'button'
+				                                            , value   : '+'
+				                                            });
 			}
 			return widgets.$addDropboxButton.quickClone(false);
 		},
@@ -1526,9 +1523,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			if (void 0 === widgets.$coverTypeSelect) {
 				var types = INNERCONTEXT.CONSTANTS.COVERTYPES
 				  , $typeList = $.make('select', { 'class'  : 'caaSelect'
-												 , multiple : 'multiple'
-												 , size	 : types.length
-												 })
+				                                 , multiple : 'multiple'
+				                                 , size     : types.length
+				                                 })
 				  ;
 
 				var $makeCoverTypeOption = function $makeCoverTypeOption (type, i) {
@@ -1547,10 +1544,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			
 			if (void 0 === widgets.$coverTypeSelect) {
 				var $image = $.make('img', { 'class'   : 'dropBoxImage'
-										   , draggable : false
-										   }).wrap('<div>')
-											 .parent()
-				  , $figcaption = $.make('figcaption').appendAll([ $.make('input', { type		: 'text'
+				                           , draggable : false
+				                           }).wrap('<div>')
+				                             .parent()
+				  , $figcaption = $.make('figcaption').appendAll([ $.make('input', { type        : 'text'
 																				   , placeholder : 'image comment'
 																				   })
 																 , $.make('br')
