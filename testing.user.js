@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0011
+// @version     0.02.0012
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -39,8 +39,8 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 ---------------------------------------------------------------------------- */
 
 //TODO: Finish refactoring:
-//TODO: Refactor: $util.getRemotePage
-//TODO: Refactor: $util.loadRemoteFile
+//TODO: Refactor: util.getRemotePage
+//TODO: Refactor: util.addRemoteImage
 //TODO: Refactor: addImageToDropbox
 //TODO: Refactor: convertImage
 //------------------------------------
@@ -63,7 +63,7 @@ if (!document.body) {
 }
 
 /* Initialize constants. */
-var OUTERCONTEXT = 
+var OUTERCONTEXT =
 	{ CONTEXTS: {}
 	, UTILITY:
 		{ extend :
@@ -94,7 +94,7 @@ var OUTERCONTEXT =
 		}
 	};
 
-OUTERCONTEXT.CONSTANTS = 
+OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE: true
 	, VERSION: '0.1.1438'
 	, NAMESPACE: 'Caabie'
@@ -130,12 +130,12 @@ OUTERCONTEXT.CONSTANTS =
 	, THROBBER: localStorage.getItem( 'throbber' )
 	, PREVIEWSIZE: 300
 	, IMAGEFORMATS: [ 'bmp', 'gif', 'jpg', 'png' ]
-	, BEINGDRAGGED: 
+	, BEINGDRAGGED:
 		{ OPACITY : '0.4'
 		, SHRINK  : '0.7'
 		}
-	, CREDITS: 
-		{ 'Developer and programmer': 
+	, CREDITS:
+		{ 'Developer and programmer':
 			[
 			  { name: 'Brian Schweitzer (“BrianFreud”)'
 			  , urlN: 'userscripts.org/users/28107'
@@ -223,7 +223,7 @@ OUTERCONTEXT.CONSTANTS =
 			  , urlW: 'github.com/blueimp/JavaScript-Canvas-to-Blob'
 			  }
 			]
-		, Tools: 
+		, Tools:
 			[
 			  { name: 'Jeff Schiller'
 			  , what: 'Scour'
@@ -359,7 +359,7 @@ OUTERCONTEXT.CONSTANTS =
 
 /* Special case Canadian English. */
 OUTERCONTEXT.CONSTANTS.TEXT['en-ca'] = JSON.parse(JSON.stringify(OUTERCONTEXT.CONSTANTS.TEXT.en));
-OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.CONSTANTS.TEXT['en-ca'], 
+OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.CONSTANTS.TEXT['en-ca'],
 	                         { 'languageName': 'English (Canadian)'
 	                         , 'Colors': 'Colours'
 	                         , 'Changed colors note': OUTERCONTEXT.CONSTANTS.TEXT['en-ca']['Changed colors note'].replace('color', 'colour')
@@ -370,7 +370,7 @@ OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.CONSTANTS.TEXT['en-ca'],
 
 /* Conditionally add the debug "language". */
 if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
-	OUTERCONTEXT.CONSTANTS.TEXT.test = 
+	OUTERCONTEXT.CONSTANTS.TEXT.test =
 		{ strings: {}
 		, generateMorse:
 			function() {
@@ -383,7 +383,7 @@ if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
 				}
 				return morseString;
 			}
-		, init: 
+		, init:
 			function() {
 				'use strict';
 				var self = this;
@@ -397,7 +397,7 @@ if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
 }
 
 OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
-	                         { getColor: 
+	                         { getColor:
 		                         // Gets a color value stored in localStorage.
 		                         function getColor(colors, color) {
 			                         'use strict';
@@ -411,7 +411,7 @@ OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
 									thisColor === null && (thisColor = colors[color]);
 									return thisColor;
 								}
-							 , hexToRGBA: 
+							 , hexToRGBA:
 		                         // Converts a hex color string into an rgba color string
 		                         function hexToRGBA(hex, opacity) {
 			                         'use strict';
@@ -421,7 +421,7 @@ OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
 			                           , G = parseInt(hex.substring(2, 4), 16)
 			                           , B = parseInt(hex.substring(4, 6), 16)
 			                           ;
-			                           
+			
 			                         return 'rgba(' + [R, G, B, opacity || 1].join(',') + ')';
 		                         }
 	                         }
@@ -433,8 +433,8 @@ OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEING
 /* Initialize CSS constants which are persistantly stored in localStorage. */
 null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Caabie_editorShadow', 75);
 
-/* Define the CSS constants. */	
-OUTERCONTEXT.CONSTANTS.CSS = 
+/* Define the CSS constants. */
+OUTERCONTEXT.CONSTANTS.CSS =
 	{ '#Options‿input‿color‿colors, #CAAeditorSaveImageBtn, #CAAeditorCancelBtn, #CAAeditorApplyCropBtn':
 		{ 'background-color'       : '#DDD'
 		}
@@ -1125,8 +1125,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT,
 		{ DATA      : {}
-		, DOM       : { body : $(document.body)
-		              , head : $(document.head)
+		, DOM       : { body       : $(document.body)
+		              , head       : $(document.head)
+		              , xhrComlink : $('#xhrComlink')
                       }
 		, TEMPLATES : { MENUS : {} }
 		, WIDGETS   : { IMAGES : { about   : localStorage.getItem('infoIcon')
@@ -1265,7 +1266,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		closeDialogGeneric : function closeDialogGeneric (e) {
 			$.single(this).parent()
-			              .find('.dropBoxImage') // Any image in the drop box 
+			              .find('.dropBoxImage') // Any image in the drop box
 			              .appendTo($('#Main‿div‿imageContainer'))
 			              .addClass('localImage')
 			              .removeClass('dropBoxImage');
@@ -1287,6 +1288,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
+		},
+		
+		getRemoteFile : function getRemoteFile (uri, imageType) {
+			$.make('pre', { 'class'     : 'image'
+			              , 'data-uri'  : uri
+			              , 'data-type' : imageType || 'jpg'
+			              })
+			 .text(uri)
+			 .appendTo('#xhrComlink')
+			 .trigger('click');
+			// At this point, the event handler for #xhrComlink, in the other javascript scope, takes over.
 		},
 
 		handleDroppedResources : function handleDroppedResources (e) {
@@ -1317,7 +1329,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var walkURIArray = function walkURIArray (uri) {
 				$domIC.trigger({ type: 'haveRemote', uri: uri }, [INNERCONTEXT.UTILITY.supportedImageType(uri)]);
 			};
-			
+
 			switch (!0) {
 				case (!!uris.file_list && !!uris.file_list.length): // local file(s)
 					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.e });
@@ -1415,45 +1427,45 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var matched = matches[0];
 			$.log('Testing file with extension "' + matched + '" to see if it is a supported extension.');
 			switch (matched) {
-				// JPEG 
-				case '.jpg'   : // falls through 
-				case '.jpeg'  : // falls through 
-				case '.jpe'   : // falls through 
-				case '.jfif'  : // falls through 
-				case '.jif'   : // falls through 
-				// Progressive JPEG 
-				case '.pjp'   : // falls through 
+				// JPEG
+				case '.jpg'   : // falls through
+				case '.jpeg'  : // falls through
+				case '.jpe'   : // falls through
+				case '.jfif'  : // falls through
+				case '.jif'   : // falls through
+				// Progressive JPEG
+				case '.pjp'   : // falls through
 				case '.pjpeg' : return 'jpg';
-				// Portable Network Graphics 
+				// Portable Network Graphics
 				case '.png'   : return 'png';
-				// GIF 
+				// GIF
 				case '.gif'   : return 'gif';
-				// Bitmap 
+				// Bitmap
 				case '.bmp'   : return 'bmp';
-				// Google WebP 
+				// Google WebP
 				case '.webp'  : return 'webp';
-				// Icon 
+				// Icon
 				case '.ico'   : return 'ico';
-				// JPEG Network Graphics 
+				// JPEG Network Graphics
 				case '.jng'   : return 'jng';
-				// JPEG2000 
-				case '.j2c'   : // falls through 
-				case '.j2k'   : // falls through 
-				case '.jp2'   : // falls through 
-				case '.jpc'   : // falls through 
+				// JPEG2000
+				case '.j2c'   : // falls through
+				case '.j2k'   : // falls through
+				case '.jp2'   : // falls through
+				case '.jpc'   : // falls through
 				case '.jpt'   : return 'jp2';
-				// ZSoft IBM PC Paintbrush 
+				// ZSoft IBM PC Paintbrush
 				case '.pcx'   : return 'pcx';
-				// Lotus Picture 
+				// Lotus Picture
 				case '.pic'   : return 'pic';
-				// Macintosh 
+				// Macintosh
 				case '.pict'   : return 'pict';
-				// MacPaint file format 
+				// MacPaint file format
 				case '.pnt'   : return 'pnt';
-				// Targa file format 
+				// Targa file format
 				case '.tga'   : return 'tga';
-				// Aldus Tagged Image File Format 
-				case '.tif'   : // falls through 
+				// Aldus Tagged Image File Format
+				case '.tif'   : // falls through
 				case '.tiff'  : return 'tiff';
 				default       : return false;
 			}
@@ -1488,14 +1500,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	INNERCONTEXT.UI = {
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
 			$.log('Creating add dropbox button.', 1);
-			if (void 0 === INNERCONTEXT.WIDGETS.$addDropboxButton) {
-				INNERCONTEXT.WIDGETS.$addDropboxButton = $.make('input', { 'class' : 'caaAdd'
+
+			var widgets = INNERCONTEXT.WIDGETS;
+
+			if (void 0 === widgets.$addDropboxButton) {
+				widgets.$addDropboxButton = $.make('input', { 'class' : 'caaAdd'
 																		  , title   : $.l('Add image one release')
 																		  , type	: 'button'
 																		  , value   : '+'
 																		  });
 			}
-			return INNERCONTEXT.WIDGETS.$addDropboxButton.quickClone(false);
+			return widgets.$addDropboxButton.quickClone(false);
 		},
 
 		$makeCloseButton : function $makeCloseButton () {
@@ -1506,7 +1521,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		$makeCoverTypeSelect : function $makeCoverTypeSelect () {
 			$.log('Creating CAA type select.');
 
-			if (void 0 === INNERCONTEXT.WIDGETS.$coverTypeSelect) {
+			var widgets = INNERCONTEXT.WIDGETS;
+
+			if (void 0 === widgets.$coverTypeSelect) {
 				var types = INNERCONTEXT.CONSTANTS.COVERTYPES
 				  , $typeList = $.make('select', { 'class'  : 'caaSelect'
 												 , multiple : 'multiple'
@@ -1518,15 +1535,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					return $.make('option', { value : i+1 }).text($.l('coverType:' + type));
 				};
 
-				INNERCONTEXT.WIDGETS.$coverTypeSelect = $typeList.appendAll(types.map($makeCoverTypeOption));
+				widgets.$coverTypeSelect = $typeList.appendAll(types.map($makeCoverTypeOption));
 			}
-			return INNERCONTEXT.WIDGETS.$coverTypeSelect.quickClone(true);
+			return widgets.$coverTypeSelect.quickClone(true);
 		},
 
 		$makeDropbox : function $makeDropbox () {
 			$.log('Creating dropbox.');
 
-			if (void 0 === INNERCONTEXT.WIDGETS.$coverTypeSelect) {
+			var widgets = INNERCONTEXT.WIDGETS;
+			
+			if (void 0 === widgets.$coverTypeSelect) {
 				var $image = $.make('img', { 'class'   : 'dropBoxImage'
 										   , draggable : false
 										   }).wrap('<div>')
@@ -1540,12 +1559,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				  , $dropbox = $.make('figure', { 'class' : 'CAAdropbox newCAAimage' })
 				  ;
 
-				INNERCONTEXT.WIDGETS.$dropBox = $dropbox.appendAll([ INNERCONTEXT.UI.$makeCloseButton()
+				widgets.$dropBox = $dropbox.appendAll([ INNERCONTEXT.UI.$makeCloseButton()
 																   , $image
 																   , $figcaption
 																   ]);
 			}
-			return INNERCONTEXT.WIDGETS.$dropBox.quickClone(true);
+			return widgets.$dropBox.quickClone(true);
 		},
 
 		$makeIcon : function $makeIcon (which) {
@@ -1554,14 +1573,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		$makeLoadDataButton : function $makeLoadDataButton () {
 			$.log('Creating add dropbox button.');
-			if (void 0 === INNERCONTEXT.WIDGETS.$loadDataButton) {
-				INNERCONTEXT.WIDGETS.$loadDataButton = $.make('input', { 'class' : 'caaLoad'
+
+			var widgets = INNERCONTEXT.WIDGETS;
+
+			if (void 0 === widgets.$loadDataButton) {
+				widgets.$loadDataButton = $.make('input', { 'class' : 'caaLoad'
 																	   , title   : $.l('Load text one release')
 																	   , type	: 'button'
 																	   , value   : $.l('Load CAA images')
 																	   });
 			}
-			return INNERCONTEXT.WIDGETS.$loadDataButton.quickClone(false);
+			return widgets.$loadDataButton.quickClone(false);
 		},
 
 		$makeColorsList : function $makeColorsList () {
@@ -1682,7 +1704,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var current   = list[i]
 			  , storedArg = args[current]
 			  ;
-	
+
 			if (void 0 !== args[current]) {
 				delete args[current];
 				this[current] = storedArg;
@@ -1755,7 +1777,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 	INNERCONTEXT.UTILITY.inherit(INNERCONTEXT.UI.PreviewElement, INNERCONTEXT.UI.GenericElement);
 
-	INNERCONTEXT.TEMPLATES.image_preview = 
+	INNERCONTEXT.TEMPLATES.image_preview =
 		[ { ele: 'h1', id: 'preview', text: $.l('Preview Image') }
 		, { ele: 'img', id: 'preview_image', draggable: false } // Do *not* put an alt attribute on the image!
 		, { ele: 'dl', id: 'info', hide: true }
@@ -1766,7 +1788,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			]
 		];
 
-	INNERCONTEXT.TEMPLATES.MENUS.about = 
+	INNERCONTEXT.TEMPLATES.MENUS.about =
 		[ { ele: 'fieldset', id: 'main', hide: true }
 		,	[ { ele: 'legend', text: $.l('About') }
 			, { ele: 'h4', text: 'Cover Art Archive Bulk Image Editor' }
@@ -1776,7 +1798,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			]
 		];
 
-	INNERCONTEXT.TEMPLATES.MENUS.options = 
+	INNERCONTEXT.TEMPLATES.MENUS.options =
 		[ { ele: 'fieldset', id: 'main', hide: true}
 		,	[ { ele: 'legend', text: $.l('Options') }
 			, { ele: 'span', text: [$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''), 'class': 'CAAversion' }
@@ -1818,7 +1840,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			window.TEMPORARY = window.TEMPORARY || 0;
 
 			// Polyfill to add FileSystem API support to Firefox.
-			'undefined' === typeof (window.requestFileSystem || window.webkitRequestFileSystem) && $.addScript('idbFileSystem');
+			void 0 === (window.requestFileSystem || window.webkitRequestFileSystem) && $.addScript('idbFileSystem');
 			window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
 
 			// Firefox renders slideToggle() badly; use toggle() instead.
@@ -1866,12 +1888,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		initializeImages : function initializeImages () {
 			$.imagesSmall();
-			INNERCONTEXT.DATA.sizeStatus = 2;
+
+			var data = INNERCONTEXT.DATA;
+			
+			data.sizeStatus = 2;
 
 			// This forces INNERCONTEXT.CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster.
 			$(document.body).append($.make('img', { src: INNERCONTEXT.CONSTANTS.THROBBER }).hide());
 
-			INNERCONTEXT.DATA.cachedImages = localStorage.getItem('Caabie_imageCache');
+			data.cachedImages = localStorage.getItem('Caabie_imageCache');
 		},
 
 		initializeRegexps : function initializeRegexps () {
@@ -1899,18 +1924,21 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		defineMainTemplate : function defineMainTemplate () {
 			/* This is separated from the other templates, as it calls INNERCONTEXT.UTILITY.assemble, and there is
 			   no need to assemble those templates on page load, rather than when the script is actually being run. */
-			INNERCONTEXT.TEMPLATES.main = 
+
+			var ui = INNERCONTEXT.UI;
+
+			INNERCONTEXT.TEMPLATES.main =
 				[ { ele: 'h1', id: 'imageHeader', text: $.l('Images') }
 				, { ele: 'div', id: 'about_control', title: $.l('About') }
-				,	INNERCONTEXT.UI.$makeIcon('about')
+				,	ui.$makeIcon('about')
 				, { ele: 'div', id: 'image_size' }
 				,	[ { ele: 'div', 'class': 'imageSizeControl', id: 'imageMagnify', title: $.l('Magnify image') }
-					,	INNERCONTEXT.UI.$makeIcon('zoomOut')
+					,	ui.$makeIcon('zoomOut')
 					, { ele: 'div', 'class': 'imageSizeControl', id: 'imageShrink', title: $.l('Shrink image') }
-					,	INNERCONTEXT.UI.$makeIcon('zoomIn')
+					,	ui.$makeIcon('zoomIn')
 					]
 				, { ele: 'div', id: 'options_control', title: $.l('Options') }
-				,	INNERCONTEXT.UI.$makeIcon('options')
+				,	ui.$makeIcon('options')
 				, { ele: 'div', id: 'imageContainer' }
 				,	[ { ele: 'div', id: 'imageHolder' }
 					,	INNERCONTEXT.UTILITY.assemble('AboutElement', INNERCONTEXT.TEMPLATES.MENUS.about)
@@ -1923,11 +1951,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		initializeUI : function initializeUI () {
 			/* Create the UI */
+			
+			var util = INNERCONTEXT.UTILITY;
+			
 			this.defineMainTemplate();
-			$('#sidebar').appendAll( INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.main) );
+			$('#sidebar').appendAll( util.assemble(INNERCONTEXT.TEMPLATES.main) );
 
 			/* Adjust the height of the image area based on the height of the preview area.  */
-			INNERCONTEXT.UTILITY.adjustContainerHeights();
+			util.adjustContainerHeights();
 
 			/* Autoeditor check */
 			var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
@@ -1942,7 +1973,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		initializeSubscribers : function initializeSubscribers () {
 			var $dom    = INNERCONTEXT.DOM
-			  , $util   = INNERCONTEXT.UTILITY
+			  , util   = INNERCONTEXT.UTILITY
 			  , change  = 'change'
 			  , click   = 'click'
 			  ;
@@ -1958,46 +1989,47 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, slideToggle );
 
 			// Image size controls
-			$dom['Main‿div‿imageShrink'].on( click, { change: -1 }, $util.changeImageSize );
-			$dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, $util.changeImageSize);
+			$dom['Main‿div‿imageShrink'].on( click, { change: -1 }, util.changeImageSize );
+			$dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, util.changeImageSize);
 
 			// remember preference: parse webpages checkbox
-			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, $util.setLSValue );
+			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, util.setLSValue );
 
 			// remember preference: autoedit checkbox
-			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, $util.setLSValue );
+			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, util.setLSValue );
 
 			// remember preference: language selector
-			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, $util.setLSValue );
+			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, util.setLSValue );
 
 			// remember preference: image editor shadow level
-			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, $util.setLSValue );
+			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, util.setLSValue );
 
 			// Clear image storage button
-			$dom['Options‿input‿button‿clear_storage'].on( click, $util.clearImageStore );
+			$dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
 			// Add functionality to close buttons
-			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric )
-			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor );
+			$dom.body.on( click, '.closeButton', util.closeDialogGeneric )
+			         .on( click, '#CAAeditiorCancelBtn', util.closeDialogImageEditor );
 
-
-
-			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
-			                                .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
-			                                .on({ dragenter : $util.addClass // Highlight field
-			                                    , dragleave : $util.removeClass // Unhighlight field
+			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
+			                                .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
+			                                .on({ dragenter : util.addClass // Highlight field
+			                                    , dragleave : util.removeClass // Unhighlight field
 			                                    }, { 'class': 'over' })
-			                                .on({  dragover    : $util.preventDefault // Required for drag events to work
-			                                    ,  drop        : $util.handleDroppedResources // Handle drops into the drop area
+			                                .on({  dragover    : util.preventDefault // Required for drag events to work
+			                                    ,  drop        : util.handleDroppedResources // Handle drops into the drop area
 			                                    , 'haveRemote' : // Handle remote non-image resources to be loaded
 			                                        function ( e, type ) {
-			                                            type ? $util.loadRemoteFile( e.data.uri, type ) : $util.getRemotePage( e.data.uri );
+			                                            type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
 			                                        }
 			                                    , 'haveLocalFileList' : // Handle local images to be loaded
 			                                        function (e) {
-			                                            $util.loadLocalFile(e.list);
+			                                            util.loadLocalFile(e.list);
 			                                        }
 			                                    });
+
+			// Handle a signal that a new remote image has been retreived and is ready to use
+			$dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
 		},
 
 		init : function init () {
@@ -2019,19 +2051,21 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		}
 	};
 
-	!function add_manual_starter_for_init () {
+	!function add_manual_starter_for_init() {
 		$.log('Adding manual starter link.');
 
-		var $triggerLink = $.make('a', { id : 'triggerLink' }).text($.l('Add cover art'))
-															 .wrap('<li>')
-															 .on('click', function start_cover_art_script () {
-															                  INNERCONTEXT.INIT.init();
-															              })
-															 .parent();
-		$('ul.links').find('hr:first').before($triggerLink);
+		var $triggerLink = $.make('a', { id: 'triggerLink' })
+		                    .text($.l('Add cover art'))
+		                    .wrap('<li>')
+		                    .on('click', 
+		                        function start_cover_art_script() {
+		                            $.single(this).remove();
+		                            INNERCONTEXT.INIT.init();
+		                        })
+		                    .parent();
+		$('ul.links').find('hr:first')
+		             .before($triggerLink);
 	}();
-
-
 };
 
 OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
@@ -2094,7 +2128,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			if (!THIRDCONTEXT.CONSTANTS.DEBUGMODE) {
 				return;
 			}
-			'undefined' === typeof verbose && (verbose = false);
+			void 0 === verbose && (verbose = false);
 			if (!verbose || THIRDCONTEXT.CONSTANTS.DEBUG_VERBOSE) {
 				str.constructor !== Array ? console.log(str)
 										  : console.log.apply(console, str);
@@ -2160,7 +2194,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 	// Tests whether an element has a defined property value.
 	$.fn.hasProp = function jQuery_prototype_hasProp (property) {
 		property = this.prop(property);
-		return ('undefined' !== typeof property && property.length);
+		return (void 0 !== property && property.length);
 	};
 
 	/* Get the width of an element.  Faster than .width(). */
@@ -2246,7 +2280,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , theseRules
 	  , cssStr
 	  ;
-	  
+	
 	CSSObj['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
 	$.make('link').attr({ rel  : 'stylesheet'
@@ -2257,14 +2291,14 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	$.log('Adding css for the CAA batch script.');
 	$.make('style', { type : 'text/css' }).text(Object.keys(CSSObj).map(function create_css_rules (key) {
-		var prefixed = 
+		var prefixed =
 			[ 'box-shadow'
 			, 'border-radius'
 			, 'margin-after'
 			, 'opacity'
 			, 'transform'
 			];
-			
+
 		theseRules = Object.keys(CSSObj[key]).map(function create_css_rules_internal (rule) {
 			cssStr = CSSObj[key][rule];
 			if ($.inArray(rule, prefixed) === -1) {
@@ -2277,7 +2311,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					'-o-', rule, ':', cssStr, ';',
 					rule, ':', cssStr
 				].join('');
-			}			
+			}
 		}).join(';');
 		return [key, '{', theseRules, ';}'].join('');
 	}).join('')).appendTo('head');
@@ -2366,7 +2400,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 }();
 
 /*
-	// Adjust the table layout and CAA rows after a screen resize event occurs. 
+	// Adjust the table layout and CAA rows after a screen resize event occurs.
 	window.onresize = function adjust_table_after_window_resize () {
 		$.log('Screen resize detected, adjusting layout.');
 		if ((window.outerHeight - window.innerHeight) > 100) {
@@ -2381,7 +2415,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-	// Preview functionality 
+	// Preview functionality
 	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
 		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
 			$.log('Setting new image for preview box.');
@@ -2396,7 +2430,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 //---------------------------------------------------------------------------------------------------------
 
 	// Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
-	   testing for completeness after an image is added is tested within that drop handler. 
+	   testing for completeness after an image is added is tested within that drop handler.
 	$('body').on('change', '.caaSelect', function select_change_handler (e) {
 		var $figure = $(e.target).parents('figure:first');
 		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
@@ -2404,11 +2438,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-	// START: functionality to allow dragging from the Images box to a specific caa image box. 
+	// START: functionality to allow dragging from the Images box to a specific caa image box.
 	var $draggedImage = null,
 		inChild	   = false;
 
-	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/ 
+	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/
 	jQuery.event.props.push('dataTransfer');
 
 	$('body').on({
@@ -2448,7 +2482,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								$.log('loadingDiv: dragleave');
 								e.preventDefault();
 								if ($draggedImage !== null) {
-									// https://bugs.webkit.org/show_bug.cgi?id=66547 
+									// https://bugs.webkit.org/show_bug.cgi?id=66547
 									if (!inChild) {
 										$.single(this).removeClass('over');
 									}
@@ -2469,18 +2503,18 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								return false;
 				}
 	}, '.newCAAimage');
-	// END: functionality to allow dragging from the Images box to a specific caa image box. 
+	// END: functionality to allow dragging from the Images box to a specific caa image box.
 
 //---------------------------------------------------------------------------------------------------------
 
-		// Create the color picker. 
+		// Create the color picker.
 		$.log('Creating color picker');
 		var myPicker = new jscolor.color(document.getElementById('colorPicker'), {});
 		myPicker.hash = true;
 		myPicker.pickerFace = 5;
 		myPicker.pickerInsetColor = 'black';
 
-		// Add functionality to the color picker. 
+		// Add functionality to the color picker.
 		!function add_color_select_handler () {
 			$.log('Adding handler for color picker.');
 			$('#colorSelect').on('change', function change_color_selection_handler (e) {
@@ -2488,7 +2522,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				$.log('Getting localStorage for ' + 'Caabie_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
 				myPicker.fromString(color);
 			});
-			// Store new color value in localStorage. 
+			// Store new color value in localStorage.
 			$('#colorPicker').change(function change_color_preference_handler (e) {
 				localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), this.value);
 				$.log('Setting localStorage for ' + 'Caabie_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
@@ -2499,10 +2533,10 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 							   INNERCONTEXT.UTILITY.getColor( $firstOption.val() )
 							   );
 		}();
-		
+
 //---------------------------------------------------------------------------------------------------------
 
-		// Add functionality to the default color button. 
+		// Add functionality to the default color button.
 		!function add_default_color_handler () {
 			$.log('Adding handler for default color button.');
 			$('#ColorDefaultBtn').on('click', function default_color_button_click_handler (e) {
@@ -2600,7 +2634,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 						};
 
 						img.src = reader.result;
-					} 
+					}
 				};
 
 				reader.readAsDataURL(inputImage);
@@ -2618,9 +2652,9 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			  , thisImageFilename = 'image' + Date.now() + '.jpg'
 			  , imageType = e.data.imageType
 			  , uri = e.data.uri
-			  , handleError = function error_handler_for_loadRemoteFile_XHR (e, flagged) {
-								  'undefined' === typeof flagged && (flagged = false);
-								  $.log('loadRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.', flagged);
+			  , handleError = function error_handler_for_getRemoteFile_XHR (e, flagged) {
+								  void 0 === flagged && (flagged = false);
+								  $.log('getRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.', flagged);
 								  $.log(e, flagged);
 							  }
 			  ;
@@ -2651,10 +2685,10 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 			}
 			var imageFile = $.dataURItoBlob(imageBase64, mime);
-			// Create a new file in the temp local file system. 
+			// Create a new file in the temp local file system.
 			loadStage = 'getFile';
 			INNERCONTEXT.DATA.localFileSystem.root.getFile(thisImageFilename, { create: true, exclusive: true }, function localFS_create_new_file (thisFile) {
-				// Write to the new file. 
+				// Write to the new file.
 				loadStage = 'createWriter';
 				thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
 					fileWriter.onwritestart = function fileWriter_onwritestart (e) {
@@ -2691,19 +2725,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-		var loadRemoteFile = function load_remote_file (uri, imageType) {
-			'undefined' === typeof imageType && (imageType = 'jpg');
 
-			$.log('Creating comlink to trigger other context to get the image.');
-			$.make('pre', { 'class': 'image' }).text(uri)
-											  .appendTo('#xhrComlink')
-											  .trigger('click')
-			// At this point, the event handler in the other javascript scope takes over.  It will then trigger a dblclick
-			// event, which will then continue the import. 
-											  .on('dblclick', { imageType: imageType, uri: uri }, addRemoteImage);
-			return;
-		};
-		
 //---------------------------------------------------------------------------------------------------------
 
 		var getRemotePage = function getRemotePage (uri) {
@@ -2753,7 +2775,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 																	   .appendTo('#xhrComlink')
 																	   .trigger('click')
 												   // At this point, the event handler in the other javascript scope takes over.
-												   // It will then trigger a dblclick event, which will then continue the process. 
+												   // It will then trigger a dblclick event, which will then continue the process.
 																	   .on('dblclick', function processRobotsWebpage (e) {
 																		   var $comlink   = $(this)
 																			 , remoteHTML = atob($comlink(this).text())
@@ -2812,13 +2834,13 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				var type = supportedImageType(newURL);
 				if (type) {
 					$.log('Received a new ' + type + ' URL: ' + newURL);
-					loadRemoteFile(newURL, type);
+					getRemoteFile(newURL, type);
 				}
 				return false;
 			};
 			window.addEventListener("storage", handleStorage, false);
 		}();
-		
+
 //---------------------------------------------------------------------------------------------------------
 
 		!function init_add_caa_row_controls () {
@@ -2857,7 +2879,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								   .find('select').prop('disabled', true);
 					  // This next bit of code does the same thing as the lowsrc attribute.  This would have
 					  // been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
-					  // http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html 
+					  // http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html
 					  var $img = $emptyDropBox.find('img');
 					  $img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
 					  $img.css('padding-top', '20px');
@@ -2874,7 +2896,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 							  }
 							});
 					  };
-					  // End lowsrc workaround. 
+					  // End lowsrc workaround.
 					  $.each(this.types, function assign_image_type (i) {
 						  var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
 						  $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
@@ -2911,7 +2933,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					   , context  : this
 					   , url	  : caaRequest
 					   , error	: function handler(jqXHR, textStatus, errorThrown, data) {
-										// Reference http://tickets.musicbrainz.org/browse/CAA-24 
+										// Reference http://tickets.musicbrainz.org/browse/CAA-24
 										$.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
 										$newCAARow.find('div.loadingDiv, .caaAdd').toggle();
 										$newCAARow.find('div.caaDiv').slideDown('slow');
@@ -2938,7 +2960,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					// DOMNodeInserted is triggered for each new element added to the table by bitmap's script.
 					// This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
 					// triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
-					// kicks in when a RG is expanded, and only when that entire expando has been inserted. 
+					// kicks in when a RG is expanded, and only when that entire expando has been inserted.
 					var $editRow = $releaseAnchor.find('a[href^="/release/add?release-group"]').parent();
 					if ($editRow.length) {
 						$editRow.remove();
@@ -2992,7 +3014,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			$thisForm.find('tbody')
 					 .each(handleInsertedReleaseRow);
 		}();
-		
+
 //---------------------------------------------------------------------------------------------------------
 
 		!function init_add_caa_table_controls () {
@@ -3023,13 +3045,13 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				  ;
 				null !== imageArray && imageArray.length && imageArray.forEach(function load_stored_images_internal (url) {
 					image = decodeURIComponent(url);
-					(type = supportedImageType(image)) && loadRemoteFile(image, type);
+					(type = supportedImageType(image)) && getRemoteFile(image, type);
 				});
 			}();
 
 //---------------------------------------------------------------------------------------------------------
 
-		// Create image editor. 
+		// Create image editor.
 		!function create_image_editor_handler () {
 			$.log('Adding handler for image editor.');
 			$('body').on('click', '#previewImage', function image_editor_initial_handler (e) {
@@ -3186,7 +3208,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				c.width  = c.height * imageRatio << 0;
 
 				// If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
-				// then figure out the height based on the editor window's width instead of the other way around. 
+				// then figure out the height based on the editor window's width instead of the other way around.
 				var editorWindowWidth = $('#CAAeditorDiv').getHiddenDimensions().width;
 
 				if (editorWindowWidth < (c.width - 230)) {
@@ -3198,17 +3220,17 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 											 , width  : c.width + 'px'
 											 });
 
-				// Load the image into the canvas. 
+				// Load the image into the canvas.
 				var canvas = document.getElementById("CAAeditorCanvas")
 				  , ctx = canvas.getContext("2d")
 				  , img = new Image()
-				// create a backup canvas for storing the unmodified image. 
+				// create a backup canvas for storing the unmodified image.
 				  , backupCanvas = document.createElement("canvas")
 				  , backupCtx = backupCanvas.getContext("2d")
 				  ;
 
 				img.onload = function load_image_handler () {
-					// Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas. 
+					// Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas.
 					canvas.width  = crop.width  = img.width;
 					canvas.height = crop.height = img.height;
 
@@ -3217,7 +3239,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 					//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
 
-					// Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas. 
+					// Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas.
 					canvas.style.height = c.height + 'px';
 					canvas.style.width = c.width + 'px';
 
@@ -3234,22 +3256,22 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					var centerH		= canvas.height/2
 					  , centerW		= canvas.width/2
 					  ;
-					// Clear the canvas 
+					// Clear the canvas
 					ctx.save();
 					ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
 					ctx.clearRect(0, 0, canvas.width, canvas.height);
 					ctx.restore();
 
-					// Move the origin point to the center of the canvas 
+					// Move the origin point to the center of the canvas
 					ctx.translate(centerW, centerH);
 
-					// Run the callback 
+					// Run the callback
 					callback();
 
-					// Move the origin point back to the top left corner of the canvas 
+					// Move the origin point back to the top left corner of the canvas
 					ctx.translate(-centerW, -centerH);
 
-					// Draw the image into the canvas 
+					// Draw the image into the canvas
 					ctx.drawImage(backupCanvas, 0, 0);
 					return;
 				};
@@ -3325,29 +3347,29 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					  , ctx	 = canvas.getContext('2d')
 					  ;
 
-					// Create a copy of the current canvas. 
+					// Create a copy of the current canvas.
 					copy.height = canvas.height;
 					copy.width = canvas.width;
 					copy.getContext('2d').drawImage(canvas, 0, 0);
 
-					// Clear the current canvas. 
+					// Clear the current canvas.
 					ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-					// Calculate the width and height of the cropped area. 
+					// Calculate the width and height of the cropped area.
 					crop.height = crop.height - crop.Top - crop.Bottom;
 					crop.width  = crop.width - crop.Left - crop.Right;
 
-					// Resize the current canvas (DOM). 
+					// Resize the current canvas (DOM).
 					canvas.height = crop.height >> 0;
 					canvas.width = crop.width >> 0;
 
-					// Resize the current canvas (CSS). 
-					var dimensions = { base  : { // This is the max size to which the canvas can grow. 
+					// Resize the current canvas (CSS).
+					var dimensions = { base  : { // This is the max size to which the canvas can grow.
 												 height : $('#CAAeditorCanvasDiv').quickHeight(0) << 0
 											   , width  : $('#CAAeditorCanvasDiv').quickWidth(0) << 0
 											   }
 									 , css   : {}
-									 , image : { // This is the current size of the cropped image. 
+									 , image : { // This is the current size of the cropped image.
 												 height : canvas.height
 											   , width  : canvas.width
 											   }
@@ -3358,20 +3380,20 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					dimensions.ratio = Math.min(dimensions.base.width  / dimensions.image.width,
 												dimensions.base.height / dimensions.image.height);
 
-					// This is the final calculated size for canvas. 
+					// This is the final calculated size for canvas.
 					dimensions.css = { height : dimensions.ratio * dimensions.image.height
 									 , width  : dimensions.ratio * dimensions.image.width
 									 };
 
-					// Apply the calculated size to the canvas. 
+					// Apply the calculated size to the canvas.
 					$canvas.css('height', dimensions.css.height + 'px')
 						   .css('width',  dimensions.css.width  + 'px');
 
-					// Adjust the max for the crop controls. 
+					// Adjust the max for the crop controls.
 					$('#CAAeditorCropControlTop, #CAAeditorCropControlBottom').prop('max', dimensions.image.height);
 					$('#CAAeditorCropControlLeft, #CAAeditorCropControlRight').prop('max', dimensions.image.width);
 
-					// Draw the image from the backup canvas to the current canvas while applying the crop. 
+					// Draw the image from the backup canvas to the current canvas while applying the crop.
 					ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
 					return;
 				};
@@ -3426,7 +3448,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					  , ctx = canvas.getContext("2d")
 					  ;
 
-					// Fill background of canvas with solid white box.  Without this, the default is a solid black background. 
+					// Fill background of canvas with solid white box.  Without this, the default is a solid black background.
 					ctx.setTransform(1, 0, 0, 1, 0, 0);
 					ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
 					ctx.fillStyle = '#FFF';
@@ -3434,7 +3456,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //TODO: Apply cropping to saved images
 
-					// Save the image. 
+					// Save the image.
 					addImageToDropbox(
 									 $.dataURItoBlob(
 													canvas.toDataURL("image/jpeg"), 'jpeg'
@@ -3442,16 +3464,16 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 									 'edited image', ''
 									 );
 
-					// Close the image editor. 
+					// Close the image editor.
 					$('#CAAeditiorCancelBtn').trigger('click');
 				});
 
-				// Create the css rule for the crop mask. 
+				// Create the css rule for the crop mask.
 				$.make('style', { id : 'CAAeditiorMaskColorStyle' }).text('.CAAmask { background-color: ' + INNERCONTEXT.UTILITY.getColor('MASK') + '; }')
 																   .attr('type', 'text/css')
 																   .appendTo('head');
 
-				// Create the color picker. 
+				// Create the color picker.
 				$.log('Creating color picker for image editor');
 				var iePicker = new jscolor.color(document.getElementById('CAAeditiorMaskColorControl'), {});
 				iePicker.hash = true;
@@ -3459,7 +3481,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				iePicker.pickerInsetColor = 'black';
 				iePicker.fromString(INNERCONTEXT.UTILITY.getColor('MASK'));
 
-				// Add functionality to the color picker to change the css rule for the crop mask. 
+				// Add functionality to the color picker to change the css rule for the crop mask.
 				$('#CAAeditiorMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
 					$('#CAAeditiorMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
 					iePicker.fromString(this.value);
