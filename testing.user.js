@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0005
+// @version 0.02.0006
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -1145,6 +1145,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	);
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT.UTILITY, {
+		addClass : function addClass (e) {
+			$.single(this).addClass(e.data['class']);
+		},
+
 		addCommas : function addCommas (numberString) {
 			// Converts a number into a comma-separated string.
 			$.log('Inserting commas.');
@@ -1298,6 +1302,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 			name.push(disambig);
 			return name.join('‿');
+		},
+
+		preventDefault : function preventDefault (e) {
+			e.preventDefault();
+		},
+
+		removeClass : function addClass (e) {
+			$.single(this).removeClass(e.data['class']);
 		},
 
 		setLSValue : function setLSValue (e) {
@@ -1850,9 +1862,26 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$dom.body.on( click, '.closeButton', $util.closeDialogGeneric)
 			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor);
 
-			// Add handler for tinting images in remove image mode
-			$dom['#Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )
-			                                 .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint );
+			var dropHandler = function dropHandler (e) {
+				$.single(this).removeClass('over');
+				e.preventDefault();
+				e = e.originalEvent || e;
+				var dropped = { file_list : e.dataTransfer.files
+				              , base  : $(e.dataTransfer.getData('Text')).find('base').attr('href') || ''
+				              , text  : e.dataTransfer.getData('Text').match(INNERCONTEXT.CONSTANTS.REGEXP.uri) || ''
+				              , uri   : e.dataTransfer.getData('text/uri-list')
+				              , e     : e
+				              };
+				$.log(dropped);
+				handleURIs(dropped);
+			}
+
+			$dom['#Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
+			                                 .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
+			                                 .on( 'dragenter', { 'class': 'over' }, $util.addClass ) // Highlight field
+			                                 .on( 'dragleave', { 'class': 'over' }, $util.removeClass ) // Unhighlight field
+			                                 .on( 'dragover', $util.preventDefault ) // Required for drag events to work
+			                                 .on( 'drop', dropHandler ); // Handle drops into the drop area
 		},
 
 		init : function init () {
@@ -2608,39 +2637,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			}
 		};
 
-		!function init_activate_dnd_at_dropzone () {
-			$.log('Attaching events to drop zone.');
-			INNERCONTEXT.DOM.$imageContainer.on({
-				dragenter: function dragEnter (e) {
-					$.log('imageContainer: dragenter.');
-					$.single(this).addClass('over');
-				},
-				dragleave: function dragLeave (e) {
-					$.log('imageContainer: dragleave.');
-					$.single(this).removeClass('over');
-				},
-				dragover: function dragOver (e) {
-					$.log('imageContainer: dragover.', 1);
-					e.preventDefault();
-				},
-				drop: function drop (e) {
-					$.log('imageContainer: drop.');
-					$.single(this).removeClass('over');
-					e.preventDefault();
-					e = e.originalEvent || e;
 
-					var dropped = { file_list : e.dataTransfer.files
-								  , base	  : $(e.dataTransfer.getData('Text')).find('base').attr('href') || ''
-								  , text	  : e.dataTransfer.getData('Text').match(INNERCONTEXT.CONSTANTS.REGEXP.uri) || ''
-								  , uri	   : e.dataTransfer.getData('text/uri-list')
-								  , e		 : e
-								  };
-
-					$.log(dropped);
-					handleURIs(dropped);
-				}
-			});
-		}();
 
 		!function init_storage_event_handling () {
 			$.log('Attaching listener for storage events.');
