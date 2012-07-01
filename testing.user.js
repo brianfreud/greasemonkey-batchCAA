@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name		Testing 1
-// @version 0.02.0006
+// @version 0.02.0007
 // @description
 // @include http://musicbrainz.org/artist/*
 // @include http://beta.musicbrainz.org/artist/*
@@ -35,6 +35,7 @@ Opera: Not compatible, sorry.
 
 */
 
+//TODO: Refactor: handleURIs
 //TODO: Finish refactoring
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
@@ -1308,8 +1309,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			e.preventDefault();
 		},
 
-		removeClass : function addClass (e) {
-			$.single(this).removeClass(e.data['class']);
+		removeClass : function removeClass (e, classToRemove) {
+			$.single(e.target).removeClass(e.data['class'] || classToRemove);
 		},
 
 		setLSValue : function setLSValue (e) {
@@ -1863,25 +1864,34 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			         .on( click, '#CAAeditiorCancelBtn', $util.closeDialogImageEditor);
 
 			var dropHandler = function dropHandler (e) {
-				$.single(this).removeClass('over');
-				e.preventDefault();
+				var $util        = INNERCONTEXT.UTILITY
+				  , dataTransfer = e.dataTransfer
+				  , getData      = dataTransfer.getData
+				  , getText      = getData('Text')
+				  ;
+
+				$util.removeClass(e, 'over');
+				$util.preventDefault(e);
 				e = e.originalEvent || e;
-				var dropped = { file_list : e.dataTransfer.files
-				              , base  : $(e.dataTransfer.getData('Text')).find('base').attr('href') || ''
-				              , text  : e.dataTransfer.getData('Text').match(INNERCONTEXT.CONSTANTS.REGEXP.uri) || ''
-				              , uri   : e.dataTransfer.getData('text/uri-list')
-				              , e     : e
+
+				var dropped = { file_list : dataTransfer.files
+				              , base      : $(getText).find('base').attr('href') || ''
+				              , text      : getText.match(INNERCONTEXT.CONSTANTS.REGEXP.uri) || ''
+				              , uri       : getData('text/uri-list')
+				              , e         : e
 				              };
 				$.log(dropped);
-				handleURIs(dropped);
-			}
+				handleURIs(dropped);  // TODO: Not yet migrated!
+			};
 
 			$dom['#Main‿div‿imageContainer'].on( click, '.tintImage', $util.removeWrappedElement )	// Remove images (in remove image mode)
 			                                 .on( 'mouseenter mouseleave', '.localImage', $util.toggleRedTint )	// Tint images (in remove image mode)
-			                                 .on( 'dragenter', { 'class': 'over' }, $util.addClass ) // Highlight field
-			                                 .on( 'dragleave', { 'class': 'over' }, $util.removeClass ) // Unhighlight field
-			                                 .on( 'dragover', $util.preventDefault ) // Required for drag events to work
-			                                 .on( 'drop', dropHandler ); // Handle drops into the drop area
+			                                 .on({ dragenter : $util.addClass // Highlight field
+			                                     , dragleave : $util.removeClass // Unhighlight field
+			                                     }, { 'class': 'over' })
+			                                 .on({ dragover : $util.preventDefault // Required for drag events to work
+			                                     , drop     : dropHandler // Handle drops into the drop area
+			                                     });
 		},
 
 		init : function init () {
