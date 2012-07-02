@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0024
+// @version     0.02.0025
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -95,12 +95,12 @@ var OUTERCONTEXT =
 	};
 
 OUTERCONTEXT.CONSTANTS =
-	{ DEBUGMODE: true
-	, VERSION: '0.1.1438'
-	, NAMESPACE: 'Caabie'
-	, DEBUG_VERBOSE: false
-	, BORDERS: '1px dotted #808080'
-	, COLORS:
+	{ DEBUGMODE      : true
+	, VERSION        : '0.02.0025'
+	, NAMESPACE      : 'Caabie'
+	, DEBUG_VERBOSE  : false
+	, BORDERS        : '1px dotted #808080'
+	, COLORS         :
 		{ ACTIVE     : '#B0C4DE'
 		, CAABOX     : '#F2F2FC'
 		, CAABUTTONS : '#4B0082'
@@ -111,7 +111,7 @@ OUTERCONTEXT.CONSTANTS =
 		, REMOVE     : '#B40000'
 		, MASK       : '#000'
 		}
-	, COVERTYPES: /* The order of items in this array matters! */
+	, COVERTYPES     : /* The order of items in this array matters! */
 		[ 'Front'
 		, 'Back'
 		, 'Booklet'
@@ -121,20 +121,20 @@ OUTERCONTEXT.CONSTANTS =
 		, 'Track'
 		, 'Other'
 		]
-	, IESHADOWLVL: 75
-	, FILESYSTEMSIZE: 50 /* This indicates the number of megabytes to use for the temporary local file system. */
-	, IMAGESIZES: [ 50, 100, 150, 300 ]
-	, LANGUAGE: 'en'
-	, SIDEBARWIDTH: ( Math.max(window.innerWidth / 500 << 0, 3) * 107 ) + 15
-	, SIDEBARHEIGHT: window.innerHeight - OUTERCONTEXT.UTILITY.height( 'header' ) - OUTERCONTEXT.UTILITY.height( 'footer' ) - 25
-	, THROBBER: localStorage.getItem( 'throbber' )
-	, PREVIEWSIZE: 300
-	, IMAGEFORMATS: [ 'bmp', 'gif', 'jpg', 'png' ]
-	, BEINGDRAGGED:
-		{ OPACITY : '0.4'
-		, SHRINK  : '0.7'
+	, IESHADOWLVL    : 75
+	, FILESYSTEMSIZE : 50 /* This indicates the number of megabytes to use for the temporary local file system. */
+	, IMAGESIZES     : [ 50, 100, 150, 300 ]
+	, LANGUAGE       : 'en'
+	, SIDEBARWIDTH   : ( Math.max(window.innerWidth / 500 << 0, 3) * 107 ) + 15
+	, SIDEBARHEIGHT  : window.innerHeight - OUTERCONTEXT.UTILITY.height( 'header' ) - OUTERCONTEXT.UTILITY.height( 'footer' ) - 25
+	, THROBBER       : localStorage.getItem( 'throbber' )
+	, PREVIEWSIZE    : 300
+	, IMAGEFORMATS   : [ 'bmp', 'gif', 'jpg', 'png' ]
+	, BEINGDRAGGED   :
+		{ OPACITY    : '0.4'
+		, SHRINK     : '0.7'
 		}
-	, CREDITS:
+	, CREDITS        :
 		{ 'Developer and programmer':
 			[
 			  { name: 'Brian Schweitzer (“BrianFreud”)'
@@ -1373,6 +1373,39 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 //							   : convertImage(file, type, name);
 			}
 		},
+		
+		loadRowInfo : function loadRowInfo (e) {
+			var $row         = $.single(this).parents('td.imageRow')
+			  , ui           = INNERCONTEXT.UI
+			  , $loadBtn     = $('.caaLoad:first')
+			  , $tblParent   = $loadBtn.parents('table:first')
+			  , $widthEle    = !$tblParent.hasClass('tbl') ? $tblParent.parents('td:first') : $loadBtn.parents('td:first')
+			  , dropboxCount = Math.max(3, ($widthEle.quickWidth(0) / 132 << 0) - 5)
+			  , $self        = $(this)
+			  ;
+			  
+			ui.showLoading();
+
+			while (dropboxCount--) {
+				$self.after(ui.$makeDropbox());
+			}
+
+			$.ajax(
+				{ cache   : false
+				, context : this
+				, url     : 'http://coverartarchive.org/release/' + $self.data('entity')
+				, error   : function handler(jqXHR, textStatus, errorThrown, data) {
+					            // Reference http://tickets.musicbrainz.org/browse/CAA-24
+					            $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
+					            $row.find('div.loadingDiv, .caaAdd').toggle();
+					            $row.find('div.caaDiv').slideDown('slow');
+					        }
+				, success : function caa_response_mediator(response, textStatus, jqXHR) {
+					            return INNERCONTEXT.UTILITY.caaResponseHandler(response, textStatus, jqXHR, { $row: $row });
+					        }
+				}
+			);
+		},
 
 		makeEleName : function makeEleName (prefix, eleType, disambig, type) {
 			var name = [prefix, eleType];
@@ -1597,26 +1630,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		$makeDropbox : function $makeDropbox () {
 			$.log('Creating dropbox.');
 
-			var widgets = INNERCONTEXT.WIDGETS;
+			var widgets = INNERCONTEXT.WIDGETS
+			  , ui      = INNERCONTEXT.UI
+			  ;
 			
 			if (void 0 === widgets.$coverTypeSelect) {
-				var $image = $.make('img', { 'class'   : 'dropBoxImage'
-				                           , draggable : false
-				                           }).wrap('<div>')
-				                             .parent()
-				  , $figcaption = $.make('figcaption').appendAll([ $.make('input', { type        : 'text'
-																				   , placeholder : 'image comment'
-																				   })
-																 , $.make('br')
-																 , INNERCONTEXT.UI.$makeCoverTypeSelect()
-																 ])
-				  , $dropbox = $.make('figure', { 'class' : 'CAAdropbox newCAAimage' })
-				  ;
-
-				widgets.$dropBox = $dropbox.appendAll([ INNERCONTEXT.UI.$makeCloseButton()
-																   , $image
-																   , $figcaption
-																   ]);
+				widgets.$dropBox = ui.assemble(INNERCONTEXT.TEMPLATES.dropbox)[0];
 			}
 			return widgets.$dropBox.quickClone(true);
 		},
@@ -1632,10 +1651,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$loadDataButton) {
 				widgets.$loadDataButton = $.make('input', { 'class' : 'caaLoad'
-																	   , title   : $.l('Load text one release')
-																	   , type	: 'button'
-																	   , value   : $.l('Load CAA images')
-																	   });
+				                                          , title : $.l('Load text one release')
+				                                          , type  : 'button'
+				                                          , value : $.l('Load CAA images')
+				                                          });
 			}
 			return widgets.$loadDataButton.quickClone(false);
 		},
@@ -1745,7 +1764,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 																 }).text(language[1]);
 									  };
 			return languages.map(makeLanguageOptions);
+		},
+		
+		showLoading : function showLoading ($row) {
+			$row.find('.loadingDiv').show();
+			$row.find('.caaLoad').hide();
+			$row.find('.caaDiv').slideUp();
 		}
+
 	};
 
 	/** @constructor */
@@ -1902,6 +1928,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				         ]
 			        ];
 	};
+	
+	INNERCONTEXT.TEMPLATES.dropbox =
+		[ INNERCONTEXT.UI.$makeCloseButton()
+		, { ele: 'div' }
+		,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false }
+			]
+		, { ele: 'figcaption' }
+		,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
+			, { ele: 'br' }
+			, INNERCONTEXT.UI.$makeCoverTypeSelect()
+			]
+		];
 	
 	INNERCONTEXT.INIT = {
 		standardizeBrowser : function standardizeBrowser () {
@@ -2946,8 +2984,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					return;
 				}
 
-				var $newCAARow	  = data.$newCAARow
-				  , $addButton	  = data.$addButton
+				var $row	  = data.$row
+				  , $addButton	  = $row.find('input.caaAdd')
 				  , parseCAAResponse = function parseCAAResponse (i) {
 					  $.log('Parsing CAA response: image #' + i);
 					  if ($newCAARow.find('.newCAAimage').length < response.images.length) {
@@ -2990,43 +3028,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				$newCAARow.find('.caaDiv').slideDown('slow');
 			};
 
-			// INNERCONTEXT.UTILITY.loadRowInfo
-			var loadRowInfo = function invoke_CAA_row_button_click_handler (e) {
-				$.log('Add CAA images to release row button triggered.');
-				var $row  = $single(this).parents('td.imageRow');
 
-				$row.find('.loadingDiv').show();
-				$row.find('.caaLoad').hide();
-				$row.find('.caaDiv').slideUp();
-
-				var $widthEle = $('.caaLoad:first').parents('td:first')
-				  , $tableParent = $('.caaLoad:first').parents('table:first')
-				  , caaRequest = 'http://coverartarchive.org/release/' + $.single( this ).data('entity')
-				  ;
-
-				if (!$tableParent.hasClass('tbl')) {
-					$widthEle = $tableParent.parents('td:first');
-				}
-				for (var i = Math.max(3, ($widthEle.quickWidth(0)/132 << 0) - 5); i > 0; i--) {
-					   $.single( this ).after(INNERCONTEXT.UI.$makeDropbox());
-				}
-				$.log('Requesting CAA info for ' + $.single( this ).data('entity'));
-				$.ajax({ cache	: false
-					   , context  : this
-					   , url	  : caaRequest
-					   , error	: function handler(jqXHR, textStatus, errorThrown, data) {
-										// Reference http://tickets.musicbrainz.org/browse/CAA-24
-										$.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-										$row.find('div.loadingDiv, .caaAdd').toggle();
-										$row.find('div.caaDiv').slideDown('slow');
-									}
-					   , success  : function caa_response_mediator (response, textStatus, jqXHR) {
-										return caaResponseHandler(response, textStatus, jqXHR, { $row  : $row
-																							   , $addButton : $row.find('input.caaAdd')
-																							   });
-									}
-					   });
-			};
 
 
 
