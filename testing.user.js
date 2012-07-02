@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0021
+// @version     0.02.0022
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1515,7 +1515,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		addNewImageDropBox : function addNewImageDropBox ( $div ) {
 			$.log('Add new CAA image space button triggered.');
 			
-			$div = $div.append ? $div : $.single( this ).nextAll( '.caaDiv' );
+			$div = $div.append ? $div : $.single( $div.target ).nextAll( '.caaDiv' );
 			$div.append( INNERCONTEXT.UI.$makeDropbox() );
 			INNERCONTEXT.UTILITY.checkScroll( $div );
 		},
@@ -2053,6 +2053,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		initializeSubscribers : function initializeSubscribers () {
 			var $dom    = INNERCONTEXT.DOM
+			  , ui      = INNERCONTEXT.UI
 			  , util    = INNERCONTEXT.UTILITY
 			  , change  = 'change'
 			  , click   = 'click'
@@ -2088,8 +2089,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
 			// Add functionality to close buttons
-			$dom.body.on( click, '.closeButton', util.closeDialogGeneric )
-			         .on( click, '#CAAeditiorCancelBtn', util.closeDialogImageEditor );
+			$dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Generic close buttons
+			         .on( click, '#CAAeditiorCancelBtn', util.closeDialogImageEditor ) // Image editor's cancel button
+			         .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
+			         .on( click, '.caaLoad', util.loadRowInfo); // Load release info
 
 			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                                .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -2110,12 +2113,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
 			$dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
-			
-//			$addButton.on('click', INNERCONTEXT.UI.addNewImageDropBox);
-//			$loadButton.on('click', { $row : $newRow
-//									, $add : $addButton
-//									}, INNERCONTEXT.UTILITY.loadRowInfo);
-
 		},
 
 		init : function init () {
@@ -3004,7 +3001,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			// INNERCONTEXT.UTILITY.loadRowInfo
 			var loadRowInfo = function invoke_CAA_row_button_click_handler (e) {
 				$.log('Add CAA images to release row button triggered.');
-				var $row  = e.data.$row;
+				var $row  = $single(this).parents('td.imageRow');
 
 				$row.find('.loadingDiv').show();
 				$row.find('.caaLoad').hide();
@@ -3033,7 +3030,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 									}
 					   , success  : function caa_response_mediator (response, textStatus, jqXHR) {
 										return caaResponseHandler(response, textStatus, jqXHR, { $row  : $row
-																							   , $addButton : e.data.$addButton
+																							   , $addButton : $row.find('input.caaAdd')
 																							   });
 									}
 					   });
