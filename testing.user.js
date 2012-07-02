@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0032
+// @version     0.02.0033
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -233,6 +233,7 @@ OUTERCONTEXT.CONSTANTS =
 			, { name: 'Google'
 			  , what: 'Google Closure Compiler'
 			  , urlW: 'closure-compiler.appspot.com/home'
+  			  , urlN: 'google.com'
 			  }
 			  , { name: 'Site Project ApS'
 			  , what: 'JavaScript string encoder'
@@ -241,6 +242,7 @@ OUTERCONTEXT.CONSTANTS =
 			, { name: 'Yahoo!'
 			  , what: 'Yahoo! Query Language'
 			  , urlW: 'developer.yahoo.com/yql/'
+  			  , urlN: 'yahoo.com'
 			  }
 			]
 		, Libraries:
@@ -1634,6 +1636,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$addDropboxButton) {
 				widgets.$addDropboxButton = $.make('input', { 'class' : 'caaAdd'
+				                                            , noid    : true
 				                                            , title   : $.l('Add image one release')
 				                                            , type    : 'button'
 				                                            , value   : '+'
@@ -1650,6 +1653,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			if (void 0 === widgets.$coverTypeSelect) {
 				var types = INNERCONTEXT.CONSTANTS.COVERTYPES
 				  , $typeList = $.make('select', { 'class'  : 'caaSelect'
+				                                 , noid     : true
 				                                 , multiple : 'multiple'
 				                                 , size     : types.length
 				                                 })
@@ -1686,9 +1690,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$loadDataButton) {
 				widgets.$loadDataButton = $.make('input', { 'class' : 'caaLoad'
-				                                          , title : $.l('Load text one release')
-				                                          , type  : 'button'
-				                                          , value : $.l('Load CAA images')
+				                                          , noid    : true
+				                                          , title   : $.l('Load text one release')
+				                                          , type    : 'button'
+				                                          , value   : $.l('Load CAA images')
 				                                          });
 			}
 			return widgets.$loadDataButton.quickClone(false);
@@ -1731,10 +1736,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		$makeCreditsList : function makeCreditsList () {
-			var $who		= $.make('div', { 'class': 'CAAcreditWho' })
-			  , $what	   = $.make('span', { 'class': 'CAAcreditWhat' })
-			  , $pre		= $.make('span').html(' [ ')
-			  , $post	   = $.make('span').html(' ]')
+			var $who       = $.make('div', { 'class': 'CAAcreditWho' })
+			  , $what      = $.make('span', { 'class': 'CAAcreditWhat' })
+			  , $pre       = $(document.createTextNode(' [ '))
+			  , $post      = $(document.createTextNode(' ]'))
 			  , $thisWho
 			  , $thisWhat
 			  , $thisMB
@@ -1825,7 +1830,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return new GenericElement(arguments[0]);
 		}
 
-		for (var args = this.args, list = ['css', 'html', 'text', 'ele', 'data', 'hide'], i = list.length; 0 < i--;) {
+		for (var args = this.args, list = ['css', 'html', 'text', 'ele', 'data', 'hide', 'noid'], i = list.length; 0 < i--;) {
 			var current   = list[i]
 			  , storedArg = args[current]
 			  ;
@@ -1848,7 +1853,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		  ;
 
 		namespace = ' ' + namespace;
-		args.id = eleName;
+		!this.noid && args.id = eleName;
 		args['class'] = $.trim( [ $.trim( args['class'] ) || '', namespace, this.addedClasses.join(namespace) ].join('') );
 		this.ele = $.make(this.ele, args);
 		void 0 !== this.text ? this.ele.text(this.text)
@@ -1903,7 +1908,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	INNERCONTEXT.UTILITY.inherit(INNERCONTEXT.UI.PreviewElement, INNERCONTEXT.UI.GenericElement);
 
 	/* A generic close button.  */
-	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = { ele: 'header', 'class': 'closeButton', text: 'x' };
+	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
 
 	INNERCONTEXT.TEMPLATES.CONTROLS.crop = function makeControl_crop (direction) {
 		return [
@@ -2013,14 +2018,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	INNERCONTEXT.TEMPLATES.dropbox =
-		[ { ele: 'figure', 'class': 'CAAdropbox' }
+		[ { ele: 'figure', 'class': 'CAAdropbox', noid: true }
 		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton
-			, { ele: 'div' }
-			,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false }
+			, { ele: 'div', noid: true }
+			,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false, noid: true }
 				]
-			, { ele: 'figcaption' }
-			,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
-				, { ele: 'br' }
+			, { ele: 'figcaption', noid: true }
+			,	[ { ele: 'input', type: 'text', placeholder : 'image comment', noid: true }
+				, { ele: 'br', noid: true }
 				, INNERCONTEXT.UI.$makeCoverTypeSelect()
 				]
 			]
@@ -3210,8 +3215,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 
 //---------------------------------------------------------------------------------------------------------
 
-
-
 		// Create image editor.
 		!function create_image_editor_handler () {
 			$.log('Adding handler for image editor.');
@@ -3227,12 +3230,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 				if ($('#previewImage').prop('src').length === 0) {
 					return;
 				}
-
-
-
-
-
-
 
 				$('body').detach(function create_image_editor_internal_detach_handler () {
 					$(this).prepend(
