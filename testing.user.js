@@ -422,7 +422,7 @@ OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
 			                           , G = parseInt(hex.substring(2, 4), 16)
 			                           , B = parseInt(hex.substring(4, 6), 16)
 			                           ;
-			
+
 			                         return 'rgba(' + [R, G, B, opacity || 1].join(',') + ')';
 		                         }
 	                         }
@@ -678,7 +678,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
 		{  clear                   : 'both'
 		}
-	, '.CAAdropbox > figcaption > select':
+	, '.caaSelect':
 		{ 'background-color'       : 'transparent'
 		,  clear                   : 'both'
 		,  clip                    : 'rect(2px, 49px, 145px, 2px)'
@@ -1291,7 +1291,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			return storedValue;
 		},
-		
+
 		getRemoteFile : function getRemoteFile (uri, imageType) {
 			$.make('pre', { 'class'     : 'image' })
 			 .data({ 'uri'  : uri
@@ -1374,7 +1374,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 //							   : convertImage(file, type, name);
 			}
 		},
-		
+
 		loadRowInfo : function loadRowInfo (e) {
 			var $row         = $.single(this).parents('td.imageRow')
 			  , ui           = INNERCONTEXT.UI
@@ -1384,7 +1384,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , dropboxCount = Math.max(3, ($widthEle.quickWidth(0) / 132 << 0) - 5)
 			  , $self        = $(this)
 			  ;
-			  
+
 			$row.trigger('loading');
 
 			while (dropboxCount--) {
@@ -1532,7 +1532,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	});
 
-	INNERCONTEXT.WIDGETS = 
+	INNERCONTEXT.WIDGETS =
 		(function defineINNERCONTEXT_WIDGETS () {
 			var getVal = INNERCONTEXT.UTILITY.getLSValue;
 			return {
@@ -1547,7 +1547,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	INNERCONTEXT.UI = {
 		addNewImageDropBox : function addNewImageDropBox ( $div ) {
 			$.log('Add new CAA image space button triggered.');
-			
+
 			$div = $div.append ? $div : $.single( $div.target ).nextAll( '.caaDiv' );
 			$div.append( INNERCONTEXT.UI.$makeDropbox() );
 			INNERCONTEXT.UTILITY.checkScroll( $div );
@@ -1562,7 +1562,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				   This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
 				   triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
 				   kicks in when a RG is expanded, and only when that entire expando has been inserted. */
-				
+
 				var $editRow = $releaseAnchor.find('a[href^="/release/add?release-group"]').parent();
 
 				if ( $editRow.length ) {
@@ -1600,16 +1600,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		lowsrc : function lowsrc ($dropBox, imageURI) {
-	
+
 			/* This code does the same thing as the lowsrc attribute used to do.  This should
 			   be easy, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
-		
+
 			   reference: http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
-		   
+
 			var $img = $dropBox.find( 'img' );
 			$img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
 			$img.css( 'padding-top', '20px' );
-			var realImg = new Image();	
+			var realImg = new Image();
 			realImg.src = imageURI;
 			realImg.onload = function lowsrc_onload () {
 				$img.data( 'resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight );
@@ -1623,7 +1623,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				});
 			};
 		},
-	
+
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
 			$.log('Creating add dropbox button.', 1);
 
@@ -1670,7 +1670,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$.log('Creating dropbox.');
 
 			var widgets = INNERCONTEXT.WIDGETS;
-			
+
 			if (void 0 === widgets.$dropBox) {
 				widgets.$dropBox = INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.dropbox)[0];
 			}
@@ -1802,10 +1802,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 									  };
 			return languages.map(makeLanguageOptions);
 		},
-		
+
 		showLoading : function showLoading (e) {
 		    var $row = $.single(e.target);
-		    
+
 			$row.find('.loadingDiv').show();
 			$row.find('.caaLoad').hide();
 			$row.find('.caaDiv').slideUp();
@@ -1813,7 +1813,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		showImageRow : function showImageRow (e) {
 		    var $row = $.single(e.target);
-		    
+
 			$row.find('.loadingDiv, .caaAdd').toggle();
 			$row.find('.caaDiv').slideDown('slow');
 		}
@@ -1966,8 +1966,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				         ,    [ INNERCONTEXT.UI.$makeAddDropboxButton().hide()
 					          , { ele: 'div', 'class': 'loadingDiv', hide: true }
 						      ,    [ { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER }
-						           , { ele: 'span', text: $.l('loading') } 					          
-						           ]					          
+						           , { ele: 'span', text: $.l('loading') }
+						           ]
 					          , $.make('div', { 'class' : 'caaDiv' })
 					          ,    [ INNERCONTEXT.UI.$makeLoadDataButton().data('entity', info.MBID)
 						           ]
@@ -1975,19 +1975,21 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				         ]
 			        ];
 	};
-	
+
 	INNERCONTEXT.TEMPLATES.dropbox =
-		[ INNERCONTEXT.UI.$makeCloseButton()
-		, { ele: 'div' }
-		,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false }
-			]
-		, { ele: 'figcaption' }
-		,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
-			, { ele: 'br' }
-			, INNERCONTEXT.UI.$makeCoverTypeSelect()
+		[ { ele: 'figure', 'class': 'CAAdropbox' }
+		,   [ INNERCONTEXT.UI.$makeCloseButton()
+			, { ele: 'div' }
+			,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false }
+				]
+			, { ele: 'figcaption' }
+			,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
+				, { ele: 'br' }
+				, INNERCONTEXT.UI.$makeCoverTypeSelect()
+				]
 			]
 		];
-	
+
 	INNERCONTEXT.INIT = {
 		standardizeBrowser : function standardizeBrowser () {
 			document.head = document.head || document.getElementsByTagName('head')[0];
@@ -2102,7 +2104,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		initializeUI : function initializeUI (dom, templates, ui, util) {
 			/* Create the UI */
-			
+
 			this.defineMainTemplate(templates, ui, util);
 			$('#sidebar').appendAll( util.assemble(templates.main) );
 
@@ -2118,7 +2120,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				dom['Options‿input‿checkbox‿autoedit'][0].checked = (util.getLSValue('autoedit') === "true");
 				$('.autoedit').show();
 			}
-			
+
 			// Add a 'load info' button to each release row
 			$( '#content' ).detach( function addImageRows () {
 				$.single( this ).find( 'a' )
@@ -2187,7 +2189,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
 			dom.xhrComlink.on( 'dblclick', '.image', util.addRemoteImage );
-			
+
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
 			                                .on( 'loaded', '.imageRow', ui.showImageRow);
 		},
@@ -2232,7 +2234,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		var $triggerLink = $.make('a', { id: 'triggerLink' })
 		                    .text($.l('Add cover art'))
 		                    .wrap('<li>')
-		                    .on('click', 
+		                    .on('click',
 		                        function start_cover_art_script() {
 		                            $.single( this ).remove();
 		                            INNERCONTEXT.INIT.init(INNERCONTEXT);
@@ -2455,7 +2457,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , theseRules
 	  , cssStr
 	  ;
-	
+
 	CSSObj['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
 
 	$.make('link').attr({ rel  : 'stylesheet'
@@ -2923,7 +2925,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 			var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
 			$dropBox.find('option[value="' + value + '"]').prop('selected', true);
 		});
-		
+
 		INNERCONTEXT.UTILITY.checkScroll($row.find('div.loadingDiv'));
 	};
 
