@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0017
+// @version     0.02.0021
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -19,24 +19,24 @@
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY */
 /*jshint smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
-/* ----------------------------------------------------------------------------
+/* ----------------------------------------------------------------------------------------------------------|
 
 Installation and requirements:
 
-Firefox: Requires a minimum of version 11.  Install as normal.  When the script is run the first time, a prompt will come up.  Make sure to click "accept"!
+Firefox: Requires version 11 or higher.  Install as normal.  When the script is run the first time, a
+confirmation prompt will be displayed.  Make sure to click "accept"!
 
-Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that the checkbox next to
-"Allow access to file URLs" for this extension is checked.  Then restart Chrome.  If you reinstall or upgrade the script, you may
-need to restart the browser before the script works again.
+Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that
+the checkbox next to "Allow access to file URLs" for this extension is checked.  Then restart Chrome.  If
+you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
 Opera: Not compatible, sorry.
 
-
-----------------------------------------------------------------------------
+|------------------------------------------------------------------------------------------------------------|
 
 Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
----------------------------------------------------------------------------- */
+|---------------------------------------------------------------------------------------------------------- */
 
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
@@ -1550,11 +1550,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					}
 				)
 			)[0].insertAfter($releaseRow);
-			
-//			$addButton.on('click', INNERCONTEXT.UI.addNewImageDropBox);
-//			$loadButton.on('click', { $row : $newRow
-//									, $add : $addButton
-//									}, INNERCONTEXT.UTILITY.loadRowInfo);
 		},
 
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
@@ -1697,6 +1692,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			};
 
 			var makeRoleListPerCredit = function makeRoleListPerCredit (credit) {
+//TODO: This function is UGLY!
 				$thisWho  = $who.quickClone().text(credit.name);
 				$thisWhat = $what.quickClone().text(credit.what);
 				void 0 !== credit.urlN && ($thisWho = $.make('a', { href : 'http://' + credit.urlN }).append($thisWho));
@@ -1704,12 +1700,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				var $dd = $.make('dd').append($thisWho);
 				$thisWhat = $.make('dt').append($thisWhat);
 				if (void 0 !== credit.mb) {
-					$thisMB = $.make('a', { href : 'http://musicbrainz.org/user/' + credit.mb }).text(credit.name.match(/\w+\s/)[0] + '@ MusicBrainz');
-					$thisMB = $.make('span', { 'class': 'caaMBCredit' }).appendAll([ $pre.quickClone()
-																				  , $thisMB
-																				  , $post.quickClone()
-																				  ]);
-					$dd.append($thisMB);
+					$thisMB = $.make('span', { 'class': 'caaMBCredit' })
+					           .appendAll([ $pre.quickClone()
+					                      , $.make('a', { href : 'http://musicbrainz.org/user/' + credit.mb })
+					                         .text(credit.name.match(/\w+\s/)[0] + '@ MusicBrainz')
+					                      , $post.quickClone()
+					                      ])
+					           .appendTo($dd);
 					void 0 !== credit.what ? credits.push($thisWhat, $dd) : credits.push($dd);
 				} else if (void 0 !== credit.what) {
 					credits.push($thisWhat, $dd);
@@ -1783,12 +1780,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		namespace = ' ' + namespace;
 		args.id = eleName;
+		args['class'] = $.trim( [ $.trim( args['class'] ) || '', namespace, this.addedClasses.join(namespace) ].join('') );
 		this.ele = $.make(this.ele, args);
 		void 0 !== this.text ? this.ele.text(this.text)
-								 : void 0 !== this.html && this.ele.html(this.html);
-		'object' === typeof this.css && this.ele.css(this.css);
-		'object' === typeof this.data && this.ele.data(this.data);
-		this['class'] = $.trim([ (this['class'] || ''), namespace, this.addedClasses.join(namespace) ].join(''));
+		                     : void 0 !== this.html && this.ele.html( this.html );
+		this.css && Object === this.css.constructor && this.ele.css( this.css );
+		this.data && Object === this.data.constructor && this.ele.data( this.data );
 		!!this.hide && this.ele.hide();
 		INNERCONTEXT.DOM[eleName] = this.ele;
 
@@ -1893,7 +1890,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		];
 
 	INNERCONTEXT.TEMPLATES.image_row = function (info) {
-			return [ { ele: 'tr', 'class': info.$row }
+			return [ { ele: 'tr', 'class': info.$row.prop('class') }
 			        ,    [ { ele: 'td', 'class': 'imageRow', colspan: info.cols }
 				         ,    [ INNERCONTEXT.UI.$makeAddDropboxButton().hide()
 					          , { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER, hide: true }
@@ -2113,6 +2110,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
 			$dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
+			
+//			$addButton.on('click', INNERCONTEXT.UI.addNewImageDropBox);
+//			$loadButton.on('click', { $row : $newRow
+//									, $add : $addButton
+//									}, INNERCONTEXT.UTILITY.loadRowInfo);
+
 		},
 
 		init : function init () {
@@ -2332,7 +2335,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 				  return;
 			  }
 			  parent.removeChild(node);
-			  if (typeof async !== 'boolean') {
+			  if (Boolean !== async.constructor) {
 				  fn = async;
 				  async = false;
 			  }
