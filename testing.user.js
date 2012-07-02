@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0015
+// @version     0.02.0017
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1520,7 +1520,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			INNERCONTEXT.UTILITY.checkScroll( $div );
 		},
 
-		addImageRow : function add_new_row_for_CAA_stuff (event) {
+		addImageRow : function addImageRow (event) {
 			var $releaseAnchor = $.single( this );
 
 			if ( $releaseAnchor[0].nodeName === 'TABLE' ) { // Detect bitmap's script's expandos.
@@ -1542,16 +1542,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 
 			var $releaseRow = $releaseAnchor.parents('tr:first');
-			var $newRow = INNERCONTEXT.UTILITY.assemble(
-					          INNERCONTEXT.TEMPLATES.image_row(
-						          { $row : $releaseRow
-						          , cols: $releaseRow[0].getElementsByTagName('td').length
-						          , MBID: INNERCONTEXT.CONSTANTS.REGEXP.mbid.exec($releaseAnchor.attr('href'))
-						          }
-					          )
-				          );
-
-			$releaseRow.after();
+			INNERCONTEXT.UTILITY.assemble(
+				INNERCONTEXT.TEMPLATES.image_row(
+					{ $row : $releaseRow
+					, cols: $releaseRow[0].getElementsByTagName('td').length
+					, MBID: INNERCONTEXT.CONSTANTS.REGEXP.mbid.exec($releaseAnchor.attr('href'))
+					}
+				)
+			)[0].insertAfter($releaseRow);
 			
 //			$addButton.on('click', INNERCONTEXT.UI.addNewImageDropBox);
 //			$loadButton.on('click', { $row : $newRow
@@ -1899,7 +1897,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        ,    [ { ele: 'td', 'class': 'imageRow', colspan: info.cols }
 				         ,    [ INNERCONTEXT.UI.$makeAddDropboxButton().hide()
 					          , { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER, hide: true }
-					          , { ele: 'div', 'class': 'loadingDiv', text: $.l('loading') }
+					          , { ele: 'div', 'class': 'loadingDiv', text: $.l('loading'), hide: true }
 					          , $.make('div', { 'class' : 'caaDiv' })
 					          ,    [ INNERCONTEXT.UI.$makeLoadDataButton().data('entity', info.MBID)
 						           ]
@@ -2048,10 +2046,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 			
 			// Add a 'load info' button to each release row
-			$('#content').detach(function addLoadButtons () {
-				$.single( this ).find('a')
-				               .filter('[resource^="[mbz:release/"]')
-				               .each(INNERCONTEXT.UI.addImageRow);
+			$( '#content' ).detach( function addImageRows () {
+				$.single( this ).find( 'a' )
+				                 .filter( '[resource^="[mbz:release/"]' )
+				                 .each( INNERCONTEXT.UI.addImageRow );
 			});
 
 		},
@@ -2956,7 +2954,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					return;
 				}
 
-				var $newCAARow	   = data.$newCAARow
+				var $newCAARow	  = data.$newCAARow
 				  , $addButton	  = data.$addButton
 				  , parseCAAResponse = function parseCAAResponse (i) {
 					  $.log('Parsing CAA response: image #' + i);
