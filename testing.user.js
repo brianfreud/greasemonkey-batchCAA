@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0013
+// @version     0.02.0014
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1126,13 +1126,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		              , xhrComlink : $('#xhrComlink')
                       }
 		, TEMPLATES : { MENUS : {} }
-		, WIDGETS   : {
-			IMAGES : { about   : localStorage.getItem('infoIcon')
-			         , zoomIn  : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassMinus')
-			         , zoomOut : localStorage.getItem('magnifyingGlassBase') + localStorage.getItem('magnifyingGlassPlus')
-			         , options : localStorage.getItem('iconSettings')
-			         }
-			}
 		}
 	);
 
@@ -1256,7 +1249,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		clearImageStore : function clearImageStore () {
-			localStorage.setItem('Caabie_imageCache', '[]');
+			INNERCONTEXT.UTILITY.setLSValue('imageCache', '[]');
 			INNERCONTEXT.DOM['Options‿input‿button‿clear_storage'].prop('disabled', true);
 			INNERCONTEXT.DATA.cachedImages = [];
 		},
@@ -1285,6 +1278,17 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
+		},
+
+		getLSValue : function getLSValue (key, unprefixed) {
+			var storedValue = INNERCONTEXT.DATA[key];
+
+			if (!storedValue) {
+				var lsKey = !unprefixed ? [INNERCONTEXT.CONSTANTS.NAMESPACE, '_', key].join('') : key;
+				storedValue = INNERCONTEXT.DATA[key] = localStorage.getItem(lsKey);
+			}
+
+			return storedValue;
 		},
 		
 		getRemoteFile : function getRemoteFile (uri, imageType) {
@@ -1397,7 +1401,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				case 'checkbox' : value = $self.is(':checked'); break;
 				case 'select'   : value = $self.find(':selected').val();
 			}
-			localStorage.setItem('Caabie_' + e.data.key, value);
+			localStorage.setItem([INNERCONTEXT.CONSTANTS.NAMESPACE, '_', e.data.key].join(), value);
+			INNERCONTEXT.DATA[e.data.key] = value;
 		},
 
 		redTintImage : function redTintImage ($image) {
@@ -1493,6 +1498,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		}
 
 	});
+
+	INNERCONTEXT.WIDGETS = 
+		(function defineINNERCONTEXT_WIDGETS () {
+			var getVal = INNERCONTEXT.UTILITY.getLSValue;
+			return {
+				IMAGES: { about   : getVal('infoIcon', 1)
+					    , zoomIn  : getVal('magnifyingGlassBase', 1) + getVal('magnifyingGlassMinus', 1)
+					    , zoomOut : getVal('magnifyingGlassBase', 1) + getVal('magnifyingGlassPlus', 1)
+					    , options : getVal('iconSettings', 1)
+					    }
+			};
+		}());
 
 	INNERCONTEXT.UI = {
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
@@ -1602,14 +1619,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var makeColorList = function make_colors_list (map) {
 				var colorItem   = colors[map.index]
 				  , color	   = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
-				  , lsItemName  = 'Caabie_colors_' + colorItem
+				  , lsItemName  = 'colors_' + colorItem
 				  , $thisOption = $.make('option', { 'class' : 'colorOption'
 												   , value   : colorItem
 												   }).data('default', color)
 													 .text($.l(colorItem));
-				if (null === localStorage.getItem(lsItemName)) {
+				if (null === INNERCONTEXT.UTILITY.getLSValue(lsItemName)) {
 					$.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
-					localStorage.setItem(lsItemName, color);
+					INNERCONTEXT.UTILITY.setLSValue(lsItemName, color);
 				}
 				$colorOptions.push($thisOption);
 			};
@@ -1679,7 +1696,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 									 : a[1] > b[1] ? 1   // a[1] >  b[1] ->  1
 												   : -1; // a[1] <  b[1] -> -1
 			});
-			var userLang  = localStorage.getItem('Caabie_language') || 'en';
+			var userLang = INNERCONTEXT.UTILITY.getLSValue('language') || 'en';
 			var makeLanguageOptions = function make_language_options (language) {
 										  return $.make('option', { selected : (language[0] === userLang)
 																 , value	: language[0]
@@ -1808,7 +1825,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			, { ele: 'input', id: 'autoedit', 'class': 'autoedit', type: 'checkbox', title: $.l('Submit as autoedits'), hide: true }
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿autoedit', 'class': 'autoedit', id: 'autoedit', title: $.l('Submit as autoedits'), text: $.l('Submit as autoedits'), hide: true }
 			, { ele: 'br' }
-			, { ele: 'input', id: 'clear_storage', title: $.l('Remove stored images nfo'), type: 'button', value: $.l('Remove stored images'), disabled: localStorage.getItem('Caabie_imageCache') === '[]' }
+			, { ele: 'input', id: 'clear_storage', title: $.l('Remove stored images nfo'), type: 'button', value: $.l('Remove stored images'), disabled: INNERCONTEXT.UTILITY.getLSValue('imageCache') === '[]' }
 			, { ele: 'br' }
 			, { ele: 'label', 'for': 'Options‿select‿language', id: 'language', title: $.l('Changed language note'), text: $.l('Language') + ':' }
 			,	[ { ele: 'select', id: 'language', size: 3, title: $.l('Changed language note') }
@@ -1822,7 +1839,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				, { ele: 'input', id: 'colors', title: $.l('Changed colors note'), type: 'button', value: $.l('default'), 'class': 'CAAbutton' }
 				, { ele: 'div', id: 'shadow' }
 				,	[ { ele: 'label', 'for': 'Options‿input‿number‿shadow', id: 'shadow', title: $.l('How dark the bkgrnd'), text: $.l('How dark the bkgrnd') }
-					,	[ { ele: 'input', id: 'shadow', type: 'number', step: 1, 'min': 0, 'max': 100, value: localStorage.getItem('Caabie_editorShadow') || INNERCONTEXT.CONSTANTS.IESHADOWLVL, title: $.l('How dark the bkgrnd') }
+					,	[ { ele: 'input', id: 'shadow', type: 'number', step: 1, 'min': 0, 'max': 100, value: INNERCONTEXT.UTILITY.getLSValue('editorShadow') || INNERCONTEXT.CONSTANTS.IESHADOWLVL, title: $.l('How dark the bkgrnd') }
 						]
 					]
 				  ]
@@ -1845,7 +1862,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		}(),
 
 		initializeLocalStorage : function initializelocalStorage () {
-			null === localStorage.getItem('Caabie_imageCache') && localStorage.setItem('Caabie_imageCache', []);
+			null === INNERCONTEXT.UTILITY.getLSValue('imageCache') && INNERCONTEXT.UTILITY.setLSValue('imageCache', []);
 		},
 
 		initializePage : function initializePage () {
@@ -1893,7 +1910,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// This forces INNERCONTEXT.CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster.
 			$(document.body).append($.make('img', { src: INNERCONTEXT.CONSTANTS.THROBBER }).hide());
 
-			data.cachedImages = localStorage.getItem('Caabie_imageCache');
+			data.cachedImages = INNERCONTEXT.UTILITY.getLSValue('imageCache');
 		},
 
 		initializeRegexps : function initializeRegexps () {
@@ -1922,7 +1939,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			/* This is separated from the other templates, as it calls INNERCONTEXT.UTILITY.assemble, and there is
 			   no need to assemble those templates on page load, rather than when the script is actually being run. */
 
-			var ui = INNERCONTEXT.UI;
+			var ui   = INNERCONTEXT.UI
+			  , util = INNERCONTEXT.UTILITY
+			  ;
 
 			INNERCONTEXT.TEMPLATES.main =
 				[ { ele: 'h1', id: 'imageHeader', text: $.l('Images') }
@@ -1938,10 +1957,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				,	ui.$makeIcon('options')
 				, { ele: 'div', id: 'imageContainer' }
 				,	[ { ele: 'div', id: 'imageHolder' }
-					,	INNERCONTEXT.UTILITY.assemble('AboutElement', INNERCONTEXT.TEMPLATES.MENUS.about)
-					,	INNERCONTEXT.UTILITY.assemble('OptionsElement', INNERCONTEXT.TEMPLATES.MENUS.options)
+					,	util.assemble('AboutElement', INNERCONTEXT.TEMPLATES.MENUS.about)
+					,	util.assemble('OptionsElement', INNERCONTEXT.TEMPLATES.MENUS.options)
 					, { ele: 'div', id: 'previewContainer' }
-					,	INNERCONTEXT.UTILITY.assemble('PreviewElement', INNERCONTEXT.TEMPLATES.image_preview)
+					,	util.assemble('PreviewElement', INNERCONTEXT.TEMPLATES.image_preview)
 					]
 				];
 		},
@@ -1958,19 +1977,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			util.adjustContainerHeights();
 
 			/* Autoeditor check */
-			var autoeditorList = JSON.parse(localStorage.getItem('autoeditors')),
+			var autoeditorList = JSON.parse(INNERCONTEXT.UTILITY.getLSValue('autoeditors', 1)),
 				thisEditor = $('.account > a:first').text();
 			if (-1 !== $.inArray(thisEditor, autoeditorList)) {
 				/* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
 				   object, even though it *looks* like it is returning a string. */
-				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (localStorage.getItem('Caabie_autoedit') === "true");
+				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (INNERCONTEXT.UTILITY.getLSValue('autoedit') === "true");
 				$('.autoedit').show();
 			}
 		},
 
 		initializeSubscribers : function initializeSubscribers () {
 			var $dom    = INNERCONTEXT.DOM
-			  , util   = INNERCONTEXT.UTILITY
+			  , util    = INNERCONTEXT.UTILITY
 			  , change  = 'change'
 			  , click   = 'click'
 			  ;
@@ -2036,14 +2055,26 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeRegexps();
 			this.initializeFileSystem();
 			this.initializeUI();
-            this.initializeSubscribers();
+			this.initializeSubscribers();
+            
+			var ui        = INNERCONTEXT.UI
+			  , util      = INNERCONTEXT.UTILITY
+			  , templates = INNERCONTEXT.TEMPLATES
+			  ;
 
-            delete INNERCONTEXT.TEMPLATES.main;
-            delete INNERCONTEXT.TEMPLATES.image_preview;
-            delete INNERCONTEXT.TEMPLATES.MENUS;
-            delete INNERCONTEXT.UTILITY.AboutElement;
-            delete INNERCONTEXT.UTILITY.OptionsElement;
-            delete INNERCONTEXT.UTILITY.PreviewElement;
+			delete templates.main;
+			delete templates.image_preview;
+			delete templates.MENUS;
+			delete ui.AboutElement;
+			delete ui.OptionsElement;
+			delete ui.PreviewElement;
+			delete ui.$makeColorsList;
+			delete ui.$makeCoverTypeSelect;
+			delete ui.$makeCreditsList;
+			delete ui.$makeLanguagesList;
+			delete util.AboutElement;
+			delete util.OptionsElement;
+			delete util.PreviewElement;
 			delete INNERCONTEXT.INIT;
 		}
 	};
@@ -2383,7 +2414,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			loadLocal('CSS');
 			delete OUTERCONTEXT.CONSTANTS.CSS;
 			loadLocal('INNER');
-		} else { /* Scripts are not cached in localStorage, go get them and cache them. */
+		} else { /* Resource scripts are not cached in localStorage, go get them, then cache them. */
 			makeScript();
 			script.src = requires[0];
 			script.addEventListener('load', function loader_move_to_next_script () {
@@ -2515,7 +2546,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		!function add_color_select_handler () {
 			$.log('Adding handler for color picker.');
 			$('#colorSelect').on('change', function change_color_selection_handler (e) {
-				var color = localStorage.getItem('Caabie_colors_' + $.single(this).find(':selected').val());
+				var color = INNERCONTEXT.UTILITY.getLSValue('colors_' + $.single(this).find(':selected').val());
 				$.log('Getting localStorage for ' + 'Caabie_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
 				myPicker.fromString(color);
 			});
@@ -2821,12 +2852,12 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				e.preventDefault();
 
 				if ('undefined' !== e.oldValue && e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
-					INNERCONTEXT.DATA.cachedImages = localStorage.getItem('Caabie_imageCache');
+					INNERCONTEXT.DATA.cachedImages = localStorage.getItem([INNERCONTEXT.CONSTANTS.NAMESPACE, '_', 'imageCache'].join(''));
 					return false;
 				}
 
 				var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
-				localStorage.setItem('Caabie_imageCache', e.oldValue || '');
+				INNERCONTEXT.UTILITY.setLSValue('imageCache', e.oldValue || '');
 
 				var type = supportedImageType(newURL);
 				if (type) {
@@ -3038,7 +3069,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		!function load_stored_images() {
 				var image
 				  , type
-				  , imageArray = JSON.parse(localStorage.getItem('Caabie_imageCache'))
+				  , imageArray = JSON.parse(INNERCONTEXT.UTILITY.getLSValue('imageCache'))
 				  ;
 				null !== imageArray && imageArray.length && imageArray.forEach(function load_stored_images_internal (url) {
 					image = decodeURIComponent(url);
