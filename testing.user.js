@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0029
+// @version     0.02.0030
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1395,12 +1395,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				{ cache   : false
 				, context : this
 				, url     : 'http://coverartarchive.org/release/' + $self.data('entity')
-				, error   : function handler(jqXHR, textStatus, errorThrown, data) {
+				, error   : function loadRowInfo_ajax_error (jqXHR, textStatus, errorThrown, data) {
 					            // Reference http://tickets.musicbrainz.org/browse/CAA-24
 					            $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
 					            $row.trigger('loaded');
 					        }
-				, success : function caa_response_mediator(response, textStatus, jqXHR) {
+				, success : function loadRowInfo_ajax_success (response, textStatus, jqXHR) {
 					            return INNERCONTEXT.UTILITY.processCAAResponse(response, textStatus, jqXHR, { $row: $row });
 					        }
 				}
