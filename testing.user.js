@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0022
+// @version     0.02.0024
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1917,11 +1917,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$.browser.mozilla && ( $.fn.slideToggle = $.fn.toggle );
 		}(),
 
-		initializeLocalStorage : function initializelocalStorage () {
-			null === INNERCONTEXT.UTILITY.getLSValue('imageCache') && INNERCONTEXT.UTILITY.setLSValue('imageCache', []);
+		initializeLocalStorage : function initializelocalStorage (util) {
+			null === util.getLSValue('imageCache') && util.setLSValue('imageCache', []);
 		},
 
-		initializePage : function initializePage () {
+		initializePage : function initializePage (constants, util) {
 			$.make('base').appendTo(document.head);
 
 			$(document.body).css({ 'background-color': '#FFF' });
@@ -1930,7 +1930,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Resize the sidebar
 			$('#sidebar').addClass('CAAsidebar');
-			$('#content').css('margin-right', (INNERCONTEXT.CONSTANTS.SIDEBARWIDTH + 20) + 'px');
+			$('#content').css('margin-right', (constants.SIDEBARWIDTH + 20) + 'px');
 
 			// Get rid of the existing sidebar divider
 			$('#page').css('background', '#FFF');
@@ -1944,7 +1944,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			});
 
 			// Lock the tables' column widths
-			INNERCONTEXT.UTILITY.antiSquish(true);
+			util.antiSquish(true);
 			$.addRule('table.tbl', '{ table-layout: fixed; }', { id : 'tblStyle1' });
 
 			// Change the page to use border-box layout
@@ -1956,34 +1956,31 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					 );
 		},
 
-		initializeImages : function initializeImages () {
+		initializeImages : function initializeImages (constants, data, util) {
 			$.imagesSmall();
-
-			var data = INNERCONTEXT.DATA;
-			
 			data.sizeStatus = 2;
 
-			// This forces INNERCONTEXT.CONSTANTS.THROBBER to be already be loaded, so that the throbber shows up faster.
-			$(document.body).append($.make('img', { src: INNERCONTEXT.CONSTANTS.THROBBER }).hide());
+			// This forces the throbber to be already be loaded, so that the throbber shows up faster later.
+			$(document.body).append($.make('img', { src: constants.THROBBER }).hide());
 
-			data.cachedImages = INNERCONTEXT.UTILITY.getLSValue('imageCache');
+			data.cachedImages = util.getLSValue('imageCache');
 		},
 
-		initializeRegexps : function initializeRegexps () {
+		initializeRegexps : function initializeRegexps (constants) {
 			// This defines the regexp constants.  Because regexps get compiled, this cannot be stringified as part of OUTERCONTEXT.
-			INNERCONTEXT.CONSTANTS.REGEXP = { image: /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp|ico)$/i
-											, mbid: /\w{8}\-\w{4}\-\w{4}\-\w{4}-\w{12}/
-											, uri: /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi
-											};
+			constants.REGEXP = { image: /\.(?:p?j(?:pg?|peg?|f?if)|bmp|gif|j(?:2c|2k|p2|pc|pt)|jng|pcx|pict?|pn(?:g|t)|tga|tiff?|webp|ico)$/i
+			                   , mbid: /\w{8}\-\w{4}\-\w{4}\-\w{4}-\w{12}/
+			                   , uri: /\b(?:https?|ftp):\/\/[\-A-Z0-9+&@#\/%?=~_|!:,.;]*[\-A-Z0-9+&@#\/%=~_|]/gi
+			                   };
 		},
 
-		initializeFileSystem : function initializeFileSystem () {
+		initializeFileSystem : function initializeFileSystem (constants, data) {
 			// Create temporary local file system to use to store remote image files.
 			requestFileSystem( TEMPORARY
-							 , INNERCONTEXT.CONSTANTS.FILESYSTEMSIZE * 1024 * 1024
+							 , constants.FILESYSTEMSIZE * 1024 * 1024
 							 , function store_file_system (fsObj) {
 								   $.log(['Creating local file system succeeded.', fsObj]);
-								   INNERCONTEXT.DATA.localFileSystem = fsObj;
+								   data.localFileSystem = fsObj;
 							   }
 							 , function request_file_system_error (error) {
 								   $.log(['Creating local file system failed.', error]);
@@ -1991,15 +1988,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 							 );
 		},
 
-		defineMainTemplate : function defineMainTemplate () {
+		defineMainTemplate : function defineMainTemplate (templates, ui, util) {
+
 			/* This is separated from the other templates, as it calls INNERCONTEXT.UTILITY.assemble, and there is
 			   no need to assemble those templates on page load, rather than when the script is actually being run. */
 
-			var ui   = INNERCONTEXT.UI
-			  , util = INNERCONTEXT.UTILITY
-			  ;
-
-			INNERCONTEXT.TEMPLATES.main =
+			templates.main =
 				[ { ele: 'h1', id: 'imageHeader', text: $.l('Images') }
 				, { ele: 'div', id: 'about_control', title: $.l('About') }
 				,	ui.$makeIcon('about')
@@ -2013,32 +2007,30 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				,	ui.$makeIcon('options')
 				, { ele: 'div', id: 'imageContainer' }
 				,	[ { ele: 'div', id: 'imageHolder' }
-					,	util.assemble('AboutElement', INNERCONTEXT.TEMPLATES.MENUS.about)
-					,	util.assemble('OptionsElement', INNERCONTEXT.TEMPLATES.MENUS.options)
+					,	util.assemble('AboutElement', templates.MENUS.about)
+					,	util.assemble('OptionsElement', templates.MENUS.options)
 					, { ele: 'div', id: 'previewContainer' }
-					,	util.assemble('PreviewElement', INNERCONTEXT.TEMPLATES.image_preview)
+					,	util.assemble('PreviewElement', templates.image_preview)
 					]
 				];
 		},
 
-		initializeUI : function initializeUI () {
+		initializeUI : function initializeUI (dom, templates, ui, util) {
 			/* Create the UI */
 			
-			var util = INNERCONTEXT.UTILITY;
-			
-			this.defineMainTemplate();
-			$('#sidebar').appendAll( util.assemble(INNERCONTEXT.TEMPLATES.main) );
+			this.defineMainTemplate(templates, ui, util);
+			$('#sidebar').appendAll( util.assemble(templates.main) );
 
 			/* Adjust the height of the image area based on the height of the preview area.  */
 			util.adjustContainerHeights();
 
 			/* Autoeditor check */
-			var autoeditorList = JSON.parse(INNERCONTEXT.UTILITY.getLSValue('autoeditors', 1)),
+			var autoeditorList = JSON.parse(util.getLSValue('autoeditors', 1)),
 				thisEditor = $('.account > a:first').text();
 			if (-1 !== $.inArray(thisEditor, autoeditorList)) {
 				/* The following non-typical bool test is required here!  localStorage.getItem actually returns a Storage
 				   object, even though it *looks* like it is returning a string. */
-				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (INNERCONTEXT.UTILITY.getLSValue('autoedit') === "true");
+				dom['Options‿input‿checkbox‿autoedit'][0].checked = (util.getLSValue('autoedit') === "true");
 				$('.autoedit').show();
 			}
 			
@@ -2046,88 +2038,88 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$( '#content' ).detach( function addImageRows () {
 				$.single( this ).find( 'a' )
 				                 .filter( '[resource^="[mbz:release/"]' )
-				                 .each( INNERCONTEXT.UI.addImageRow );
+				                 .each( ui.addImageRow );
 			});
 
 		},
 
-		initializeSubscribers : function initializeSubscribers () {
-			var $dom    = INNERCONTEXT.DOM
-			  , ui      = INNERCONTEXT.UI
-			  , util    = INNERCONTEXT.UTILITY
-			  , change  = 'change'
+		initializeSubscribers : function initializeSubscribers (ui, util, dom) {
+			var change  = 'change'
 			  , click   = 'click'
 			  ;
 
 			var slideToggle = function (e) {
-				$dom[e.data.element].slideToggle();
+				dom[e.data.element].slideToggle();
 			};
 
             // Toggle control for options menu
-			$dom['Main‿div‿options_control'].on( click, { element: 'Options‿fieldset‿main' }, slideToggle );
+			dom['Main‿div‿options_control'].on( click, { element: 'Options‿fieldset‿main' }, slideToggle );
 
             // Toggle control for about menu
-			$dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, slideToggle );
+			dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, slideToggle );
 
 			// Image size controls
-			$dom['Main‿div‿imageShrink'].on( click, { change: -1 }, util.changeImageSize );
-			$dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, util.changeImageSize);
+			dom['Main‿div‿imageShrink'].on( click, { change: -1 }, util.changeImageSize );
+			dom['Main‿div‿imageMagnify'].on( click, { change: 1 }, util.changeImageSize);
 
 			// remember preference: parse webpages checkbox
-			$dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, util.setLSValue );
+			dom['Options‿input‿checkbox‿parse'].on( change, { key: 'parse', type: 'checkbox' }, util.setLSValue );
 
 			// remember preference: autoedit checkbox
-			$dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, util.setLSValue );
+			dom['Options‿input‿checkbox‿autoedit'].on( change, { key: 'autoedit', type: 'checkbox' }, util.setLSValue );
 
 			// remember preference: language selector
-			$dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, util.setLSValue );
+			dom['Options‿select‿language'].on( change, { key: 'language', type: 'select' }, util.setLSValue );
 
 			// remember preference: image editor shadow level
-			$dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, util.setLSValue );
+			dom['Options‿input‿number‿shadow'].on( change, { key: 'editorShadow', type: 'text' }, util.setLSValue );
 
 			// Clear image storage button
-			$dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
+			dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
 			// Add functionality to close buttons
-			$dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Generic close buttons
-			         .on( click, '#CAAeditiorCancelBtn', util.closeDialogImageEditor ) // Image editor's cancel button
-			         .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
-			         .on( click, '.caaLoad', util.loadRowInfo); // Load release info
+			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Generic close buttons
+			        .on( click, '#CAAeditiorCancelBtn', util.closeDialogImageEditor ) // Image editor's cancel button
+			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
+			        .on( click, '.caaLoad', util.loadRowInfo); // Load release info
 
-			$dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
-			                                .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
-			                                .on({ dragenter : util.addClass // Highlight field
-			                                    , dragleave : util.removeClass // Unhighlight field
-			                                    }, { 'class': 'over' })
-			                                .on({  dragover    : util.preventDefault // Required for drag events to work
-			                                    ,  drop        : util.handleDroppedResources // Handle drops into the drop area
-			                                    , 'haveRemote' : // Handle remote non-image resources to be loaded
-			                                        function ( e, type ) {
-			                                            type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
-			                                        }
-			                                    , 'haveLocalFileList' : // Handle local images to be loaded
-			                                        function (e) {
-			                                            util.loadLocalFile(e.list);
-			                                        }
-			                                    });
+			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
+			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
+			                              .on({ dragenter : util.addClass // Highlight field
+			                                  , dragleave : util.removeClass // Unhighlight field
+			                                  }, { 'class': 'over' })
+			                              .on({  dragover    : util.preventDefault // Required for drag events to work
+			                                  ,  drop        : util.handleDroppedResources // Handle drops into the drop area
+			                                  , 'haveRemote' : // Handle remote non-image resources to be loaded
+			                                      function ( e, type ) {
+			                                          type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
+			                                      }
+			                                  , 'haveLocalFileList' : // Handle local images to be loaded
+			                                      function (e) {
+			                                          util.loadLocalFile(e.list);
+			                                      }
+			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
-			$dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
+			dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
 		},
 
-		init : function init () {
-			this.initializeLocalStorage();
-			this.initializePage();
-			this.initializeImages();
-			this.initializeRegexps();
-			this.initializeFileSystem();
-			this.initializeUI();
-			this.initializeSubscribers();
-            
-			var ui        = INNERCONTEXT.UI
-			  , util      = INNERCONTEXT.UTILITY
-			  , templates = INNERCONTEXT.TEMPLATES
+		init : function init (inner) {
+			var constants = inner.CONSTANTS
+			  , data      = inner.DATA
+			  , dom       = inner.DOM
+			  , templates = inner.TEMPLATES
+			  , ui        = inner.UI
+			  , util      = inner.UTILITY
 			  ;
+
+			this.initializeLocalStorage(util);
+			this.initializePage(constants, util);
+			this.initializeImages(constants, data, util);
+			this.initializeRegexps(constants);
+			this.initializeFileSystem(constants, data);
+			this.initializeUI(dom, templates, ui, util);
+			this.initializeSubscribers(ui, util, dom);
 
 			delete templates.main;
 			delete templates.image_preview;
@@ -2142,7 +2134,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			delete util.AboutElement;
 			delete util.OptionsElement;
 			delete util.PreviewElement;
-			delete INNERCONTEXT.INIT;
+			delete inner.INIT;
 		}
 	};
 
@@ -2155,7 +2147,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		                    .on('click', 
 		                        function start_cover_art_script() {
 		                            $.single( this ).remove();
-		                            INNERCONTEXT.INIT.init();
+		                            INNERCONTEXT.INIT.init(INNERCONTEXT);
 		                        })
 		                    .parent();
 		$('ul.links').find('hr:first')
