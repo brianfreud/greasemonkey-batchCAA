@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0033
+// @version     0.02.0034
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,6 +45,8 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Refactor: addImageToDropbox
 //TODO: Refactor: convertImage
 //------------------------------------
+//TODO: Add some sort of glow on hover over controls
+//TODO: Fix missing border on empty image element in dropboxes
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
@@ -932,6 +934,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#About‿fieldset‿main * h5':
 		{ 'font-size'              : '100%'
+		, 'white-space'            : 'nowrap'
 		}
 	, '#About‿fieldset‿main * dd':
 		{ 'padding-bottom'         : '5px'
