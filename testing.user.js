@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0014
+// @version     0.02.0015
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1131,7 +1131,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT.UTILITY, {
 		addClass : function addClass (e) {
-			$.single(this).addClass(e.data['class']);
+			$.single( this ).addClass(e.data['class']);
 		},
 
 		addCommas : function addCommas (numberString) {
@@ -1255,7 +1255,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		closeDialogGeneric : function closeDialogGeneric (e) {
-			$.single(this).parent()
+			$.single( this ).parent()
 			              .find('.dropBoxImage') // Any image in the drop box
 			              .appendTo($('#Main‿div‿imageContainer'))
 			              .addClass('localImage')
@@ -1393,7 +1393,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		setLSValue : function setLSValue (e) {
 			var value = ''
-			  , $self = $.single(this)
+			  , $self = $.single( this )
 			  ;
 
 			switch (e.data.type) {
@@ -1512,6 +1512,53 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		}());
 
 	INNERCONTEXT.UI = {
+		addNewImageDropBox : function addNewImageDropBox ( $div ) {
+			$.log('Add new CAA image space button triggered.');
+			
+			$div = $div.append ? $div : $.single( this ).nextAll( '.caaDiv' );
+			$div.append( INNERCONTEXT.UI.$makeDropbox() );
+			INNERCONTEXT.UTILITY.checkScroll( $div );
+		},
+
+		addImageRow : function add_new_row_for_CAA_stuff (event) {
+			var $releaseAnchor = $.single( this );
+
+			if ( $releaseAnchor[0].nodeName === 'TABLE' ) { // Detect bitmap's script's expandos.
+
+				/* DOMNodeInserted is triggered for each new element added to the table by bitmap's script.
+				   This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
+				   triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
+				   kicks in when a RG is expanded, and only when that entire expando has been inserted. */
+				
+				var $editRow = $releaseAnchor.find('a[href^="/release/add?release-group"]').parent();
+
+				if ( $editRow.length ) {
+					$editRow.remove();
+					$releaseAnchor.find( 'a' )
+								  .filter( '[href^="/release/"]' )
+								  .each( INNERCONTEXT.UI.addImageRow );
+				}
+				return;
+			}
+
+			var $releaseRow = $releaseAnchor.parents('tr:first');
+			var $newRow = INNERCONTEXT.UTILITY.assemble(
+					          INNERCONTEXT.TEMPLATES.image_row(
+						          { $row : $releaseRow
+						          , cols: $releaseRow[0].getElementsByTagName('td').length
+						          , MBID: INNERCONTEXT.CONSTANTS.REGEXP.mbid.exec($releaseAnchor.attr('href'))
+						          }
+					          )
+				          );
+
+			$releaseRow.after();
+			
+//			$addButton.on('click', INNERCONTEXT.UI.addNewImageDropBox);
+//			$loadButton.on('click', { $row : $newRow
+//									, $add : $addButton
+//									}, INNERCONTEXT.UTILITY.loadRowInfo);
+		},
+
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
 			$.log('Creating add dropbox button.', 1);
 
@@ -1847,6 +1894,20 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			 ]
 		];
 
+	INNERCONTEXT.TEMPLATES.image_row = function (info) {
+			return [ { ele: 'tr', 'class': info.$row }
+			        ,    [ { ele: 'td', 'class': 'imageRow', colspan: info.cols }
+				         ,    [ INNERCONTEXT.UI.$makeAddDropboxButton().hide()
+					          , { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER, hide: true }
+					          , { ele: 'div', 'class': 'loadingDiv', text: $.l('loading') }
+					          , $.make('div', { 'class' : 'caaDiv' })
+					          ,    [ INNERCONTEXT.UI.$makeLoadDataButton().data('entity', info.MBID)
+						           ]
+					          ]
+				         ]
+			        ];
+	};
+	
 	INNERCONTEXT.INIT = {
 		standardizeBrowser : function standardizeBrowser () {
 			document.head = document.head || document.getElementsByTagName('head')[0];
@@ -1882,9 +1943,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Get rid of the checkboxes
 			$('tr').find('th, td').filter(':first-child:has(input)').remove();
 			$('tr.subh > th').each(function () {
-				var colSpan = $.single(this).attr('colspan') - 1;
-				colSpan ? $.single(this).attr('colspan', $.single(this).attr('colspan') - 1)
-						: $.single(this).remove(); // Fixes broken colspan on http://musicbrainz.org/release-group/{mbid}
+				var colSpan = $.single( this ).attr('colspan') - 1;
+				colSpan ? $.single( this ).attr('colspan', $.single( this ).attr('colspan') - 1)
+						: $.single( this ).remove(); // Fixes broken colspan on http://musicbrainz.org/release-group/{mbid}
 			});
 
 			// Lock the tables' column widths
@@ -1985,6 +2046,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				INNERCONTEXT.DOM['Options‿input‿checkbox‿autoedit'][0].checked = (INNERCONTEXT.UTILITY.getLSValue('autoedit') === "true");
 				$('.autoedit').show();
 			}
+			
+			// Add a 'load info' button to each release row
+			$('#content').detach(function addLoadButtons () {
+				$.single( this ).find('a')
+				               .filter('[resource^="[mbz:release/"]')
+				               .each(INNERCONTEXT.UI.addImageRow);
+			});
+
 		},
 
 		initializeSubscribers : function initializeSubscribers () {
@@ -2087,7 +2156,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		                    .wrap('<li>')
 		                    .on('click', 
 		                        function start_cover_art_script() {
-		                            $.single(this).remove();
+		                            $.single( this ).remove();
 		                            INNERCONTEXT.INIT.init();
 		                        })
 		                    .parent();
@@ -2437,7 +2506,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			$('#tblStyle1').prop('disabled',false);
 		}
 		$('div.caaDiv').each(function window_resize_internal () {
-			INNERCONTEXT.UTILITY.checkScroll($.single(this));
+			INNERCONTEXT.UTILITY.checkScroll($.single( this ));
 		});
 	};
 
@@ -2447,10 +2516,10 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
 		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
 			$.log('Setting new image for preview box.');
-			$('#previewImage').prop('src', $.single(this).prop('src'))
+			$('#previewImage').prop('src', $.single( this ).prop('src'))
 							  .prop('title', $.l('Click to edit this image'));
-			$('#previewResolution').text($.single(this).data('resolution'));
-			$('#previewFilesize').text($.single(this).data('size') + ' ' + $.l('bytes'));
+			$('#previewResolution').text($.single( this ).data('resolution'));
+			$('#previewFilesize').text($.single( this ).data('size') + ' ' + $.l('bytes'));
 			$('#previewText').show();
 		}
 	});
@@ -2502,7 +2571,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								if ($draggedImage !== null) {
 									inChild = !$(e.target).hasClass('newCAAimage');
 									$('figure').removeClass('over');
-									$.single(this).addClass('over');
+									$.single( this ).addClass('over');
 								}
 								return false;
 							},
@@ -2512,7 +2581,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								if ($draggedImage !== null) {
 									// https://bugs.webkit.org/show_bug.cgi?id=66547
 									if (!inChild) {
-										$.single(this).removeClass('over');
+										$.single( this ).removeClass('over');
 									}
 								}
 								return false;
@@ -2521,10 +2590,10 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 								$.log('newCAAimage: drop');
 								e.preventDefault();
 								if ($draggedImage !== null) {
-									$.single(this).find('.dropBoxImage').replaceWith($draggedImage);
+									$.single( this ).find('.dropBoxImage').replaceWith($draggedImage);
 									$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
 												 .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-																		 .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(this)));
+																		 .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single( this )));
 									$('figure').removeClass('over');
 									$draggedImage = null;
 								}
@@ -2546,8 +2615,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		!function add_color_select_handler () {
 			$.log('Adding handler for color picker.');
 			$('#colorSelect').on('change', function change_color_selection_handler (e) {
-				var color = INNERCONTEXT.UTILITY.getLSValue('colors_' + $.single(this).find(':selected').val());
-				$.log('Getting localStorage for ' + 'Caabie_colors_' + $.single(this).find(':selected').val() + '.  Result: ' + color);
+				var color = INNERCONTEXT.UTILITY.getLSValue('colors_' + $.single( this ).find(':selected').val());
+				$.log('Getting localStorage for ' + 'Caabie_colors_' + $.single( this ).find(':selected').val() + '.  Result: ' + color);
 				myPicker.fromString(color);
 			});
 			// Store new color value in localStorage.
@@ -2874,13 +2943,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		!function init_add_caa_row_controls () {
 			$.log('Adding CAA controls and event handlers.');
 
-			var columnCount	 = 0
-			  , tableLocation
-			  , $thisForm	   = $('form[action*="merge_queue"]')
-			  , $loadingDiv	 = $.make('div', { 'class' : 'loadingDiv' }).text($.l('loading'))
-																		  .prepend($.make('img', { 'class' : 'throbberImage'
-																								, src	 : INNERCONTEXT.CONSTANTS.THROBBER
-																								})).hide()
+			var $thisForm	   = $('form[action*="merge_queue"]')
 			  ;
 
 			var caaResponseHandler = function caaResponseHandler (response, textStatus, jqXHR, data) {
@@ -2894,11 +2957,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				}
 
 				var $newCAARow	   = data.$newCAARow
-				  , $thisAddBtn	  = data.$thisAddBtn
+				  , $addButton	  = data.$addButton
 				  , parseCAAResponse = function parseCAAResponse (i) {
 					  $.log('Parsing CAA response: image #' + i);
 					  if ($newCAARow.find('.newCAAimage').length < response.images.length) {
-						  caaAddNewImageBox($newCAARow.find('.caaDiv'));
+						  INNERCONTEXT.UI.addNewImageDropBox($newCAARow.find('.caaDiv'));
 					  }
 					  var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
 					  $emptyDropBox.removeClass('newCAAimage')
@@ -2937,107 +3000,52 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				$newCAARow.find('.caaDiv').slideDown('slow');
 			};
 
-			var caaRowLoadHandler = function invoke_CAA_row_button_click_handler (e) {
+			// INNERCONTEXT.UTILITY.loadRowInfo
+			var loadRowInfo = function invoke_CAA_row_button_click_handler (e) {
 				$.log('Add CAA images to release row button triggered.');
-				var $newCAARow  = e.data.$newCAARow;
+				var $row  = e.data.$row;
 
-				$newCAARow.find('.loadingDiv').show();
-				$newCAARow.find('.caaLoad').hide();
-				$newCAARow.find('.caaDiv').slideUp();
+				$row.find('.loadingDiv').show();
+				$row.find('.caaLoad').hide();
+				$row.find('.caaDiv').slideUp();
 
 				var $widthEle = $('.caaLoad:first').parents('td:first')
 				  , $tableParent = $('.caaLoad:first').parents('table:first')
-				  , caaRequest = 'http://coverartarchive.org/release/' + $.single(this).data('entity')
+				  , caaRequest = 'http://coverartarchive.org/release/' + $.single( this ).data('entity')
 				  ;
 
 				if (!$tableParent.hasClass('tbl')) {
 					$widthEle = $tableParent.parents('td:first');
 				}
 				for (var i = Math.max(3, ($widthEle.quickWidth(0)/132 << 0) - 5); i > 0; i--) {
-					   $.single(this).after(INNERCONTEXT.UI.$makeDropbox());
+					   $.single( this ).after(INNERCONTEXT.UI.$makeDropbox());
 				}
-				$.log('Requesting CAA info for ' + $.single(this).data('entity'));
+				$.log('Requesting CAA info for ' + $.single( this ).data('entity'));
 				$.ajax({ cache	: false
 					   , context  : this
 					   , url	  : caaRequest
 					   , error	: function handler(jqXHR, textStatus, errorThrown, data) {
 										// Reference http://tickets.musicbrainz.org/browse/CAA-24
 										$.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-										$newCAARow.find('div.loadingDiv, .caaAdd').toggle();
-										$newCAARow.find('div.caaDiv').slideDown('slow');
+										$row.find('div.loadingDiv, .caaAdd').toggle();
+										$row.find('div.caaDiv').slideDown('slow');
 									}
 					   , success  : function caa_response_mediator (response, textStatus, jqXHR) {
-										return caaResponseHandler(response, textStatus, jqXHR, { $newCAARow  : $newCAARow
-																							   , $thisAddBtn : e.data.$thisAddBtn
+										return caaResponseHandler(response, textStatus, jqXHR, { $row  : $row
+																							   , $addButton : e.data.$addButton
 																							   });
 									}
 					   });
 			};
 
-			var caaAddNewImageBox = function invoke_Add_image_space_button_click_handler ($div) {
-				$.log('Add new CAA image space button triggered.');
-				$div = $div.append ? $div : $(this).nextAll('.caaDiv');
-				$div.append(INNERCONTEXT.UI.$makeDropbox());
-				INNERCONTEXT.UTILITY.checkScroll($div);
-			};
 
-			var addCAARow = function add_new_row_for_CAA_stuff (event) {
-				var $releaseAnchor = $.single(this);
 
-				if ($releaseAnchor[0].nodeName === 'TABLE') { // Detect bitmap's script's expandos.
-					// DOMNodeInserted is triggered for each new element added to the table by bitmap's script.
-					// This looks for the editing tr he adds at the end, since that is the last DOMNodeInserted which is
-					// triggered when a RG is expanded.  He does not add that row for expanded releases, so this only
-					// kicks in when a RG is expanded, and only when that entire expando has been inserted.
-					var $editRow = $releaseAnchor.find('a[href^="/release/add?release-group"]').parent();
-					if ($editRow.length) {
-						$editRow.remove();
-						$releaseAnchor.find('a')
-									  .filter('[href^="/release/"]')
-									  .each(addCAARow);
-					}
-					return;
-				}
 
-				var tableLocation = tableLocation
-				  , $releaseRow   = $releaseAnchor.parents('tr:first')
-				  , thisMBID	  = INNERCONTEXT.CONSTANTS.REGEXP.mbid.exec($releaseAnchor.attr('href'))
-				  ;
-
-				0 === columnCount && (columnCount = $releaseRow[0].getElementsByTagName('td').length);
-
-				$.log('New release found, attaching a CAA row.', 1);
-				var $thisAddBtn	 = INNERCONTEXT.UI.$makeAddDropboxButton().hide()
-				  , $thisCAABtn	 = INNERCONTEXT.UI.$makeLoadDataButton().data('entity', thisMBID)
-				  , $thisLoadingDiv = $loadingDiv.quickClone(true)
-				  , $newCAARow	  = $.make('td', { 'class' : 'imageRow'
-												  , colspan : columnCount
-												  }).appendAll([ $thisAddBtn
-															   , $thisLoadingDiv
-															   , $.make('div', { 'class' : 'caaDiv' }).append($thisCAABtn)
-															   ])
-													.wrap($.make('tr', { 'class': $releaseRow.prop('class') }));
-
-				$thisAddBtn.on('click', caaAddNewImageBox);
-				$thisCAABtn.on('click', { $newCAARow  : $newCAARow
-										, $thisAddBtn : $thisAddBtn
-										}, caaRowLoadHandler);
-				$releaseRow.after($newCAARow);
-				return;
-			};
-
-			// handle pre-existing release rows
-			var addLoadButtons = function add_load_images_button_to_existing_release_rows () {
-				$(this).find('a')
-					   .filter('[resource^="[mbz:release/"]')
-					   .each(addCAARow);
-			};
-			$('#content').detach(addLoadButtons);
 
 			// handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
 			$.log('Adding release row event handler.');
 			var handleInsertedReleaseRow = function handleInsertedReleaseRow () {
-				$.single(this).on('DOMNodeInserted', 'table', addCAARow);
+				$.single( this ).on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
 			};
 			$thisForm.find('tbody')
 					 .each(handleInsertedReleaseRow);
@@ -3059,7 +3067,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				$.log('CAA load all releases\' images button has been clicked.');
 				$('.caaLoad:visible').each(function caaAllBtn_click_each_release_button () {
 					$.log('Triggering a click on a CAA load images button.');
-					$.single(this).trigger('click');
+					$.single( this ).trigger('click');
 				});
 			});
 		}();
@@ -3445,7 +3453,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				});
 
 				$('#CAAeditorDiv').on('change', '#CAAeditorRotateControl', function rotate_controls_change_event_handler () {
-					rotate($.single(this).val());
+					rotate($.single( this ).val());
 				});
 
 				$('#CAAeditorDiv').on('change', '#CAAeditorCropControlTop', function crop_controls_change_event_handler_top () {
