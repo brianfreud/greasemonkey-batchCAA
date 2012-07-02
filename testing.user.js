@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0025
+// @version     0.02.0029
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -15,6 +15,7 @@
 // @include     http://beta.musicbrainz.org/label/*
 // @include     http://test.musicbrainz.org/label/*
 // @exclude     http://musicbrainz.org/label/*/*
+
 // ==/UserScript==
 /*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY */
 /*jshint smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
@@ -96,7 +97,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0025'
+	, VERSION        : '0.02.0029'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1384,7 +1385,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , $self        = $(this)
 			  ;
 			  
-			ui.showLoading();
+			$row.trigger('loading');
 
 			while (dropboxCount--) {
 				$self.after(ui.$makeDropbox());
@@ -1397,11 +1398,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				, error   : function handler(jqXHR, textStatus, errorThrown, data) {
 					            // Reference http://tickets.musicbrainz.org/browse/CAA-24
 					            $.log('Ignore the XMLHttpRequest error.  CAA returned XML stating that CAA has no images for this release.');
-					            $row.find('div.loadingDiv, .caaAdd').toggle();
-					            $row.find('div.caaDiv').slideDown('slow');
+					            $row.trigger('loaded');
 					        }
 				, success : function caa_response_mediator(response, textStatus, jqXHR) {
-					            return INNERCONTEXT.UTILITY.caaResponseHandler(response, textStatus, jqXHR, { $row: $row });
+					            return INNERCONTEXT.UTILITY.processCAAResponse(response, textStatus, jqXHR, { $row: $row });
 					        }
 				}
 			);
@@ -1585,6 +1585,45 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			)[0].insertAfter($releaseRow);
 		},
 
+		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
+			$dropBox.detach(function convertEmptyDropbox_internal () {
+				$.single(this).removeClass('newCAAimage')
+				              .find('input')
+				              .replaceWith($.make('div').text(comment))
+				              .end()
+				              .find('br, .closeButton')
+				              .remove()
+				              .end()
+				              .find('select')
+				              .prop('disabled', true);
+			});
+		},
+
+		lowsrc : function lowsrc ($dropBox, imageURI) {
+	
+			/* This code does the same thing as the lowsrc attribute used to do.  This should
+			   be easy, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
+		
+			   reference: http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
+		   
+			var $img = $dropBox.find( 'img' );
+			$img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
+			$img.css( 'padding-top', '20px' );
+			var realImg = new Image();	
+			realImg.src = imageURI;
+			realImg.onload = function lowsrc_onload () {
+				$img.data( 'resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight );
+				$.ajax(
+					{ url: realImg.src
+					, success: function lowsrc_onload_success ( request ) {
+						$img.data( 'size', INNERCONTEXT.UTILITY.addCommas( request.length ))
+						    .prop( 'src', realImg.src )
+						    .css( 'padding-top', '0px' );
+					}
+				});
+			};
+		},
+	
 		$makeAddDropboxButton : function $makeAddDropboxButton () {
 			$.log('Creating add dropbox button.', 1);
 
@@ -1630,12 +1669,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		$makeDropbox : function $makeDropbox () {
 			$.log('Creating dropbox.');
 
-			var widgets = INNERCONTEXT.WIDGETS
-			  , ui      = INNERCONTEXT.UI
-			  ;
+			var widgets = INNERCONTEXT.WIDGETS;
 			
-			if (void 0 === widgets.$coverTypeSelect) {
-				widgets.$dropBox = ui.assemble(INNERCONTEXT.TEMPLATES.dropbox)[0];
+			if (void 0 === widgets.$dropBox) {
+				widgets.$dropBox = INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.dropbox)[0];
 			}
 			return widgets.$dropBox.quickClone(true);
 		},
@@ -1766,12 +1803,20 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return languages.map(makeLanguageOptions);
 		},
 		
-		showLoading : function showLoading ($row) {
+		showLoading : function showLoading (e) {
+		    var $row = $.single(e.target);
+		    
 			$row.find('.loadingDiv').show();
 			$row.find('.caaLoad').hide();
 			$row.find('.caaDiv').slideUp();
-		}
+		},
 
+		showImageRow : function showImageRow (e) {
+		    var $row = $.single(e.target);
+		    
+			$row.find('.loadingDiv, .caaAdd').toggle();
+			$row.find('.caaDiv').slideDown('slow');
+		}
 	};
 
 	/** @constructor */
@@ -1919,8 +1964,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return [ { ele: 'tr', 'class': info.$row.prop('class') }
 			        ,    [ { ele: 'td', 'class': 'imageRow', colspan: info.cols }
 				         ,    [ INNERCONTEXT.UI.$makeAddDropboxButton().hide()
-					          , { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER, hide: true }
-					          , { ele: 'div', 'class': 'loadingDiv', text: $.l('loading'), hide: true }
+					          , { ele: 'div', 'class': 'loadingDiv', hide: true }
+						      ,    [ { ele: 'img', 'class': 'throbberImage', src: INNERCONTEXT.CONSTANTS.THROBBER }
+						           , { ele: 'span', text: $.l('loading') } 					          
+						           ]					          
 					          , $.make('div', { 'class' : 'caaDiv' })
 					          ,    [ INNERCONTEXT.UI.$makeLoadDataButton().data('entity', info.MBID)
 						           ]
@@ -2075,8 +2122,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Add a 'load info' button to each release row
 			$( '#content' ).detach( function addImageRows () {
 				$.single( this ).find( 'a' )
-				                 .filter( '[resource^="[mbz:release/"]' )
-				                 .each( ui.addImageRow );
+				                .filter( '[resource^="[mbz:release/"]' )
+				                .each( ui.addImageRow );
 			});
 
 		},
@@ -2139,7 +2186,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
-			dom.xhrComlink.on('dblclick', '.image', util.addRemoteImage);
+			dom.xhrComlink.on( 'dblclick', '.image', util.addRemoteImage );
+			
+			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
+			                                .on( 'loaded', '.imageRow', ui.showImageRow);
 		},
 
 		init : function init (inner) {
@@ -2850,6 +2900,46 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
+processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
+	if (Object !== response.constructor) { // Firefox
+		response = JSON.parse(response);
+	}
+
+	if ($.isEmptyObject(response)) {
+		$.log('No images in CAA for this release.');
+		return;
+	}
+
+	var parseCAAResponse = function parseCAAResponse ( i ) {
+		$.log('Parsing CAA response: image #' + i);
+
+
+		var $dropBox = $row.find('.newCAAimage:first');
+
+		INNERCONTEXT.UI.convertEmptyDropbox($dropBox, this.comment)
+		INNERCONTEXT.UI.lowsrc($dropBox, this.image);
+
+		$.each(this.types, function assign_image_type(i) {
+			var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
+			$dropBox.find('option[value="' + value + '"]').prop('selected', true);
+		});
+		
+		INNERCONTEXT.UTILITY.checkScroll($row.find('div.loadingDiv'));
+	};
+
+	var $row = data.$row
+		, $addButton = $row.find('input.caaAdd');
+
+    var neededDropboxes = $row.find('.newCAAimage').length - response.images.length;
+
+	while ( neededDropboxes >= 0 && neededDropboxes-- ) {
+		INNERCONTEXT.UI.addNewImageDropBox( $row.find('.caaDiv') );
+	}
+
+	$.each(response.images, parseCAAResponse);
+
+	$row.trigger('loaded');
+};
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -2968,65 +3058,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-		!function init_add_caa_row_controls () {
-			$.log('Adding CAA controls and event handlers.');
 
-			var $thisForm	   = $('form[action*="merge_queue"]')
-			  ;
-
-			var caaResponseHandler = function caaResponseHandler (response, textStatus, jqXHR, data) {
-				if ('object' !== typeof(response)) { // Firefox
-					response = JSON.parse(response);
-				}
-				$.log('Received CAA response, parsing...');
-				if ($.isEmptyObject(response)) {
-					$.log('CAA response: no images in CAA for this release.');
-					return;
-				}
-
-				var $row	  = data.$row
-				  , $addButton	  = $row.find('input.caaAdd')
-				  , parseCAAResponse = function parseCAAResponse (i) {
-					  $.log('Parsing CAA response: image #' + i);
-					  if ($newCAARow.find('.newCAAimage').length < response.images.length) {
-						  INNERCONTEXT.UI.addNewImageDropBox($newCAARow.find('.caaDiv'));
-					  }
-					  var $emptyDropBox = $newCAARow.find('.newCAAimage:first');
-					  $emptyDropBox.removeClass('newCAAimage')
-								   .find('input').replaceWith($.make('div').text(this.comment)).end()
-								   .find('br, .closeButton').remove().end()
-								   .find('select').prop('disabled', true);
-					  // This next bit of code does the same thing as the lowsrc attribute.  This would have
-					  // been easier, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
-					  // http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html
-					  var $img = $emptyDropBox.find('img');
-					  $img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
-					  $img.css('padding-top', '20px');
-					  var realImg = new Image();
-					  realImg.src = this.image;
-					  realImg.onload = function assign_real_caa_image () {
-						  $img.data('resolution', realImg.naturalWidth + ' x ' + realImg.naturalHeight);
-						  var xhrReq = $.ajax({
-							  url: realImg.src,
-							  success: function lowsrc_workaround_success_handler (request) {
-								  $img.data('size', INNERCONTEXT.UTILITY.addCommas(request.length))
-									  .prop('src', realImg.src)
-									  .css('padding-top', '0px');
-							  }
-							});
-					  };
-					  // End lowsrc workaround.
-					  $.each(this.types, function assign_image_type (i) {
-						  var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
-						  $emptyDropBox.find('option[value="' + value + '"]').prop('selected', true);
-					  });
-					  INNERCONTEXT.UTILITY.checkScroll($newCAARow.find('div.loadingDiv'));
-				  };
-
-				$.each(response.images, parseCAAResponse);
-				$newCAARow.find('.loadingDiv, .caaAdd').toggle();
-				$newCAARow.find('.caaDiv').slideDown('slow');
-			};
 
 
 
@@ -3039,7 +3071,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			var handleInsertedReleaseRow = function handleInsertedReleaseRow () {
 				$.single( this ).on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
 			};
-			$thisForm.find('tbody')
+			$('form[action*="merge_queue"]').find('tbody')
 					 .each(handleInsertedReleaseRow);
 		}();
 
