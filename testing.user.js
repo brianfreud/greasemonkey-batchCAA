@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0034
+// @version     0.02.0035
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -235,7 +235,7 @@ OUTERCONTEXT.CONSTANTS =
 			, { name: 'Google'
 			  , what: 'Google Closure Compiler'
 			  , urlW: 'closure-compiler.appspot.com/home'
-  			  , urlN: 'google.com'
+			  , urlN: 'google.com'
 			  }
 			  , { name: 'Site Project ApS'
 			  , what: 'JavaScript string encoder'
@@ -244,7 +244,7 @@ OUTERCONTEXT.CONSTANTS =
 			, { name: 'Yahoo!'
 			  , what: 'Yahoo! Query Language'
 			  , urlW: 'developer.yahoo.com/yql/'
-  			  , urlN: 'yahoo.com'
+			  , urlN: 'yahoo.com'
 			  }
 			]
 		, Libraries:
@@ -1856,7 +1856,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		  ;
 
 		namespace = ' ' + namespace;
-		!this.noid && args.id = eleName;
+		!this.noid && (args.id = eleName);
 		args['class'] = $.trim( [ $.trim( args['class'] ) || '', namespace, this.addedClasses.join(namespace) ].join('') );
 		this.ele = $.make(this.ele, args);
 		void 0 !== this.text ? this.ele.text(this.text)
@@ -1913,7 +1913,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	/* A generic close button.  */
 	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
 
-	INNERCONTEXT.TEMPLATES.CONTROLS.crop = function makeControl_crop (direction) {
+	INNERCONTEXT.TEMPLATES.CONTROLS.crop = function makeControl_crop (where) {
 		return [
 			{ ele     : 'label'
 			, 'class' : 'cropLabel'
@@ -1935,17 +1935,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	INNERCONTEXT.TEMPLATES.CONTROLS.flip = function makeControl_flip (direction) {
+		var symbol = direction === 'Vertical' ? '⇵' : '⇆';
 		return { ele     : 'input'
 		       , 'class' : 'flipControl'
 		       , id      : 'ieFlip' + direction
-		       , title   : $.l('Flip image') + ' ' + symbol
+                       , title   : $.l('Flip image') + ' ' + symbol
 		       , type    : 'button'
-		       , value   : direction === 'Vertical' ? '⇵' : '⇆'
+		       , value   : symbol
 		       };
-	}
+	};
 
 	INNERCONTEXT.TEMPLATES.CONTROLS.mask = function makeControl_mask (where) {
-		return { ele: 'div', 'class': 'CAAmask', id: 'CAAmask' + where }
+		return { ele: 'div', 'class': 'CAAmask', id: 'CAAmask' + where };
 	};
 
 	INNERCONTEXT.TEMPLATES.image_preview =
@@ -2173,8 +2174,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 								,	[ { ele: fieldset, id: 'ieRotateField' }
 									,	[ { ele: legend, id: 'ieRotateLegend', text: $.l('Rotate image') }
 										, { ele: label, id: 'ieRotateLabel', title: $.l('How many degrees') }
-										,	[
-											, { ele: input, id: 'ieRotateControl', max: 360, min: -360, step: 1, type: 'number', value: 0 }
+										,	[ { ele: input, id: 'ieRotateControl', max: 360, min: -360, step: 1, type: 'number', value: 0 }
 											, $.l('degrees')
 											]
 										]
