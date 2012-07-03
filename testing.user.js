@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0038
+// @version     0.02.0039
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -97,7 +97,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0038'
+	, VERSION        : '0.02.0039'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -569,6 +569,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  height                  : '5em'
 		,  margin                  : '10px 10px -27px 6px'
 		,  padding                 : '6px'
+		, 'text-transform'         : 'capitalize'
+		,  width                   : '70%'
 		}
 	, '#Main‿div‿options_control, #Main‿div‿about_control':
 		{  display                 : 'inline-block'
@@ -2076,10 +2078,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		initializePage : function initializePage (constants, util) {
+			// Create a base tag, so it can be used with relative anchors as needed
 			$.make('base').appendTo(document.head);
 
+			// Get rid of the footer
+			$('#footer').remove();
+
+			// Get rid of the slight background tint for the page
 			$(document.body).css({ 'background-color': '#FFF' });
 
+			// Empty the sidebar
 			document.getElementById('sidebar').innerHTML = '';
 
 			// Resize the sidebar
