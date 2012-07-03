@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0035
+// @version     0.02.0036
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -657,12 +657,13 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '.CAAdropbox > div':
 		{  display                 : 'block'
 		,  height                  : '120px'
-		,  margin                  : '3px auto'
+		,  margin                  : '3px'
+		,  width                   : '100%'
 		}
 	, '.CAAdropbox > div > img':
 		{  display                 : 'block'
 		, 'image-rendering'        : 'optimizeQuality'
-		,  margin                  : '0 auto'
+		,  margin                  : 0
 		, 'max-height'             : '120px'
 		, 'max-width'              : '120px'
 		}
@@ -677,7 +678,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '.CAAdropbox > figcaption > input':
 		{ 'font-size'              : '12px'
-		,  width                   : '90%'
+		,  padding                 : '2px'
+		,  width                   : '94%'
 		}
 	, '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
 		{  clear                   : 'both'
@@ -688,7 +690,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  clip                    : 'rect(2px, 49px, 145px, 2px)'
 		,  color                   : '#555'
 		, 'font-size'              : 'inherit'
-		,  left                    : '36px'
+		,  left                    : '30px'
+		,  margin                  : 0
 		, 'padding-bottom'         : '20px'
 		, 'padding-right'          : '20px'
 		, 'padding-top'            : '8px'
@@ -741,6 +744,12 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{ 'font-size'              : '85%'
 		, 'white-space'            : 'nowrap'
 		}
+	, '.dropBoxImage':
+		{  background              : '#FFF'
+		,  height                  : '96%'
+		,  padding                 : '1%'
+		,  width                   : '96%'
+		}		
 	, '.newCAAimage':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABOX')
 		}
@@ -2563,7 +2572,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , cssStr
 	  ;
 
-	CSSObj['.dropBoxImage'] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
+	CSSCONTEXT.UTILITY.extend(CSSObj['.dropBoxImage'],
+	                          { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' });
 
 	$.make('link').attr({ rel  : 'stylesheet'
 						, type : 'text/css'
