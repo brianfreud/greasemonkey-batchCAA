@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0039
+// @version     0.02.0040
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -97,7 +97,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0039'
+	, VERSION        : '0.02.0040'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1150,7 +1150,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	$.log('Script initializing.');
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT,
-		{ DATA      : {}
+		{ DATA      : { imageEditor: {} }
 		, DOM       : { body       : $(document.body)
 		              , head       : $(document.head)
 		              , xhrComlink : $('#xhrComlink')
@@ -3283,7 +3283,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 
 				var imageRatio	 = $('#previewImage').quickWidth(0) / $('#previewImage').quickHeight(0)
 					, c			= {}
-				  , degreesRotated = 0
+				  , INNERCONTEXT.DATA.imageEditor.degreesRotated = 0
 				  ;
 
 				c.height = $('#ie').quickHeight(0) * 0.9 << 0;
@@ -3306,9 +3306,6 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 				var canvas = document.getElementById("ieCanvas")
 				  , ctx = canvas.getContext("2d")
 				  , img = new Image()
-				// create a backup canvas for storing the unmodified image.
-				  , backupCanvas = document.createElement("canvas")
-				  , backupCtx = backupCanvas.getContext("2d")
 				  ;
 
 				img.onload = function load_image_handler () {
@@ -3327,54 +3324,75 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 
 					ctx.drawImage(img, 0, 0);
 
-					backupCanvas.width = canvas.width;
-					backupCanvas.height = canvas.height;
-					backupCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+					// create a backup canvas for storing the unmodified image.
+					INNERCONTEXT.DATA.imageEditor.backupCanvas = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
 				};
 
 				img.src = $('#previewImage').prop('src');
 
-				var prepCanvas = function prep_canvas_handler (callback) {
-					var centerH		= canvas.height/2
-					  , centerW		= canvas.width/2
-					  ;
-					// Clear the canvas
-					ctx.save();
-					ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-					ctx.clearRect(0, 0, canvas.width, canvas.height);
-					ctx.restore();
 
-					// Move the origin point to the center of the canvas
-					ctx.translate(centerW, centerH);
+	INNERCONTEXT.UTILITY.imageEditor = {
+		data : INNERCONTEXT.DATA.imageEditor,
 
-					// Run the callback
-					callback();
+		copyCanvas : function ( canvas ) {
+			// Create and return a copy of a canvas.
+		  	var copy = document.createElement( 'canvas' );
 
-					// Move the origin point back to the top left corner of the canvas
-					ctx.translate(-centerW, -centerH);
+			copy.height = canvas.height;
+			copy.width = canvas.width;
+			copy.getContext( '2d' )
+			    .drawImage( canvas, 0, 0 );
+			    
+			return copy;
+		},
+		
+		prepCanvas: function prep_canvas_handler ( callback ) {
+			var centerH = canvas.height / 2
+			  , centerW = canvas.width / 2;
 
-					// Draw the image into the canvas
-					ctx.drawImage(backupCanvas, 0, 0);
-					return;
-				};
+			// Clear the canvas
+			ctx.save();
+			ctx.setTransform( 1, 0, 0, 1, 0, 0 ); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+			ctx.clearRect( 0, 0, canvas.width, canvas.height );
+			ctx.restore();
 
-				var rotate = function rotate_handler (degrees) {
-					var rotate = function rotate_internal_handler  () {
-						ctx.rotate(-degreesRotated * Math.PI / 180);
-						ctx.rotate(degrees * Math.PI / 180);
-						degreesRotated = degrees;
-					};
-					prepCanvas(rotate);
-					return;
-				};
+			// Move the origin point to the center of the canvas
+			ctx.translate( centerW, centerH );
 
-				var flip = function flip_handler  (h, v) {
-					var flip = function flip_internal_handler () {
-						ctx.scale(h ? -1 : 1, v ? -1 : 1);
-					};
-					prepCanvas(flip);
-					return;
-				};
+			// Run the callback
+			callback();
+
+			// Move the origin point back to the top left corner of the canvas
+			ctx.translate( -centerW, -centerH );
+
+			// Draw the image into the canvas
+			ctx.drawImage( this.data.backupCanvas, 0, 0 );
+			return;
+		},
+
+		flip: function flip_handler ( h, v ) {
+			var flip = function flip_internal() {
+				ctx.scale( h ? -1 : 1, v ? -1 : 1 );
+			};
+
+			this.prepCanvas( flip );
+			return;
+		},
+
+		rotate: function rotate_handler ( degrees ) {
+			var rotate = function rotate_internal() {
+				ctx.rotate( -this.data.degreesRotated * Math.PI / 180 );
+				ctx.rotate( degrees * Math.PI / 180 );
+				this.data.degreesRotated = degrees;
+			};
+
+			this.prepCanvas( rotate );
+			return;
+		}
+	};
+	
+	
+	
 
 				var cropMask = function handle_crop_mask_change (where) {
 					var opposite
@@ -3425,14 +3443,11 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 				var applyCrop = function handle_apply_crop_click () {
 					var canvas  = document.getElementById("ieCanvas")
 					  , $canvas = $.single(canvas)
-					  , copy	= document.createElement("canvas")
 					  , ctx	 = canvas.getContext('2d')
 					  ;
 
 					// Create a copy of the current canvas.
-					copy.height = canvas.height;
-					copy.width = canvas.width;
-					copy.getContext('2d').drawImage(canvas, 0, 0);
+				  	var copy = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
 
 					// Clear the current canvas.
 					ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3499,7 +3514,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 				});
 
 				$('#ieDiv').on('change', '#ieRotateControl', function rotate_controls_change_event_handler () {
-					rotate($.single( this ).val());
+					INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
 				});
 
 				$('#ieDiv').on('change', '#ieCropControlTop', function crop_controls_change_event_handler_top () {
