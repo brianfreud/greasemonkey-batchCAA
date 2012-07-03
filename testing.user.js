@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0036
+// @version     0.02.0038
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -45,8 +45,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Refactor: addImageToDropbox
 //TODO: Refactor: convertImage
 //------------------------------------
-//TODO: Add some sort of glow on hover over controls
-//TODO: Fix missing border on empty image element in dropboxes
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
@@ -99,7 +97,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0032'
+	, VERSION        : '0.02.0038'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -441,7 +439,20 @@ null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Ca
 /* Define the CSS constants. */
 OUTERCONTEXT.CONSTANTS.CSS =
 	{ '#Options‿input‿color‿colors, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
-		{ 'background-color'       : '#DDD'
+		{ 'background-color'       : '#C7C7C7'
+		}
+	, 'select.CaabieOptions':
+		{ 'background-color'           : 'rgba(200, 200, 255, .8)'
+		, 'border-top-left-radius'     : '10px'
+		, 'border-bottom-left-radius'  : '10px'
+		, 'border-top-right-radius'    : '6px'
+		, 'border-bottom-right-radius' : '6px'
+		, 'border'                     : '1px dotted navy'
+		, 'border-right'               : 0
+		}		
+	, 'input.CaabieOptions:hover, select.CaabieOptions:hover':
+		{ 'box-shadow'             : 'inset 0px 0px 20px 3px rgba(0, 0, 150, .15)'
+        , 'background-color'       : 'rgba(100, 100, 100, .2)'
 		}
 	, '.CAAversion':
 		{ 'float'                  : 'right'
@@ -534,6 +545,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#Options‿div‿shadow':
 		{  display                 : 'inline-block'
+		, 'margin-top'             : '4px'
 		}
 	, '#Main‿div‿imageContainer':
 		{  height                  : (OUTERCONTEXT.CONSTANTS.SIDEBARHEIGHT - 25) + 'px'
@@ -587,7 +599,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#Options‿fieldset‿main > label, #Options‿fieldset‿main > label > select':
 		{ 'margin-left'            : '5px'
-		, 'margin-top'             : '5px'
+		, 'margin-top'             : '12px'
 		}
 	, '#Options‿div‿note':
 		{ 'font-size'              : '85%'
@@ -685,7 +697,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  clear                   : 'both'
 		}
 	, '.caaSelect':
-		{ 'background-color'       : 'transparent'
+		{ 'appearance'             : 'caret'
+		, 'background-color'       : 'transparent'
 		,  clear                   : 'both'
 		,  clip                    : 'rect(2px, 49px, 145px, 2px)'
 		,  color                   : '#555'
@@ -2584,7 +2597,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	$.log('Adding css for the CAA batch script.');
 	$.make('style', { type : 'text/css' }).text(Object.keys(CSSObj).map(function create_css_rules (key) {
 		var prefixed =
-			[ 'box-shadow'
+			[ 'appearance'
+			, 'box-shadow'
 			, 'border-radius'
 			, 'margin-after'
 			, 'opacity'
