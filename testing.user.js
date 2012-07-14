@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0564
+// @version     0.02.0565
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -2495,30 +2495,30 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 	/* Despite the name, each function in thirdParty is by Brian Schweitzer unless otherwise noted. */
 
 	/*jshint strict:false */
-	jQuery.noConflict();
+	$.noConflict();
 
 	if (!document.head) {
 		document.head = document.getElementsByTagName('head')[0];
 	}
 
-	jQuery.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
+	$.browser.chrome = navigator.userAgent.toString().toLowerCase().indexOf('chrome');
 
-	jQuery.extend({
+	$.extend({
 		/* Takes a localStorage value name, and inserts the script stored there (as a string) into the DOM. */
-		addScript: function jQuery_addScript  (scriptSource) {
+		addScript: function $_addScript  (scriptSource) {
 			var script = document.createElement('script');
 			script.type = 'text/javascript';
 			script.textContent = localStorage.getItem(scriptSource);
 			document.head.appendChild(script);
 		},
 		// Creates and adds a new css rule
-		addRule: function jQuery_addRule (selector, rule, props) {
+		addRule: function $_addRule (selector, rule, props) {
 			var $rule = $('<style type="text/css">').text(selector + rule);
 			void 0 !== props && $rule.prop(props);
 			$rule.appendTo('head');
 		},
 		// Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
-		dataURItoBlob: function jQuery_dataURItoBlob (dataURI, mime) {
+		dataURItoBlob: function $_dataURItoBlob (dataURI, mime) {
 			// convert base64 to raw binary data held in a string
 			var byteString;
 			if (dataURI.split(',')[0].indexOf('base64') >= 0) {
@@ -2547,11 +2547,11 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			return bb.getBlob('image/' + mime);
 		},
 		// A very basic version of a gettext function.
-		l: function jQuery_l (str) {
+		l: function $_l (str) {
 			return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('Caabie_language') || 'en'][str]);
 		},
 		// Logs a message to the console if debug mode is on.
-		log: function jQuery_log (str, verbose) {
+		log: function $_log (str, verbose) {
 			if (!THIRDCONTEXT.CONSTANTS.DEBUGMODE) {
 				return;
 			}
@@ -2563,7 +2563,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			return;
 		},
 		/* Polyfill input[type=number], if needed. */
-		polyfillInputNumber : function jQuery_polyfillInputNumber () {
+		polyfillInputNumber : function $_polyfillInputNumber () {
 			var testEle = document.createElement('input');
 			testEle.setAttribute('type','number');
 			if (testEle.type === 'number') {
@@ -2585,7 +2585,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 
 	// By Brian Schweitzer and Naftali Lubin
 	// Appends an array of jQuery objects to a jQuery object
-	$.fn.appendAll = function jQuery_prototype_appendAll (arrayToAdd) {
+	$.fn.appendAll = function $_prototype_appendAll (arrayToAdd) {
 		var $fragment = $.single(document.createDocumentFragment())
 		  , i = 0
 		  , len = arrayToAdd.length
@@ -2599,46 +2599,46 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 	};
 
 	// Modify jQuery.append to allow appending document fragments.
-	$.fn.append = function jQuery_prototype_append () {
+	$.fn.append = function $_prototype_append () {
 		return this.domManip(arguments, true, function (a) {
 			this.nodeType % 10 === 1 && this.appendChild(a);
 		});
 	};
 
 	// Sets the css visibility using a boolean value rather than a string value
-	$.fn.vis = function jQuery_prototype_vis (i) {
+	$.fn.vis = function $_prototype_vis (i) {
 		return this.css('visibility', i ? 'visible'
 										: 'hidden');
 	};
 
 	// A faster .clone(); clones only the nodes, without regard to events.  deep = true == deep node copy.
-	$.fn.quickClone = function jQuery_prototype_quickClone (deep) {
+	$.fn.quickClone = function $_prototype_quickClone (deep) {
 		return this.map(function quickClone_internal (elem, deep) {
 			return this.cloneNode(deep || false);
 		});
 	};
 
 	// Tests whether an element has a defined property value.
-	$.fn.hasProp = function jQuery_prototype_hasProp (property) {
+	$.fn.hasProp = function $_prototype_hasProp (property) {
 		property = this.prop(property);
 		return (void 0 !== property && property.length);
 	};
 
 	/* Get the width of an element.  Faster than .width(). */
-	$.fn.quickWidth = function jQuery_prototype_quickWidth (which) {
+	$.fn.quickWidth = function $_prototype_quickWidth (which) {
 		return parseInt($.css(this[which || 0], 'width'), 10);
 	};
 
 	/* Get the height of an element.  Faster than .height(). */
-	$.fn.quickHeight = function jQuery_prototype_quickHeight (which) {
+	$.fn.quickHeight = function $_prototype_quickHeight (which) {
 		return parseInt($.css(this[which || 0], 'height'), 10);
 	};
 
 	/* jQuery.single, by James Padolsey
 	   http://james.padolsey.com/javascript/76-bytes-for-faster-jquery/
 	*/
-	jQuery.single = (function jQuery_single (o){
-		 var collection = jQuery([1]); // Fill with 1 item, to make sure length === 1
+	$.single = (function $_single (o){
+		 var collection = $([1]); // Fill with 1 item, to make sure length === 1
 		 return function single_internal (element) {
 			 // Give collection the element:
 			collection[0] = element;
@@ -2657,7 +2657,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 	 * http://benalman.com/about/license/
 	 */
 	 // https://gist.github.com/938767
-	  var detach = $.detach = function jQuery_detach (node, async, fn) {
+	  var detach = $.detach = function $_detach (node, async, fn) {
 			  var parent = node.parentNode;
 			  var next = node.nextSibling;
 			  if (!parent) {
@@ -2680,13 +2680,13 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			  }
 		  };
 
-	  $.fn.detach = function jQuery_prototype_detach (async, fn) {
+	  $.fn.detach = function $_prototype_detach (async, fn) {
 		  return this.each(function detach_internal () {
 			  detach(this, async, fn);
 		  });
 	  };
 
-	$.make = function jQuery_make (tagName, options) {
+	$.make = function $_make (tagName, options) {
 			/* Faster element creation. */
 			var domEl = [document.createElement(tagName)]
 			  , jq = $
@@ -2695,6 +2695,9 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			jq.fn.prop.call(domEl, options, true);
 			return jq.merge(jq(), domEl);
 	};
+	
+	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/
+	$.event.props.push('dataTransfer');
 };
 
 OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
@@ -2856,9 +2859,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	// START: functionality to allow dragging from the Images box to a specific caa image box.
 	var $draggedImage = null,
 		inChild	   = false;
-
-	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/
-	jQuery.event.props.push('dataTransfer');
 
 	$('body').on({
 				 dragstart : function localImage_dragStart (e) {
