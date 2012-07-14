@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0050
+// @version     0.02.0051
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1203,7 +1203,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                  , file   : file
 			                  });
 
-
 			var getExif = function getExif (event) {
 				var jpeg = new JpegMeta.JpegFile(this.result, file.name);
 				jpeg = jpeg.general;
@@ -1214,9 +1213,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				          , size       : INNERCONTEXT.UTILITY.addCommas(file.size || file.fileSize)
 				          });
 			};
-			
+
 			var addImageToDOM = function addImageToDOM (event) {
-				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append($img.prop('src', event.target.result));
+				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $img.prop('src', event.target.result) );
 			};
 
             var readImage = function readImage () {
@@ -2473,11 +2472,15 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			}
 
 			// write the ArrayBuffer to a blob, and you're done
-			/* The deprecated BlobBuilder format is normally prefixed; we need to find the right one.  (The Blob constructor which
-			   has replaced BlobBuilder is not yet implemented. */
-			window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder || window.MSBlobBuilder;
-			var bb = new BlobBuilder();
-			bb.append(ab);
+			var bb;
+			try { // Old API
+				window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
+				bb = new BlobBuilder();
+				bb.append(ab);
+			} catch (e) { // New API
+				bb = new Blob([ab]);
+			}
+
 			return bb.getBlob('image/' + mime);
 		},
 		// A very basic version of a gettext function.
