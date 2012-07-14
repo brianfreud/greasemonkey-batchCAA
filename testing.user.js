@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.00561
+// @version     0.02.0564
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -96,7 +96,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0040'
+	, VERSION        : '0.02.0564'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -613,7 +613,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#Preview‿dl‿info':
 		{ 'line-height'            : '140%'
 		,  margin                  : '0 auto'
-		, 'padding-top'            : '10px'
+		, 'padding-top'            : '6px'
 		,  width                   : '60%'
 		}
 	, '#Preview‿dl‿info > dd':
@@ -1194,7 +1194,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , binaryReader  = new FileReader()
 			  ;
 
-			var $img = $.make('img', { 'class'   : 'localImage'
+			var $img = $.make('img', { 'class'   : 'localImage previewable'
 			                         , alt       : title
 			                         , draggable : true
 			                         , title     : title
@@ -1215,7 +1215,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create the code to be used by the web worker.
 				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
 				    // Create a blob containing the code.
-				  , blob       = util.makeBlob( workerCode );
+				  , blob       = util.makeBlob( workerCode )
 				    // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
 				  , objURL     = URL.createObjectURL( blob.getBlob() )
 				    // Create a new web worker, point it to the ObjectURL as the path to its source.
@@ -1533,6 +1533,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		preventDefault : function preventDefault (e) {
 			e.preventDefault();
+		},
+
+		previewImage : function previewImage (e) {
+			var $img = $.single( this )
+			  , dom  = e.data.dom
+			  ;
+
+			if (!dom['Options‿input‿checkbox‿remove_images'].prop( 'checked' )) {
+				e.data.ui.previewImage($img, dom);
+			}
 		},
 
 		removeClass : function removeClass (e, classToRemove) {
@@ -1916,6 +1926,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return languages.map(makeLanguageOptions);
 		},
 
+		previewImage : function previewImage ($img, dom) {
+			var src  = $img.prop('src')
+			  , res  = $img.data('resolution')
+			  , size = [$img.data('size'), ' ', $.l('bytes')].join('')
+			  ;
+
+			dom['Preview‿img‿preview_image'].prop('src', src);
+			dom['Preview‿dd‿resolution'].text(res);
+			dom['Preview‿dd‿filesize'].text(size);
+			dom['Preview‿dl‿info'].show();
+		},
+
 		showLoading : function showLoading (e) {
 		    var $row = $.single(e.target);
 
@@ -2058,7 +2080,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	INNERCONTEXT.TEMPLATES.image_preview =
 		[ { ele: 'h1', id: 'preview', text: $.l('Preview Image') }
-		, { ele: 'img', id: 'preview_image', draggable: false } // Do *not* put an alt attribute on the image!
+		, { ele: 'img', id: 'preview_image', draggable: false } // Do *not* put an alt or title attribute on the image!
 		, { ele: 'dl', id: 'info', hide: true }
 		,	[ { ele: 'dt', 'class': 'previewDT', text: $.l('(Image) Resolution') }
 			, { ele: 'dd', id: 'resolution' }
@@ -2132,7 +2154,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		[ { ele: 'figure', 'class': 'CAAdropbox', noid: true }
 		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton
 			, { ele: 'div', noid: true }
-			,	[ { ele: 'img', 'class': 'dropBoxImage', draggable : false, noid: true }
+			,	[ { ele: 'img', 'class': 'dropBoxImage previewable', draggable : false, noid: true }
 				]
 			, { ele: 'figcaption', noid: true }
 			,	[ { ele: 'input', type: 'text', placeholder : 'image comment', noid: true }
@@ -2349,6 +2371,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				                .each( ui.addImageRow );
 			});
 
+			/* This must be added after the fact, rather than at initial element creation.  Otherwise, an empty
+			   box containing the title text will be displayed. */
+			dom['Preview‿img‿preview_image'].prop('title', $.l('Click to edit this image'));
 		},
 
 		initializeSubscribers : function initializeSubscribers (ui, util, dom) {
@@ -2388,7 +2413,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Add functionality to generic close buttons
 			        .on( click, '#ieCancelBtn', util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
-			        .on( click, '.caaLoad', util.loadRowInfo); // Load release info
+			        .on( click, '.caaLoad', util.loadRowInfo) // Load release info
+			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ); // Image preview functionality
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -2682,8 +2708,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , cssStr
 	  ;
 
-	CSSCONTEXT.UTILITY.extend(CSSObj['.dropBoxImage'],
-	                          { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' });
+	CSSCONTEXT.UTILITY.extend(CSSObj['.dropBoxImage'], { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' });
 
 	$.make('link').attr({ rel  : 'stylesheet'
 						, type : 'text/css'
@@ -2816,19 +2841,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		});
 	};
 
-//---------------------------------------------------------------------------------------------------------
-
-	// Preview functionality
-	$('body').on('click', '.localImage, .CAAdropbox:not(.newCAAimage) * .dropBoxImage', function send_image_to_preview_box () {
-		if (!$('#Options‿input‿checkbox‿remove_images').prop('checked')) {
-			$.log('Setting new image for preview box.');
-			$('#previewImage').prop('src', $.single( this ).prop('src'))
-							  .prop('title', $.l('Click to edit this image'));
-			$('#previewResolution').text($.single( this ).data('resolution'));
-			$('#previewFilesize').text($.single( this ).data('size') + ' ' + $.l('bytes'));
-			$('#previewText').show();
-		}
-	});
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -2950,10 +2962,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 												  localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), color);
 											  });
 		}();
-
-//---------------------------------------------------------------------------------------------------------
-
-
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -3291,7 +3299,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 		// Create image editor.
 		!function create_image_editor_handler () {
 			$.log('Adding handler for image editor.');
-			$('body').on('click', '#previewImage', function image_editor_initial_handler (e) {
+			$('body').on('click', '#Preview‿img‿preview_image', function image_editor_initial_handler (e) {
 				var crop = { Left   : 0
 						   , Top	: 0
 						   , Right  : 0
@@ -3300,7 +3308,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 						   , width  : 0
 						   };
 
-				if ($('#previewImage').prop('src').length === 0) {
+				if ($('#Preview‿img‿preview_image').prop('src').length === 0) {
 					return;
 				}
 
@@ -3319,7 +3327,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 									   , title		 : $.l('Error')
 									   });
 
-				var imageRatio	 = $('#previewImage').quickWidth(0) / $('#previewImage').quickHeight(0)
+				var imageRatio	 = $('#Preview‿img‿preview_image').quickWidth(0) / $('#Preview‿img‿preview_image').quickHeight(0)
 					, c			= {}
 				  , INNERCONTEXT.DATA.imageEditor.degreesRotated = 0
 				  ;
@@ -3366,7 +3374,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 					INNERCONTEXT.DATA.imageEditor.backupCanvas = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
 				};
 
-				img.src = $('#previewImage').prop('src');
+				img.src = $('#Preview‿img‿preview_image').prop('src');
 
 
 	INNERCONTEXT.UTILITY.imageEditor = {
