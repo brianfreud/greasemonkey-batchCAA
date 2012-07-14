@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0051
+// @version     0.02.0052
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1487,14 +1487,28 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				}
 			);
 		},
-
-		makeEleName : function makeEleName (prefix, eleType, disambig, type) {
-			var name = [prefix, eleType];
-			if (void 0 !== type) {
-				name.push(type);
+		
+		makeBlob : function makeBlob ( data ) {
+			var thisBlob;
+					
+			try { // Old API
+				window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
+				thisBlob = new BlobBuilder();
+				thisBlob.append( data );
+			} catch ( e ) { // New API
+				thisBlob = new Blob( [data] );
 			}
-			name.push(disambig);
-			return name.join('‿');
+			
+			return thisBlob;
+		},
+
+		makeEleName : function makeEleName ( prefix, eleType, disambig, type ) {
+			var name = [prefix, eleType];
+			if ( void 0 !== type ) {
+				name.push( type );
+			}
+			name.push( disambig );
+			return name.join( '‿' );
 		},
 
 		preventDefault : function preventDefault (e) {
