@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0052
+// @version     0.02.0059
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -17,7 +17,7 @@
 // @exclude     http://musicbrainz.org/label/*/*
 
 // ==/UserScript==
-/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY */
+/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY URL postMessage */
 /*jshint smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
 /* ----------------------------------------------------------------------------------------------------------|
@@ -1193,7 +1193,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , dataURLreader = new FileReader()
 			  , binaryReader  = new FileReader()
 			  ;
-			  
+
 			var $img = $.make('img', { 'class'   : 'localImage'
 			                         , alt       : title
 			                         , draggable : true
@@ -1203,15 +1203,36 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                  , file   : file
 			                  });
 
-			var getExif = function getExif (event) {
-				var jpeg = new JpegMeta.JpegFile(this.result, file.name);
-				jpeg = jpeg.general;
-				
-				$img.data({ depth      : jpeg.depth.value
-				          , name       : file.name || file.fileName || uri
-				          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
-				          , size       : INNERCONTEXT.UTILITY.addCommas(file.size || file.fileSize)
-				          });
+			var getExif = function getExif ( event ) {
+                // This next function is used by the web worker
+				var process = function process ( e ) {
+					var exif = new JpegMeta.JpegFile( e.data );
+					exif = JSON.stringify( exif.general );
+					postMessage( exif );
+				};
+
+				var util       = INNERCONTEXT.UTILITY
+				    // Create the code to be used by the web worker.
+				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
+				    // Create a blob containing the code.
+				  , blob       = util.makeBlob( workerCode );
+				    // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
+				  , objURL     = URL.createObjectURL( blob.getBlob() )
+				    // Create a new web worker, point it to the ObjectURL as the path to its source.
+				  , worker     = new Worker( objURL )
+				  ;
+	
+				worker.onmessage = function ( e ) {
+					var jpeg = JSON.parse(e.data);
+					
+					$img.data({ depth      : jpeg.depth.value
+					          , name       : file.name || file.fileName || uri
+					          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
+					          , size       : util.addCommas(file.size || file.fileSize)
+					          });
+				};
+
+				worker.postMessage( this.result );
 			};
 
 			var addImageToDOM = function addImageToDOM (event) {
@@ -1492,7 +1513,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var thisBlob;
 					
 			try { // Old API
-				window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
 				thisBlob = new BlobBuilder();
 				thisBlob.append( data );
 			} catch ( e ) { // New API
@@ -2127,6 +2147,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			document.head = document.head || document.getElementsByTagName('head')[0];
 			document.body = document.body || document.getElementsByTagName('body')[0];
 			window.TEMPORARY = window.TEMPORARY || 0;
+			window.URL = window.URL || window.webkitURL;
+			window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
+
 
 			// Polyfill to add FileSystem API support to Firefox.
 			void 0 === (window.requestFileSystem || window.webkitRequestFileSystem) && $.addScript('idbFileSystem');
