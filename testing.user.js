@@ -1549,20 +1549,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$.single(e.target).removeClass(e.data['class'] || classToRemove);
 		},
 
-		setLSValue : function setLSValue (e) {
-			var value = ''
-			  , $self = $.single( this )
-			  ;
-
-			switch (e.data.type) {
-				case 'text'     : value = $self.val(); break;
-				case 'checkbox' : value = $self.is(':checked'); break;
-				case 'select'   : value = $self.find(':selected').val();
-			}
-			localStorage.setItem([INNERCONTEXT.CONSTANTS.NAMESPACE, '_', e.data.key].join(), value);
-			INNERCONTEXT.DATA[e.data.key] = value;
-		},
-
 		redTintImage : function redTintImage ($image) {
 			$.log('Tinting image');
 
@@ -1577,6 +1563,29 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		removeWrappedElement : function removeWrappedItem (e) {
 			$(e.target).parent().remove();
+		},
+
+		setLSValue : function setLSValue (e) {
+			var value = ''
+			  , key   = (e.data && e.data.key) || e.key
+			  , $self = $.single( this )
+			  ;
+
+			if (void 0 !== e.data) {
+				switch (e.data.type) {
+					case 'text'     : value = $self.val(); break;
+					case 'checkbox' : value = $self.is(':checked'); break;
+					case 'select'   : value = $self.find(':selected').val();
+				}
+			} else {
+				value = e.val;
+			}
+			localStorage.setItem([INNERCONTEXT.CONSTANTS.NAMESPACE, '_', key].join(''), value);
+			INNERCONTEXT.DATA[key] = value;
+		},
+
+		storeColor : function storeColor (e) {
+			e.data.util.setLSValue({key: 'colors_' + e.data.color, val: this.value});
 		},
 
 		supportedImageType : function supportedImageType (uri) {
@@ -1710,6 +1719,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			)[0].insertAfter($releaseRow);
 		},
 
+		changeSelectedColorOption : function changeSelectedColorOption (e) {
+			var color = e.data.util.getLSValue('colors_' + $.single( this ).find(':selected').val());
+			e.data.picker.fromString(color);
+		},
+
 		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
 			$dropBox.detach(function convertEmptyDropbox_internal () {
 				$.single(this).removeClass('newCAAimage')
@@ -1722,6 +1736,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				              .find('select')
 				              .prop('disabled', true);
 			});
+		},
+
+		createColorPicker : function createColorPicker (eleID) {
+			// Create color picker
+			var picker = new jscolor.color(document.getElementById(eleID), {});
+			picker.hash = true;
+			picker.pickerFace = 5;
+			picker.pickerInsetColor = 'black';
+			
+			// Store a reference to the color picker
+			$('#' + eleID).data('picker', picker);
+			
+			return picker;
 		},
 
 		lowsrc : function lowsrc ($dropBox, imageURI) {
@@ -2345,6 +2372,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			templates.imageEditor = templates.imageEditor();
 		},
 
+		initializeColorPicker : function initializeColorPicker (util, dom) {
+			var $firstOption = dom['Options‿select‿colors'].find('option:first')
+			  , firstColor   = util.getColor($firstOption.val())
+			  ;
+
+			$firstOption.prop('selected', true);
+		    dom['Options‿input‿color‿colors'].data('picker').fromString(firstColor);
+		},
+
 		initializeUI : function initializeUI (dom, templates, ui, util) {
 			/* Create the UI */
 
@@ -2374,6 +2410,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			/* This must be added after the fact, rather than at initial element creation.  Otherwise, an empty
 			   box containing the title text will be displayed. */
 			dom['Preview‿img‿preview_image'].prop('title', $.l('Click to edit this image'));
+			
+			// Initialize the settings color picker
+			ui.createColorPicker('Options‿input‿color‿colors');
+			this.initializeColorPicker(util, dom);
 		},
 
 		initializeSubscribers : function initializeSubscribers (ui, util, dom) {
@@ -2436,6 +2476,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Handle a signal that a new remote image has been retreived and is ready to use
 			dom.xhrComlink.on( 'dblclick', '.image', util.addRemoteImage );
 
+			// Add functionality to the options color picker select.
+			dom['Options‿select‿colors'].on(change, { util: util }, { picker: dom['Options‿input‿color‿colors'] }, ui.changeSelectedColorOption);
+
+			// Store new options color value in localStorage.
+			dom['Options‿input‿color‿colors'].on(change, { util: util, color: dom['Options‿select‿colors'].find(':selected').val() }, util.storeColor);
+
+			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
 			                                .on( 'loaded', '.imageRow', ui.showImageRow);
 		},
@@ -2920,34 +2967,9 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	}, '.newCAAimage');
 	// END: functionality to allow dragging from the Images box to a specific caa image box.
 
-//---------------------------------------------------------------------------------------------------------
 
-		// Create the color picker.
-		$.log('Creating color picker');
-		var myPicker = new jscolor.color(document.getElementById('colorPicker'), {});
-		myPicker.hash = true;
-		myPicker.pickerFace = 5;
-		myPicker.pickerInsetColor = 'black';
+			
 
-		// Add functionality to the color picker.
-		!function add_color_select_handler () {
-			$.log('Adding handler for color picker.');
-			$('#colorSelect').on('change', function change_color_selection_handler (e) {
-				var color = INNERCONTEXT.UTILITY.getLSValue('colors_' + $.single( this ).find(':selected').val());
-				$.log('Getting localStorage for ' + 'Caabie_colors_' + $.single( this ).find(':selected').val() + '.  Result: ' + color);
-				myPicker.fromString(color);
-			});
-			// Store new color value in localStorage.
-			$('#colorPicker').change(function change_color_preference_handler (e) {
-				localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), this.value);
-				$.log('Setting localStorage for ' + 'Caabie_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + this.value);
-			});
-			var $firstOption = $('#colorSelect').find('option:first');
-			$firstOption.prop('selected', true);
-			myPicker.fromString(
-							   INNERCONTEXT.UTILITY.getColor( $firstOption.val() )
-							   );
-		}();
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -2955,11 +2977,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		!function add_default_color_handler () {
 			$.log('Adding handler for default color button.');
 			$('#ColorDefaultBtn').on('click', function default_color_button_click_handler (e) {
-												  var color = $('#colorSelect').find(':selected')
+												  var color = $('#Options‿select‿colors').find(':selected')
 																			   .data('default');
 												  myPicker.fromString(color);
-												  $.log('Setting localStorage for ' + 'Caabie_colors_' + $('#colorSelect').find(':selected').val() + ' to ' + color);
-												  localStorage.setItem('Caabie_colors_' + $('#colorSelect').find(':selected').val(), color);
+												  $.log('Setting localStorage for ' + 'Caabie_colors_' + $('#Options‿select‿colors').find(':selected').val() + ' to ' + color);
+												  localStorage.setItem('Caabie_colors_' + $('#Options‿select‿colors').find(':selected').val(), color);
 											  });
 		}();
 
@@ -3097,7 +3119,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 
 	var parseCAAResponse = function parseCAAResponse ( i ) {
 		$.log('Parsing CAA response: image #' + i);
-
 
 		var $dropBox = $row.find('.newCAAimage:first');
 
@@ -3244,21 +3265,15 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 //---------------------------------------------------------------------------------------------------------
 
 
-
-
-
-
-
-
-
 			// handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
-			$.log('Adding release row event handler.');
+
 			var handleInsertedReleaseRow = function handleInsertedReleaseRow () {
 				$.single( this ).on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
 			};
+
 			$('form[action*="merge_queue"]').find('tbody')
 					 .each(handleInsertedReleaseRow);
-		}();
+
 
 //---------------------------------------------------------------------------------------------------------
 
