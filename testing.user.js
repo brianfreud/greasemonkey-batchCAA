@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0059
+// @version     0.02.00560
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -3031,21 +3031,10 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 			switch (imageType) {
 				case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
-				case ('png'): mime = 'png'; break;
-				case ('webp'): mime = 'webp'; break;
-				case ('bmp'): mime = 'bmp'; break;
-				case ('gif'): mime = 'gif'; break;
-				case ('ico'): mime = 'vnd.microsoft.icon'; break;
-				case ('jng'): mime = 'x-jng'; break;
-				case ('jp2'): mime = 'jp2'; break;
-				case ('ico'): mime = 'ico'; break;
-				case ('pcx'): mime = 'pcx'; break;
-				case ('pic'): mime = 'x-lotus-pic'; break;
-				case ('pict'): mime = 'pict'; break;
-				case ('pnt'): mime = 'pnt'; break;
-				case ('tga'): mime = 'tga'; break;
-				case ('tif'): mime = 'tiff'; break;
-
+				case ('ico'): mime = 'vnd.microsoft.icon';                     break;
+				case ('jng'): mime = 'x-jng';                                  break;
+				case ('pic'): mime = 'x-lotus-pic';                            break;
+				default:      mime = imageType;
 			}
 			var imageFile = $.dataURItoBlob(imageBase64, mime);
 			// Create a new file in the temp local file system.
