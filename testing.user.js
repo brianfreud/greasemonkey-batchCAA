@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0040
+// @version     0.02.0050
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -42,7 +42,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
 //TODO: Refactor: util.addRemoteImage
-//TODO: Refactor: addImageToDropbox
 //TODO: Refactor: convertImage
 //------------------------------------
 //TODO: Use the persistent parse webpages setting
@@ -132,8 +131,8 @@ OUTERCONTEXT.CONSTANTS =
 	, PREVIEWSIZE    : 300
 	, IMAGEFORMATS   : [ 'bmp', 'gif', 'jpg', 'png' ]
 	, BEINGDRAGGED   :
-		{ OPACITY    : '0.4'
-		, SHRINK     : '0.7'
+		{ OPACITY    : 0.4
+		, SHRINK     : 0.7
 		}
 	, CREDITS        :
 		{ 'Developer and programmer':
@@ -449,6 +448,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border-bottom-right-radius' : '6px'
 		, 'border'                     : '1px dotted navy'
 		, 'border-right'               : 0
+		,  outline                     : 'none'
 		}		
 	, 'input.CaabieOptions:hover, select.CaabieOptions:hover':
 		{ 'box-shadow'             : 'inset 0px 0px 20px 3px rgba(0, 0, 150, .15)'
@@ -575,7 +575,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#Main‿div‿options_control, #Main‿div‿about_control':
 		{  display                 : 'inline-block'
 		, 'float'                  : 'right'
-		,  opacity                 : '0.4'
+		,  opacity                 : 0.4
 		}
 	, '#Main‿div‿options_control':
 		{ 'margin-right'           : '-26px'
@@ -723,7 +723,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'font-weight'            : '900!important'
 		,  left                    : '2em'
 		, 'margin-left'            : '-1.2em'
-		,  opacity                 : '0.3'
+		,  opacity                 : 0.3
 		, 'padding-bottom'         : 0
 		, 'padding-top'            : 0
 		,  position                : 'absolute'
@@ -735,7 +735,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
 		{  color                   : '#D3D3D3'
-		,  opacity                 : '.9'
+		,  opacity                 : 0.9
 		}
 	, '.caaDiv':
 		{  display                 : 'inline-block'
@@ -774,11 +774,11 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'margin-bottom'          : '6px!important'
 		}
 	, '.tintWrapper':
-		{ 'background-color'       : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), '0.8')
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.hexToRGBA(OUTERCONTEXT.UTILITY.getColor('REMOVE'), 0.8)
 		, 'border-radius'          : '5px'
 		,  display                 : 'inline-block'
 		,  margin                  : 0
-		,  opacity                 : '0.8'
+		,  opacity                 : 0.8
 		,  outline                 : 0
 		,  padding                 : 0
 		, 'vertical-align'         : 'baseline'
@@ -818,7 +818,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'line-height'            : '.8em'
 		, 'margin-right'           : '-1em'
 		, 'margin-top'             : '-.95em'
-		,  opacity                 : '0.9'
+		,  opacity                 : 0.9
 		,  padding                 : '2px 4px 5px'
 		}
 	, '.closeButton:hover':
@@ -873,7 +873,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  content                 : '" • "'
 		}
 	, '.tintImage, .imageSizeControl':
-		{  opacity                 : '0.4'
+		{  opacity                 : 0.4
 		}
 	, '.workingCAAimage':
 		{ 'padding-left'           : '1px'
@@ -902,7 +902,14 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  border                  : OUTERCONTEXT.CONSTANTS.BORDERS
 		}
 	, 'input[type="color"]':
-		{  padding                 : 0
+		{  padding                 : '0!important'
+		}
+	, 'input[type="color"]::-webkit-color-swatch-wrapper':
+		{  padding                 : '0'
+		}
+	, 'input[type="color"]::-webkit-color-swatch':
+		{  border                  : 'none'
+        , 'border-radius'          : '5px'
 		}
 	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿clear_storage, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
 		{  border                  : '1px outset #EEE!important'
@@ -1180,6 +1187,49 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return x1 + x2;
 		},
 
+		addDropboxImage : function addDropboxImage (file, source, uri) {
+			var title         = (source === 'local') ? 'Local file: ' + (file.name)
+			                                         : source + ' file: ' + uri
+			  , dataURLreader = new FileReader()
+			  , binaryReader  = new FileReader()
+			  ;
+			  
+			var $img = $.make('img', { 'class'   : 'localImage'
+			                         , alt       : title
+			                         , draggable : true
+			                         , title     : title
+			                         })
+			            .data({ source : source
+			                  , file   : file
+			                  });
+
+
+			var getExif = function getExif (event) {
+				var jpeg = new JpegMeta.JpegFile(this.result, file.name);
+				jpeg = jpeg.general;
+				
+				$img.data({ depth      : jpeg.depth.value
+				          , name       : file.name || file.fileName || uri
+				          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
+				          , size       : INNERCONTEXT.UTILITY.addCommas(file.size || file.fileSize)
+				          });
+			};
+			
+			var addImageToDOM = function addImageToDOM (event) {
+				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append($img.prop('src', event.target.result));
+			};
+
+            var readImage = function readImage () {
+				dataURLreader.readAsDataURL(file);
+				binaryReader.readAsBinaryString(file);
+			};
+
+			dataURLreader.onload = addImageToDOM;
+			binaryReader.onloadend = getExif;
+
+			setTimeout(readImage, 1);
+		},
+		
 		antiSquish: function antiSquish (init) {
 			/* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.
 			   This prevents those columns getting squished when the table-layout is set to fixed layout. */
@@ -1336,20 +1386,20 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		handleDroppedResources : function handleDroppedResources (e) {
+			e = e.originalEvent || e;
+			e.preventDefault(); // This has to be done before anything else.
+
 			var $util        = INNERCONTEXT.UTILITY
 			  , dataTransfer = e.dataTransfer
-			  , getData      = dataTransfer.getData
-			  , getText      = getData( 'Text' )
+			  , textData     = dataTransfer.getData( 'Text' )
 			  ;
 
-			$util.removeClass( e, 'over' );
-			$util.preventDefault( e );
-			e = e.originalEvent || e;
+			$.single(this).removeClass( 'over' ); // clear the drop highlight
 
 			var dropped = { file_list : dataTransfer.files
-			              , base      : $( getText ).find( 'base' ).attr( 'href' ) || ''
-			              , text      : getText.match( INNERCONTEXT.CONSTANTS.REGEXP.uri ) || ''
-			              , uri       : getData( 'text/uri-list' )
+			              , base      : $( textData ).find( 'base' ).attr( 'href' ) || ''
+			              , text      : textData.match( INNERCONTEXT.CONSTANTS.REGEXP.uri ) || ''
+			              , uri       : dataTransfer.getData( 'text/uri-list' )
 			              , e         : e
 			              };
 
@@ -1366,7 +1416,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			switch (!0) {
 				case (!!uris.file_list && !!uris.file_list.length): // local file(s)
-					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.e });
+					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
 					break;
 				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
 					uris.uri.forEach(walkURIArray);
@@ -1383,11 +1433,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		   child.prototype = parent.prototype;
 		},
 
-		 loadLocalFile : function loadLocalFile (event) {
+		 loadLocalFile : function loadLocalFile (e) {
 			var file, name, type
-			  , e = event.data.e
 			  , debugMsg = ''
-		      , files = (e.files || e.dataTransfer.files || e.file_list)
+		      , files = e.list
 		      , len = files.length
 		      , i = len
 		      , $util = INNERCONTEXT.UTILITY
@@ -1402,7 +1451,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					continue;
 				}
 				$.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
-//				"jpg" === type ? addImageToDropbox(file, "local")
+				"jpg" === type ? INNERCONTEXT.UTILITY.addDropboxImage(file, "local")
+/*temp code*/                  : true;
 //							   : convertImage(file, type, name);
 			}
 		},
@@ -2299,9 +2349,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Clear image storage button
 			dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
-			// Add functionality to close buttons
-			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Generic close buttons
-			        .on( click, '#ieCancelBtn', util.closeDialogImageEditor ) // Image editor's cancel button
+			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Add functionality to generic close buttons
+			        .on( click, '#ieCancelBtn', util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
 			        .on( click, '.caaLoad', util.loadRowInfo); // Load release info
 
@@ -2318,7 +2367,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                      }
 			                                  , 'haveLocalFileList' : // Handle local images to be loaded
 			                                      function (e) {
-			                                          util.loadLocalFile(e.list);
+			                                          util.loadLocalFile(e);
 			                                      }
 			                                  });
 
@@ -2864,47 +2913,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-		var addImageToDropbox = function add_image_to_dropbox (file, source, uri) {
-			$.log('Running addImageToDropbox');
 
-			var dataURLreader = new FileReader()
-			  , binaryReader  = new FileReader()
-			  , title		 = (source === 'local') ? 'Local file: ' + (file.name)
-													 : source + ' file: ' + uri
-			  ;
-			var $img		  = $.make('img', { 'class'   : 'localImage'
-											 , alt	   : title
-											 , draggable : true
-											 , title	 : title
-											 }).data('source', source)
-											   .data('file', file);
-
-			dataURLreader.onload = function add_attributes_to_dropped_image(event) {
-				$.log('Running addImageToDropbox -> dataURLreader.onload');
-				$img.prop('src', event.target.result);
-				INNERCONTEXT.DOM.$imageHolder.append($img);
-			};
-			binaryReader.onloadend = function get_exif_for_dropped_image(event) {
-				$.log('Running addImageToDropbox -> binaryReader.onloadend');
-				var jpeg = new JpegMeta.JpegFile(this.result, file.name);
-				$img.data({ depth	  : jpeg.general.depth.value
-						  , name	   : file.name || file.fileName || uri
-						  , resolution : jpeg.general.pixelWidth.value + ' x ' + jpeg.general.pixelHeight.value
-						  , size	   : INNERCONTEXT.UTILITY.addCommas(file.size || file.fileSize)
-						  });
-				var logStr = 'Loaded new image: ' + $img.data('name') +
-							 '.  Image has a resolution of ' + $img.data('resolution') + ', '
-							 + $img.data('depth') + '-bit color depth, ' +
-							 'and a filesize of ' + $img.data('size') + ' bytes.';
-				$.log(logStr);
-			};
-
-			setTimeout(function () {
-				dataURLreader.readAsDataURL(file);
-				binaryReader.readAsBinaryString(file);
-				}, 1);
-			return;
-		};
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -2919,8 +2928,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					var useCanvasData = function useCanvasData () {
 						$.log('Appending temporary canvas item to the body.');
 						INNERCONTEXT.CONSTANTS.DEBUGMODE && $('body').append($(canvas)).prop('title', source);
-						$.log('Converting image to jpg, sending new blob to addImageToDropbox().');
-						addImageToDropbox(
+						$.log('Converting image to jpg, sending new blob to addDropboxImage.');
+						INNERCONTEXT.UTILITY.addDropboxImage(
 										 $.dataURItoBlob(
 														canvas.toDataURL("image/jpeg"), 'jpeg'
 														),
@@ -3017,9 +3026,9 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 							thisFile.file(function fileWriter_onwriteend_internal (file) {
 								if (imageType !== 'jpg') {
 									convertImage(file, imageType, uri);
-									addImageToDropbox(file, 'converted remote ' + imageType, uri);
+									INNERCONTEXT.UTILITY.addDropboxImage(file, 'converted remote ' + imageType, uri);
 								} else {
-									addImageToDropbox(file, 'Remote', uri);
+									INNERCONTEXT.UTILITY.addDropboxImage(file, 'Remote', uri);
 								}
 							});
 						}
@@ -3336,7 +3345,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 
 		copyCanvas : function ( canvas ) {
 			// Create and return a copy of a canvas.
-		  	var copy = document.createElement( 'canvas' );
+			var copy = document.createElement( 'canvas' );
 
 			copy.height = canvas.height;
 			copy.width = canvas.width;
@@ -3447,7 +3456,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 					  ;
 
 					// Create a copy of the current canvas.
-				  	var copy = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
+					var copy = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
 
 					// Clear the current canvas.
 					ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -3554,7 +3563,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 //TODO: Apply cropping to saved images
 
 					// Save the image.
-					addImageToDropbox(
+					INNERCONTEXT.UTILITY.addDropboxImage(
 									 $.dataURItoBlob(
 													canvas.toDataURL("image/jpeg"), 'jpeg'
 													),
