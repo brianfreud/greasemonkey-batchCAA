@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.00560
+// @version     0.02.00561
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -2775,11 +2775,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			 localStorage.getItem('Caabie') === OUTERCONTEXT.CONSTANTS.VERSION) {
 			/* Scripts are cached in localStorage; load them. */
 			i++;
-			requires[1] = 'jQuery';
-			requires[2] = 'jQueryUI';
-			requires[3] = 'jsjpegmeta';
-			requires[4] = 'jscolor';
-			requires[5] = 'canvasToBlob';
+			requires.push( 'jQuery'
+			             , 'jQueryUI'
+			             , 'jscolor'
+			             , 'canvasToBlob'
+			             );
 			requires.forEach(function add_required_scripts (requiredItem) {
 				makeScript();
 				script.textContent = localStorage.getItem(requiredItem);
