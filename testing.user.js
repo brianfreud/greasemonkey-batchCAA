@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0567
+// @version     0.02.0569
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -96,7 +96,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0567'
+	, VERSION        : '0.02.0569'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -911,7 +911,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  border                  : 'none'
         , 'border-radius'          : '5px'
 		}
-	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿clear_storage, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
+	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿default, #Options‿input‿button‿clear_storage, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
 		{  border                  : '1px outset #EEE!important'
 		, 'border-radius'          : '6px'
 		,  cursor                  : 'pointer'
@@ -929,7 +929,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  opacity                 : '.7'
 		,  width                   : '190px'
 		}
-	, '#Options‿input‿button‿colors':
+	, '#Options‿input‿button‿colors, #Options‿input‿button‿default':
 		{ 'background-color'       : 'lightgray'
 		}
 	, '#Options‿input‿button‿clear_storage:disabled':
@@ -937,11 +937,11 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  color                   : '#000'
 		, 'text-decoration'        : 'line-through'
 		}
-	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
+	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #Options‿input‿button‿default, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
 		{ 'float'                  : 'right'
 		,  width                   : '79px'
 		}
-	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿clear_storage:active, #ieMaskColorControl:active, #ieSaveImageBtn:active, #ieCancelBtn:active, #ieApplyCropBtn:active':
+	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿default:active, #Options‿input‿button‿clear_storage:active, #ieMaskColorControl:active, #ieSaveImageBtn:active, #ieCancelBtn:active, #ieApplyCropBtn:active':
 		{  border                  : '1px inset #D3D3D3'
 		,  opacity                 : 1
 		}
@@ -1571,7 +1571,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , util    = e.data.util
 			  ;
 		  
-		    e.data.picker.fromString(color);
+		    e.data.picker.data('picker').fromString(color);
 			util.setLSColorValue($option.val(), color, util);
 		},
 
@@ -1740,7 +1740,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		changeSelectedColorOption : function changeSelectedColorOption (e) {
 			var color = e.data.util.getLSValue('colors_' + $.single( this ).find(':selected').val());
-			e.data.picker.fromString(color);
+			e.data.picker.data('picker').fromString(color);
 		},
 
 		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
@@ -2500,7 +2500,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			dom.xhrComlink.on( 'dblclick', '.image', util.addRemoteImage );
 
 			// Add functionality to the options color picker select.
-			dom['Options‿select‿colors'].on(change, { util: util }, { picker: dom['Options‿input‿color‿colors'] }, ui.changeSelectedColorOption);
+			dom['Options‿select‿colors'].on(change, { util: util, picker: dom['Options‿input‿color‿colors'] }, ui.changeSelectedColorOption);
 
 			// Store new options color value in localStorage.
 			dom['Options‿input‿color‿colors'].on(change, { util: util, color: dom['Options‿select‿colors'].find(':selected').val() }, util.storeColor);
@@ -2584,12 +2584,14 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			script.textContent = localStorage.getItem(scriptSource);
 			document.head.appendChild(script);
 		},
+		
 		// Creates and adds a new css rule
 		addRule: function $_addRule (selector, rule, props) {
 			var $rule = $('<style type="text/css">').text(selector + rule);
 			void 0 !== props && $rule.prop(props);
 			$rule.appendTo('head');
 		},
+		
 		// Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
 		dataURItoBlob: function $_dataURItoBlob (dataURI, mime) {
 			// convert base64 to raw binary data held in a string
@@ -2619,10 +2621,12 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 
 			return bb.getBlob('image/' + mime);
 		},
+		
 		// A very basic version of a gettext function.
 		l: function $_l (str) {
 			return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('Caabie_language') || 'en'][str]);
 		},
+		
 		// Logs a message to the console if debug mode is on.
 		log: function $_log (str, verbose) {
 			if (!THIRDCONTEXT.CONSTANTS.DEBUGMODE) {
@@ -2635,6 +2639,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			}
 			return;
 		},
+		
 		/* Polyfill input[type=number], if needed. */
 		polyfillInputNumber : function $_polyfillInputNumber () {
 			var testEle = document.createElement('input');
@@ -2808,11 +2813,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				return [rule, ':', cssStr].join('');
 			} else {
 				return [
-					'-khtml-', rule, ':', cssStr, ';',
-					'-moz-', rule, ':', cssStr, ';',
+					'-khtml-',  rule, ':', cssStr, ';',
+					'-moz-',    rule, ':', cssStr, ';',
 					'-webkit-', rule, ':', cssStr, ';',
-					'-o-', rule, ':', cssStr, ';',
-					rule, ':', cssStr
+					'-o-',      rule, ':', cssStr, ';',
+					            rule, ':', cssStr
 				].join('');
 			}
 		}).join(';');
