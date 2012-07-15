@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0569
+// @version     0.02.0574
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -750,10 +750,15 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border-radius'          : '7px'
 		,  color                   : '#FFF!important'
 		, 'font-size'              : '90%'
-		, 'margin-bottom'          : '16px'
-		, 'margin-top'             : '1px!important'
 		,  opacity                 : '.35'
 		,  padding                 : '3px 8px'
+		}
+	, '.caaLoad':
+		{ 'margin-bottom'          : '16px'
+		, 'margin-top'             : '1px!important'
+		}
+	, '.caaAll':
+		{  margin                  : '1em 0'
 		}
 	, '.caaMBCredit':
 		{ 'font-size'              : '85%'
@@ -1215,7 +1220,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create the code to be used by the web worker.
 				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
 				    // Create a blob containing the code.
-				  , blob       = util.makeBlob( workerCode )
+				  , blob       = $.makeBlob( workerCode )
 				    // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
 				  , objURL     = URL.createObjectURL( blob.getBlob() )
 				    // Create a new web worker, point it to the ObjectURL as the path to its source.
@@ -1509,19 +1514,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			);
 		},
 		
-		makeBlob : function makeBlob ( data ) {
-			var thisBlob;
-					
-			try { // Old API
-				thisBlob = new BlobBuilder();
-				thisBlob.append( data );
-			} catch ( e ) { // New API
-				thisBlob = new Blob( [data] );
-			}
-			
-			return thisBlob;
-		},
-
 		makeEleName : function makeEleName ( prefix, eleType, disambig, type ) {
 			var name = [prefix, eleType];
 			if ( void 0 !== type ) {
@@ -2437,6 +2429,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Initialize the settings color picker
 			ui.createColorPicker('Options‿input‿color‿colors');
 			this.initializeColorPicker(util, dom);
+
+			// Create load all button
+			$.make('input', { 'class': 'caaAll'
+			                , noid    : true
+			                , title: $.l('Load text all releases')
+			                , type: 'button'
+			                , value: $.l('Load CAA images for all')
+			                })
+			 .insertBefore('table.tbl');
 		},
 
 		initializeSubscribers : function initializeSubscribers (ui, util, dom) {
@@ -2473,11 +2474,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Clear image storage button
 			dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
+			var caaAllBtn_click_handler = function caaAllBtn_click_handler () {
+				$('.caaLoad:visible').each(function caaAllBtn_click_each_release_button() {
+					$.single( this ).trigger('click');
+				});
+			};
+
 			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Add functionality to generic close buttons
 			        .on( click, '#ieCancelBtn', util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
 			        .on( click, '.caaLoad', util.loadRowInfo) // Load release info
-			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ); // Image preview functionality
+			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ) // Image preview functionality
+			        .on( click, '.caaAll', caaAllBtn_click_handler ); // Load all button functionality
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -2490,10 +2498,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                      function ( e, type ) {
 			                                          type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
 			                                      }
-			                                  , 'haveLocalFileList' : // Handle local images to be loaded
-			                                      function (e) {
-			                                          util.loadLocalFile(e);
-			                                      }
+			                                  , 'haveLocalFileList' : util.loadLocalFile // Handle local images to be loaded
+			                                      
 			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
@@ -2507,7 +2513,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Add functionality to the options color default button.
 			dom['Options‿input‿button‿default'].on('click', { dom: dom, util: util, picker: dom['Options‿input‿color‿colors'] }, util.resetColorToDefault);
-			
+						
 			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
 			                                .on( 'loaded', '.imageRow', ui.showImageRow);
@@ -2592,6 +2598,19 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			$rule.appendTo('head');
 		},
 		
+		makeBlob : function makeBlob ( data ) {
+			var thisBlob;
+					
+			try { // Old API
+				thisBlob = new BlobBuilder();
+				thisBlob.append( data );
+			} catch ( e ) { // New API
+				thisBlob = new Blob( [data] );
+			}
+			
+			return thisBlob;
+		},
+		
 		// Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
 		dataURItoBlob: function $_dataURItoBlob (dataURI, mime) {
 			// convert base64 to raw binary data held in a string
@@ -2610,14 +2629,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			}
 
 			// write the ArrayBuffer to a blob, and you're done
-			var bb;
-			try { // Old API
-				window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
-				bb = new BlobBuilder();
-				bb.append(ab);
-			} catch (e) { // New API
-				bb = new Blob([ab]);
-			}
+			var bb = $.makeBlob(ab);
 
 			return bb.getBlob('image/' + mime);
 		},
@@ -2938,63 +2950,58 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		inChild	   = false;
 
 	$('body').on({
-				 dragstart : function localImage_dragStart (e) {
-								 $.log('localImage: dragstart');
-								 $draggedImage = $(this).addClass('beingDragged');
-								 e.dataTransfer.dropEffect='move';
-								 e.dataTransfer.effectAllowed = 'move';
-							 },
-				 dragend   : function localImage_dragEnd (e) {
-								 $.log('localImage: dragend');
-								 if ($draggedImage !== null) {
-									 $draggedImage.removeClass('beingDragged');
-									 $('figure').removeClass('over');
-								 }
-								 $draggedImage = null;
-							 }
+		dragstart: function localImage_dragStart(e) {
+			var edT = e.dataTransfer;
+			e.preventDefault();
+			$draggedImage = $(this).addClass('beingDragged');
+			edT.dropEffect = 'move';
+			edT.effectAllowed = 'move';
+		},
+		dragend: function localImage_dragEnd(e) {
+			e.preventDefault();
+			if (null === $draggedImage) {
+				return;
+			}
+			$draggedImage.removeClass('beingDragged');
+			$('figure').removeClass('over');
+			$draggedImage = null;
+		}
 	}, '.localImage');
 
 	$('body').on({
-				dragover : function newCAAimage_dragOver (e) {
-								$.log('newCAAimage: dragover');
-								e.preventDefault();
-								return false;
-							},
-				dragenter : function newCAAimage_dragEnter (e) {
-								$.log('newCAAimage: dragenter');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									inChild = !$(e.target).hasClass('newCAAimage');
-									$('figure').removeClass('over');
-									$.single( this ).addClass('over');
-								}
-								return false;
-							},
-				dragleave : function newCAAimage_dragLeave (e) {
-								$.log('loadingDiv: dragleave');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									// https://bugs.webkit.org/show_bug.cgi?id=66547
-									if (!inChild) {
-										$.single( this ).removeClass('over');
-									}
-								}
-								return false;
-							},
-				drop	  : function newCAAimage_drop (e) {
-								$.log('newCAAimage: drop');
-								e.preventDefault();
-								if ($draggedImage !== null) {
-									$.single( this ).find('.dropBoxImage').replaceWith($draggedImage);
-									$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
-												 .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-																		 .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single( this )));
-									$('figure').removeClass('over');
-									$draggedImage = null;
-								}
-								return false;
-				}
+		dragover: function newCAAimage_dragOver(e) {
+			e.preventDefault();
+		},
+		dragenter: function newCAAimage_dragEnter(e) {
+			e.preventDefault();
+			if (null === $draggedImage) {
+				return;
+			}
+			inChild = !$(e.target).hasClass('newCAAimage');
+			$('figure').removeClass('over');
+			$.single(this).addClass('over');
+		},
+		dragleave: function newCAAimage_dragLeave(e) {
+			e.preventDefault();
+			if (null === $draggedImage) {
+				return;
+			}
+			if (!inChild) { // https://bugs.webkit.org/show_bug.cgi?id=66547
+				$.single(this).removeClass('over');
+			}
+		},
+		drop: function newCAAimage_drop(e) {
+			e.preventDefault();
+			if (null === $draggedImage) {
+				return;
+			}
+			$.single(this).find('.dropBoxImage').replaceWith($draggedImage);
+			$draggedImage.toggleClass('beingDragged dropBoxImage localImage').parents('figure:first').toggleClass('newCAAimage workingCAAimage over').css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(this)));
+			$('figure').removeClass('over');
+			$draggedImage = null;
+		}
 	}, '.newCAAimage');
+	
 	// END: functionality to allow dragging from the Images box to a specific caa image box.
 
 
@@ -3133,14 +3140,16 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 		$.log('No images in CAA for this release.');
 		return;
 	}
+	
+	var ui = INNERCONTEXT.UI;
 
 	var parseCAAResponse = function parseCAAResponse ( i ) {
 		$.log('Parsing CAA response: image #' + i);
 
 		var $dropBox = $row.find('.newCAAimage:first');
 
-		INNERCONTEXT.UI.convertEmptyDropbox($dropBox, this.comment)
-		INNERCONTEXT.UI.lowsrc($dropBox, this.image);
+		ui.convertEmptyDropbox($dropBox, this.comment)
+		ui.lowsrc($dropBox, this.image);
 
 		$.each(this.types, function assign_image_type(i) {
 			var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
@@ -3156,7 +3165,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
     var neededDropboxes = $row.find('.newCAAimage').length - response.images.length;
 
 	while ( neededDropboxes >= 0 && neededDropboxes-- ) {
-		INNERCONTEXT.UI.addNewImageDropBox( $row.find('.caaDiv') );
+		ui.addNewImageDropBox( $row.find('.caaDiv') );
 	}
 
 	$.each(response.images, parseCAAResponse);
@@ -3292,26 +3301,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 					 .each(handleInsertedReleaseRow);
 
 
-//---------------------------------------------------------------------------------------------------------
-
-		!function init_add_caa_table_controls () {
-			$.log('Adding CAA load all releases button.');
-			var $caaAllBtn = $.make('input', { 'class' : 'caaAll'
-											, title   : $.l('Load text all releases')
-											, type	: 'button'
-											, value   : $.l('Load CAA images for all')
-											});
-
-			$('table.tbl').before($.make('br'))
-						  .before($caaAllBtn);
-			$caaAllBtn.on('click', function caaAllBtn_click_handler () {
-				$.log('CAA load all releases\' images button has been clicked.');
-				$('.caaLoad:visible').each(function caaAllBtn_click_each_release_button () {
-					$.log('Triggering a click on a CAA load images button.');
-					$.single( this ).trigger('click');
-				});
-			});
-		}();
 
 //---------------------------------------------------------------------------------------------------------
 
@@ -3584,11 +3573,11 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 				};
 
 				$('#ieDiv').on('click', '#ieFlipVertical', function flip_vertical_click_event_handler () {
-					flip(0,1);
+					flip(0, 1);
 				});
 
 				$('#ieDiv').on('click', '#ieFlipHorizontal', function flip_vertical_click_event_horizontal () {
-					flip(1,0);
+					flip(1, 0);
 				});
 
 				$('#ieDiv').on('change', '#ieRotateControl', function rotate_controls_change_event_handler () {
