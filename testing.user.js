@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0565
+// @version     0.02.0566
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -96,7 +96,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0564'
+	, VERSION        : '0.02.0566'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1564,6 +1564,23 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		removeWrappedElement : function removeWrappedItem (e) {
 			$(e.target).parent().remove();
 		},
+		
+		resetColorToDefault : function resetColorToDefault (e) {
+			var $option = e.data.dom['Options‿select‿colors'].find(':selected')
+			  , color   = $option.data('default')
+			  , util    = e.data.util
+			  ;
+		  
+		    e.data.picker.fromString(color);
+			util.setLSColorValue($option.val(), color, util);
+		},
+
+		setLSColorValue : function setLSColorValue (color, value, util) {
+			util = util || INNERCONTEXT.UTILITY;
+			util.setLSValue({ key : 'colors_' + color
+		                    , val : value
+		                    });
+		},
 
 		setLSValue : function setLSValue (e) {
 			var value = ''
@@ -1585,7 +1602,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		storeColor : function storeColor (e) {
-			e.data.util.setLSValue({key: 'colors_' + e.data.color, val: this.value});
+			var util = e.data.util;
+			util.setLSColorValue(e.data.color, this.value, util);
 		},
 
 		supportedImageType : function supportedImageType (uri) {
@@ -1636,6 +1654,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				// Aldus Tagged Image File Format
 				case '.tif'   : // falls through
 				case '.tiff'  : return 'tiff';
+				// default
 				default       : return false;
 			}
 		},
@@ -1864,15 +1883,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			var makeColorList = function make_colors_list (map) {
 				var colorItem   = colors[map.index]
-				  , color	   = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
+				  , color       = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
 				  , lsItemName  = 'colors_' + colorItem
+				  , util        = INNERCONTEXT.UTILITY
 				  , $thisOption = $.make('option', { 'class' : 'colorOption'
 												   , value   : colorItem
 												   }).data('default', color)
 													 .text($.l(colorItem));
-				if (null === INNERCONTEXT.UTILITY.getLSValue(lsItemName)) {
+				if (null === util.getLSValue(lsItemName)) {
 					$.log(['Initializing localStorage for ', lsItemName, ' to ', color].join(''));
-					INNERCONTEXT.UTILITY.setLSValue(lsItemName, color);
+					util.setLSColorValue(lsItemName, color, util);
 				}
 				$colorOptions.push($thisOption);
 			};
@@ -2150,7 +2170,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				, { ele: 'select', id: 'colors', size: 5, title: $.l('Changed colors note') }
 				,	INNERCONTEXT.UI.$makeColorsList()
 				, { ele: 'input', id: 'colors', title: $.l('Changed colors note'), type: 'color', value: '66ff00', 'class': 'CAAbutton' }
-				, { ele: 'input', id: 'colors', title: $.l('Changed colors note'), type: 'button', value: $.l('default'), 'class': 'CAAbutton' }
+				, { ele: 'input', id: 'default', title: $.l('Changed colors note'), type: 'button', value: $.l('default'), 'class': 'CAAbutton' }
 				, { ele: 'div', id: 'shadow' }
 				,	[ { ele: 'label', 'for': 'Options‿input‿number‿shadow', id: 'shadow', title: $.l('How dark the bkgrnd'), text: $.l('How dark the bkgrnd') }
 					,	[ { ele: 'input', id: 'shadow', type: 'number', step: 1, 'min': 0, 'max': 100, value: INNERCONTEXT.UTILITY.getLSValue('editorShadow') || INNERCONTEXT.CONSTANTS.IESHADOWLVL, title: $.l('How dark the bkgrnd') }
@@ -2482,6 +2502,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Store new options color value in localStorage.
 			dom['Options‿input‿color‿colors'].on(change, { util: util, color: dom['Options‿select‿colors'].find(':selected').val() }, util.storeColor);
 
+			// Add functionality to the options color default button.
+			dom['Options‿input‿button‿default'].on('click', { dom: dom, util: util, picker: dom['Options‿input‿color‿colors'] }, util.resetColorToDefault);
+			
 			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
 			                                .on( 'loaded', '.imageRow', ui.showImageRow);
@@ -2768,14 +2791,13 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	$.log('Adding css for the CAA batch script.');
 	$.make('style', { type : 'text/css' }).text(Object.keys(CSSObj).map(function create_css_rules (key) {
-		var prefixed =
-			[ 'appearance'
-			, 'box-shadow'
-			, 'border-radius'
-			, 'margin-after'
-			, 'opacity'
-			, 'transform'
-			];
+		var prefixed = [ 'appearance'
+			           , 'box-shadow'
+			           , 'border-radius'
+			           , 'margin-after'
+			           , 'opacity'
+			           , 'transform'
+			           ];
 
 		theseRules = Object.keys(CSSObj[key]).map(function create_css_rules_internal (rule) {
 			cssStr = CSSObj[key][rule];
@@ -2971,19 +2993,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			
 
 
-//---------------------------------------------------------------------------------------------------------
-
-		// Add functionality to the default color button.
-		!function add_default_color_handler () {
-			$.log('Adding handler for default color button.');
-			$('#ColorDefaultBtn').on('click', function default_color_button_click_handler (e) {
-												  var color = $('#Options‿select‿colors').find(':selected')
-																			   .data('default');
-												  myPicker.fromString(color);
-												  $.log('Setting localStorage for ' + 'Caabie_colors_' + $('#Options‿select‿colors').find(':selected').val() + ' to ' + color);
-												  localStorage.setItem('Caabie_colors_' + $('#Options‿select‿colors').find(':selected').val(), color);
-											  });
-		}();
 
 //---------------------------------------------------------------------------------------------------------
 
