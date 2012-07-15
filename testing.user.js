@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0566
+// @version     0.02.0567
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -96,7 +96,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0566'
+	, VERSION        : '0.02.0567'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -2259,6 +2259,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				colSpan ? $.single( this ).attr('colspan', $.single( this ).attr('colspan') - 1)
 						: $.single( this ).remove(); // Fixes broken colspan on http://musicbrainz.org/release-group/{mbid}
 			});
+
+			// Get rid of the "Add selected releases for merging​" button
+			$('button[type=submit]:last').remove();
 
 			// Lock the tables' column widths
 			util.antiSquish(true);
