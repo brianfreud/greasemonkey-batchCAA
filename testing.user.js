@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0601
+// @version     0.02.0602
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -435,7 +435,7 @@ null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Ca
 
 /* Define the CSS constants. */
 OUTERCONTEXT.CONSTANTS.CSS =
-	{ '#Options‿input‿color‿colors, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
+	{ '#Options‿input‿color‿colors, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
 		{ 'background-color'       : '#C7C7C7'
 		}
 	, 'select.CaabieOptions':
@@ -457,7 +457,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'font-size'              : '75%'
 		, 'margin-top'             : '-15px'
 		}
-	, '#Options‿input‿color‿colors, #ieMaskColorControl':
+	, '#Options‿input‿color‿colors, #ImageEditor‿input‿color‿ieMaskColorControl':
 		{  border                  : '1px outset #D3D3D3'
 		}
 	, '#Options‿select‿colors':
@@ -475,11 +475,11 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#ImageEditor‿canvas‿ieCanvas':
 		{ 'background-color'       : '#FFF'
 		}
-	, '#ImageEditor‿canvas‿ieRotateControl':
+	, '#ImageEditor‿input‿number‿ieRotateControl':
 		{ 'margin-right'           : '2px'
 		,  width                   : '4em'
 		}
-	, '#ImageEditor‿canvas‿ieMenu':
+	, '#ImageEditor‿div‿ieMenu':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
 		, 'border-radius'          : '20px'
 		,  border                  : '1px dotted navy'
@@ -489,7 +489,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  right                   : '40px'
 		,  top                     : '20%'
 		}
-	, '#ImageEditor‿canvas‿ieCanvasDiv':
+	, '#ImageEditor‿div‿ieCanvasDiv':
 		{  position                : 'relative'
 		}
 	, '.CAAmask':
@@ -648,7 +648,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  width                   : '86%'
 		, 'z-index'                : 500
 		}
-	, '#ImageEditor‿canvas‿ieDiv':
+	, '#ImageEditor‿div‿ieDiv':
 		{  height                  : '96%'
 		,  margin                  : '2%'
 		,  width                   : '96%'
@@ -897,7 +897,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  margin                  : '30px -4px 7px'
 		,  padding                 : '6px'
 		}
-	, '#ImageEditor‿canvas‿ieMenu > fieldset':
+	, '#ImageEditor‿div‿ieMenu > fieldset':
 		{  border                  : 'none'
 		,  margin                  : '16px -4px 7px'
 		}
@@ -914,7 +914,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  border                  : 'none'
         , 'border-radius'          : '5px'
 		}
-	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿default, #Options‿input‿button‿clear_storage, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
+	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿default, #Options‿input‿button‿clear_storage, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
 		{  border                  : '1px outset #EEE!important'
 		, 'border-radius'          : '6px'
 		,  cursor                  : 'pointer'
@@ -940,11 +940,11 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  color                   : '#000'
 		, 'text-decoration'        : 'line-through'
 		}
-	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #Options‿input‿button‿default, #ieSaveImageBtn, #ieCancelBtn, #ieApplyCropBtn':
+	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #Options‿input‿button‿default, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
 		{ 'float'                  : 'right'
 		,  width                   : '79px'
 		}
-	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿default:active, #Options‿input‿button‿clear_storage:active, #ieMaskColorControl:active, #ieSaveImageBtn:active, #ieCancelBtn:active, #ieApplyCropBtn:active':
+	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿default:active, #Options‿input‿button‿clear_storage:active, #ImageEditor‿input‿color‿ieMaskColorControl:active, #ImageEditor‿input‿button‿ieSaveImageBtn:active, #ImageEditor‿input‿button‿ieCancelBtn:active, #ImageEditor‿input‿button‿ieApplyCropBtn:active':
 		{  border                  : '1px inset #D3D3D3'
 		,  opacity                 : 1
 		}
@@ -2161,7 +2161,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		return [
 			{ ele     : 'label'
 			, 'class' : 'cropLabel'
-			, id      : 'ieCropLabel' + where
+			, 'for'   : 'ImageEditor‿input‿number‿ieCropControl' + where
 			, title   : $.l(where)
 			}
 			,	[ { ele     : 'input'
@@ -2426,31 +2426,31 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 									, { ele: 'canvas', id: 'ieCanvas' }
 									]
 								, { ele: div, id: 'ieMenu' }
-								,	[ { ele: fieldset, id: 'ieRotateField' }
-									,	[ { ele: legend, id: 'ieRotateLegend', text: $.l('Rotate image') }
-										, { ele: label, id: 'ieRotateLabel', title: $.l('How many degrees') }
+								,	[ { ele: fieldset }
+									,	[ { ele: legend, text: $.l('Rotate image') }
+										, { ele: label, title: $.l('How many degrees'), 'for': 'ImageEditor‿input‿number‿ieRotateControl' }
 										,	[ { ele: input, id: 'ieRotateControl', max: 360, min: -360, step: 1, type: 'number', value: 0 }
 											, $.l('degrees')
 											]
 										]
-									, { ele: fieldset, id: 'ieFlipField' }
-									,	[ { ele: legend,   id: 'ieFlipLegend', text: $.l('Flip image') }
+									, { ele: fieldset }
+									,	[ { ele: legend, text: $.l('Flip image') }
 										, flip('Vertical')
 										, flip('Horizontal')
 										]
-									, { ele: fieldset, id: 'ieCropField' }
-									,	[ { ele: legend,   id: 'ieCropLegend', text: $.l('Crop image') }
+									, { ele: fieldset }
+									,	[ { ele: legend, text: $.l('Crop image') }
 										, crop('Top')
 										, crop('Bottom')
 										, crop('Left')
 										, crop('Right')
-										, { ele: label, 'class': 'cropLabel', id: 'ieMaskColorLabel', title: $.l('Crop mask color')}
+										, { ele: label, 'class': 'cropLabel', title: $.l('Crop mask color'), 'for': 'ImageEditor‿input‿color‿ieMaskColorControl'}
 										,	[ { ele: input, 'class': 'cropControl', id: 'ieMaskColorControl', type: 'color', value: INNERCONTEXT.UTILITY.getColor('MASK') }
 											, $.l('Crop mask color')
 											]
 										, { ele: input, id: 'ieApplyCropBtn', title: $.l('Apply'), type: button, value: $.l('Apply') }
 										]
-									, { ele: fieldset, id: 'ieBtnField' }
+									, { ele: fieldset }
 									,	[ { ele: input, id: 'ieSaveImageBtn', title: $.l('Save changes'), type: button, value: $.l('Save') }
 										, { ele: input, id: 'ieCancelBtn', title: $.l('Cancel'), type: button, value: $.l('Cancel') }
 										]
@@ -2549,7 +2549,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
 			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Add functionality to generic close buttons
-			        .on( click, '#ImageEditor‿canvas‿ieCancelBtn', { dom: dom }, util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
+			        .on( click, '#ImageEditor‿input‿button‿ieCancelBtn', { dom: dom }, util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
 			        .on( click, '.caaLoad', util.loadRowInfo) // Load release info
 			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ) // Image preview functionality
@@ -3360,19 +3360,20 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 				  , INNERCONTEXT.DATA.imageEditor.degreesRotated = 0
 				  ;
 
-				c.height = $('#ie').quickHeight(0) * 0.9 << 0;
+
+				c.height = $('#ImageEditor‿div‿ie').quickHeight(0) * 0.9 << 0;
 				c.width  = c.height * imageRatio << 0;
 
 				// If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
 				// then figure out the height based on the editor window's width instead of the other way around.
-				var editorWindowWidth = $('#ImageEditor‿canvas‿ieDiv').getHiddenDimensions().width;
+				var editorWindowWidth = $('#ImageEditor‿div‿ieDiv').getHiddenDimensions().width;
 
 				if (editorWindowWidth < (c.width - 230)) {
 					c.width  = editorWindowWidth - 230 << 0;
 					c.height = c.width / imageRatio << 0;
 				}
 
-				$('#ImageEditor‿canvas‿ieCanvasDiv').css({ height : c.height + 'px'
+				$('#ImageEditor‿div‿ieCanvasDiv').css({ height : c.height + 'px'
 											 , width  : c.width + 'px'
 											 });
 
@@ -3386,9 +3387,8 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 					// Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas.
 					canvas.width  = crop.width  = img.width;
 					canvas.height = crop.height = img.height;
-
-					$('#ImageEditor‿canvas‿ieCropControlTop, 'ImageEditor‿canvas‿ieCropControlBottom').prop('max', img.height);
-					$('#ImageEditor‿canvas‿ieCropControlLeft, 'ImageEditor‿canvas‿ieCropControlRight').prop('max', img.width);
+					$('#ImageEditor‿input‿number‿ieCropControlTop, 'ImageEditor‿input‿number‿ieCropControlBottom').prop('max', img.height);
+					$('#ImageEditor‿input‿number‿ieCropControlLeft, 'ImageEditor‿input‿number‿ieCropControlRight').prop('max', img.width);
 
 					//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
 
@@ -3471,7 +3471,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 				var cropMask = function handle_crop_mask_change (where) {
 					var opposite
 					  , direction
-					  , $thisControl = $('#ImageEditor‿canvas‿ieCropControl' + where)
+					  , $thisControl = $('#ImageEditor‿input‿number‿ieCropControl' + where)
 					  , value = +$thisControl.val()
 					  , background = '#FFF'
 					  , color	  = '#000'
@@ -3500,9 +3500,10 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 					if (value + crop[opposite] >= limit) {
 						background = 'pink';
 						color	  = 'red';
-						$('#ImageEditor‿canvas‿ieCropError').dialog('open');
+//bad id
+						$('#ieCropError').dialog('open');
 					}
-					$thisControl.add('#ImageEditor‿canvas‿ieCropControl' + opposite)
+					$thisControl.add('#ImageEditor‿input‿number‿ieCropControl' + opposite)
 								.css({ background : background
 									 , color	  : color
 									 });
@@ -3536,8 +3537,8 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 
 					// Resize the current canvas (CSS).
 					var dimensions = { base  : { // This is the max size to which the canvas can grow.
-												 height : $('#ImageEditor‿canvas‿ieCanvasDiv').quickHeight(0) << 0
-											   , width  : $('#ImageEditor‿canvas‿ieCanvasDiv').quickWidth(0) << 0
+												 height : $('#ImageEditor‿div‿ieCanvasDiv').quickHeight(0) << 0
+											   , width  : $('#ImageEditor‿div‿ieCanvasDiv').quickWidth(0) << 0
 											   }
 									 , css   : {}
 									 , image : { // This is the current size of the cropped image.
@@ -3561,8 +3562,9 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 						   .css('width',  dimensions.css.width  + 'px');
 
 					// Adjust the max for the crop controls.
-					$('#ImageEditor‿canvas‿ieCropControlTop, #ieCropControlBottom').prop('max', dimensions.image.height);
-					$('#ImageEditor‿canvas‿ieCropControlLeft, #ieCropControlRight').prop('max', dimensions.image.width);
+
+					$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom').prop('max', dimensions.image.height);
+					$('#ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').prop('max', dimensions.image.width);
 
 					// Draw the image from the backup canvas to the current canvas while applying the crop.
 					ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
@@ -3572,49 +3574,49 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 				var resetCrop = function handle_apply_crop_click () {
 					$('.maskVertical').css('height', 0);
 					$('.maskHorizontal').css('width', 0);
-					$('#ImageEditor‿canvas‿ieCropControlTop, #ieCropControlBottom, #ieCropControlLeft, #ieCropControlRight').val(0);
+					$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom, #ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').val(0);
 					crop.Left = crop.Right = crop.Top = crop.Bottom = 0;
 					crop.width = canvas.width;
 					crop.height = canvas.height;
 					return;
 				};
 
-				$('#ImageEditor‿canvas‿ieDiv').on('click', '#ImageEditor‿canvas‿ieFlipVertical', function flip_vertical_click_event_handler () {
+				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipVertical', function flip_vertical_click_event_handler () {
 					flip(0, 1);
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('click', '#ImageEditor‿canvas‿ieFlipHorizontal', function flip_vertical_click_event_horizontal () {
+				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipHorizontal', function flip_vertical_click_event_horizontal () {
 					flip(1, 0);
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('change', '#ImageEditor‿canvas‿ieRotateControl', function rotate_controls_change_event_handler () {
+				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieRotateControl', function rotate_controls_change_event_handler () {
 					INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('change', '#ImageEditor‿canvas‿ieCropControlTop', function crop_controls_change_event_handler_top () {
+				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlTop', function crop_controls_change_event_handler_top () {
 					cropMask('Top');
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('change', '#ImageEditor‿canvas‿ieCropControlBottom', function crop_controls_change_event_handler_bottom () {
+				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlBottom', function crop_controls_change_event_handler_bottom () {
 					cropMask('Bottom');
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('change', '#ImageEditor‿canvas‿ieCropControlLeft', function crop_controls_change_event_handler_left () {
+				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlLeft', function crop_controls_change_event_handler_left () {
 					cropMask('Left');
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('change', '#ImageEditor‿canvas‿ieCropControlRight', function crop_controls_change_event_handler_right () {
+				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlRight', function crop_controls_change_event_handler_right () {
 					cropMask('Right');
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('click', '#ImageEditor‿canvas‿ieApplyCropBtn', function crop_controls_apply_crop_click_event_handler () {
+				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieApplyCropBtn', function crop_controls_apply_crop_click_event_handler () {
 					var canvas = document.getElementById("ieCanvas");
 
 					applyCrop();
 					resetCrop();
 				});
 
-				$('#ImageEditor‿canvas‿ieDiv').on('click', '#ImageEditor‿canvas‿ieSaveImageBtn', function image_editor_save_button_click_handler () {
+				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieSaveImageBtn', function image_editor_save_button_click_handler () {
 					var canvas = document.getElementById("ieCanvas")
 					  , ctx = canvas.getContext("2d")
 					  ;
@@ -3636,7 +3638,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 									 );
 
 					// Close the image editor.
-					$('#ImageEditor‿canvas‿ieCancelBtn').trigger('click');
+					$('#ImageEditor‿input‿button‿ieCancelBtn').trigger('click');
 				});
 
 				// Create the css rule for the crop mask.
@@ -3653,8 +3655,10 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 				iePicker.fromString(INNERCONTEXT.UTILITY.getColor('MASK'));
 
 				// Add functionality to the color picker to change the css rule for the crop mask.
-				$('#ImageEditor‿canvas‿ieMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
-					$('#ImageEditor‿canvas‿ieMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
+				
+				$('#ImageEditor‿input‿color‿ieMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
+//bad id
+					$('#ieMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
 					iePicker.fromString(this.value);
 				});
 
