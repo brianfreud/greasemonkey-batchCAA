@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0574
+// @version     0.02.0597
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -58,9 +58,7 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Fullsize image editor option
 //TODO: HSL controls in image editor
 
-if (!document.body) {
-	document.body = document.getElementsByTagName('body')[0];
-}
+document.body = document.body || document.getElementsByTagName('body')[0];
 
 /* Initialize constants. */
 var OUTERCONTEXT =
@@ -96,7 +94,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0569'
+	, VERSION        : '0.02.0597'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -2078,6 +2076,72 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 	INNERCONTEXT.UTILITY.inherit(INNERCONTEXT.UI.PreviewElement, INNERCONTEXT.UI.GenericElement);
 
+	INNERCONTEXT.EVENTS = {
+		caaAllBtn : {
+			click : function caaAllBtn_click () {
+				$('.caaLoad:visible').each(function caaAllBtn_click_each_release_button() {
+					$.single( this ).trigger('click');
+				});
+			}
+		},
+
+		handleDrag :
+			{ $draggedImage : null
+			, inChild       : false
+			},
+
+		slideToggle : function slideToggle (e) {
+			INNERCONTEXT.DOM[e.data.element].slideToggle();
+		}
+	};
+             
+	INNERCONTEXT.EVENTS.handleDrag.check = function handleDrag_check (e) {
+	$.log(e.type);
+        var handleDrag = INNERCONTEXT.EVENTS.handleDrag;
+		e.preventDefault();
+		if (null === handleDrag.$draggedImage) {
+			return;
+		}
+		handleDrag.hasOwnProperty(e.type) && handleDrag[e.type](e, handleDrag, this);
+		return false;
+	};
+	
+	INNERCONTEXT.EVENTS.handleDrag.dragend = function handleDrag_dragend (e, handleDrag) {
+		handleDrag.$draggedImage.removeClass('beingDragged');
+		$('figure').removeClass('over');
+//		handleDrag.$draggedImage = null;
+	};
+	
+	INNERCONTEXT.EVENTS.handleDrag.dragenter = function handleDrag_dragenter (e, handleDrag) {
+		this.inChild = !$(e.target).hasClass('newCAAimage');
+		$('figure').removeClass('over');
+		$.single(this).addClass('over');
+	};
+	
+	INNERCONTEXT.EVENTS.handleDrag.dragleave = function handleDrag_dragleave (e, handleDrag) {
+		if (!this.inChild) { // https://bugs.webkit.org/show_bug.cgi?id=66547
+			$.single(this).removeClass('over');
+		}
+	};
+
+	INNERCONTEXT.EVENTS.handleDrag.dragstart = function handleDrag_dragstart (e) {
+        var handleDrag = INNERCONTEXT.EVENTS.handleDrag
+          , edT = e.dataTransfer
+          ;
+		handleDrag.$draggedImage = $(this).addClass('beingDragged');
+		edT.dropEffect = 'move';
+		edT.effectAllowed = 'move';
+	};
+
+	INNERCONTEXT.EVENTS.handleDrag.drop = function handleDrag_drop (e, handleDrag, self) {
+		self.parentNode.replaceChild(this.$draggedImage[0], self);
+		this.$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
+		                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
+		                                          .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(self)));
+		$('figure').removeClass('over');
+		this.$draggedImage = null;
+	};
+
 	/* A generic close button.  */
 	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
 
@@ -2193,7 +2257,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		[ { ele: 'figure', 'class': 'CAAdropbox', noid: true }
 		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton
 			, { ele: 'div', noid: true }
-			,	[ { ele: 'img', 'class': 'dropBoxImage previewable', draggable : false, noid: true }
+			,	[ { ele: 'img', 'class': 'dropBoxImage newCAAimage previewable', draggable : false, noid: true }
 				]
 			, { ele: 'figcaption', noid: true }
 			,	[ { ele: 'input', type: 'text', placeholder : 'image comment', noid: true }
@@ -2210,7 +2274,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			window.TEMPORARY = window.TEMPORARY || 0;
 			window.URL = window.URL || window.webkitURL;
 			window.BlobBuilder = window.BlobBuilder || window.MozBlobBuilder || window.WebKitBlobBuilder;
-
 
 			// Polyfill to add FileSystem API support to Firefox.
 			void 0 === (window.requestFileSystem || window.webkitRequestFileSystem) && $.addScript('idbFileSystem');
@@ -2440,20 +2503,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			 .insertBefore('table.tbl');
 		},
 
-		initializeSubscribers : function initializeSubscribers (ui, util, dom) {
+		initializeSubscribers : function initializeSubscribers (ui, util, dom, events) {
 			var change  = 'change'
 			  , click   = 'click'
 			  ;
 
-			var slideToggle = function (e) {
-				dom[e.data.element].slideToggle();
-			};
-
             // Toggle control for options menu
-			dom['Main‿div‿options_control'].on( click, { element: 'Options‿fieldset‿main' }, slideToggle );
+			dom['Main‿div‿options_control'].on( click, { element: 'Options‿fieldset‿main' }, events.slideToggle );
 
             // Toggle control for about menu
-			dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, slideToggle );
+			dom['Main‿div‿about_control'].on( click, { element: 'About‿fieldset‿main' }, events.slideToggle );
 
 			// Image size controls
 			dom['Main‿div‿imageShrink'].on( click, { change: -1 }, util.changeImageSize );
@@ -2474,18 +2533,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// Clear image storage button
 			dom['Options‿input‿button‿clear_storage'].on( click, util.clearImageStore );
 
-			var caaAllBtn_click_handler = function caaAllBtn_click_handler () {
-				$('.caaLoad:visible').each(function caaAllBtn_click_each_release_button() {
-					$.single( this ).trigger('click');
-				});
-			};
-
 			dom.body.on( click, '.closeButton', util.closeDialogGeneric ) // Add functionality to generic close buttons
 			        .on( click, '#ieCancelBtn', util.closeDialogImageEditor ) // Add functionality to the image editor's cancel button
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
 			        .on( click, '.caaLoad', util.loadRowInfo) // Load release info
 			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ) // Image preview functionality
-			        .on( click, '.caaAll', caaAllBtn_click_handler ); // Load all button functionality
+			        .on( click, '.caaAll', events.caaAllBtn.click ) // Load all button functionality
+			        // Add functionality to allow dragging from the images box to a specific CAA image box.
+			        .on( 'dragstart', '.localImage', events.handleDrag.dragstart )
+			        .on( 'dragend', '.localImage', events.handleDrag.check )
+			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check );
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -2523,6 +2580,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var constants = inner.CONSTANTS
 			  , data      = inner.DATA
 			  , dom       = inner.DOM
+			  , events    = inner.EVENTS
 			  , templates = inner.TEMPLATES
 			  , ui        = inner.UI
 			  , util      = inner.UTILITY
@@ -2534,7 +2592,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeRegexps(constants);
 			this.initializeFileSystem(constants, data);
 			this.initializeUI(dom, templates, ui, util);
-			this.initializeSubscribers(ui, util, dom);
+			this.initializeSubscribers(ui, util, dom, events);
 
 			delete templates.main;
 			delete templates.image_preview;
@@ -2942,70 +3000,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 		var $figure = $(e.target).parents('figure:first');
 		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
 	});
-
-//---------------------------------------------------------------------------------------------------------
-
-	// START: functionality to allow dragging from the Images box to a specific caa image box.
-	var $draggedImage = null,
-		inChild	   = false;
-
-	$('body').on({
-		dragstart: function localImage_dragStart(e) {
-			var edT = e.dataTransfer;
-			e.preventDefault();
-			$draggedImage = $(this).addClass('beingDragged');
-			edT.dropEffect = 'move';
-			edT.effectAllowed = 'move';
-		},
-		dragend: function localImage_dragEnd(e) {
-			e.preventDefault();
-			if (null === $draggedImage) {
-				return;
-			}
-			$draggedImage.removeClass('beingDragged');
-			$('figure').removeClass('over');
-			$draggedImage = null;
-		}
-	}, '.localImage');
-
-	$('body').on({
-		dragover: function newCAAimage_dragOver(e) {
-			e.preventDefault();
-		},
-		dragenter: function newCAAimage_dragEnter(e) {
-			e.preventDefault();
-			if (null === $draggedImage) {
-				return;
-			}
-			inChild = !$(e.target).hasClass('newCAAimage');
-			$('figure').removeClass('over');
-			$.single(this).addClass('over');
-		},
-		dragleave: function newCAAimage_dragLeave(e) {
-			e.preventDefault();
-			if (null === $draggedImage) {
-				return;
-			}
-			if (!inChild) { // https://bugs.webkit.org/show_bug.cgi?id=66547
-				$.single(this).removeClass('over');
-			}
-		},
-		drop: function newCAAimage_drop(e) {
-			e.preventDefault();
-			if (null === $draggedImage) {
-				return;
-			}
-			$.single(this).find('.dropBoxImage').replaceWith($draggedImage);
-			$draggedImage.toggleClass('beingDragged dropBoxImage localImage').parents('figure:first').toggleClass('newCAAimage workingCAAimage over').css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(this)));
-			$('figure').removeClass('over');
-			$draggedImage = null;
-		}
-	}, '.newCAAimage');
-	
-	// END: functionality to allow dragging from the Images box to a specific caa image box.
-
-
-			
 
 
 
@@ -3474,7 +3468,7 @@ INNERCONTEXT.TEMPLATES.imageEditor();
 					  ;
 
 					switch (where) {
-						case 'Top'	: opposite = 'Bottom'; direction = 'height'; break;
+						case 'Top'    : opposite = 'Bottom'; direction = 'height'; break;
 						case 'Bottom' : opposite = 'Top';	direction = 'height'; break;
 						case 'Left'   : opposite = 'Right';  direction = 'width';  break;
 						case 'Right'  : opposite = 'Left';   direction = 'width';
