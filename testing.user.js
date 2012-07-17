@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0602
+// @version     0.02.0609
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1361,21 +1361,30 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		closeDialogGeneric : function closeDialogGeneric (e) {
-			$.single( this ).parent()
-			              .find('.dropBoxImage') // Any image in the drop box
-			              .appendTo($('#Main‿div‿imageContainer'))
-			              .addClass('localImage')
-			              .removeClass('dropBoxImage');
-			INNERCONTEXT.UTILITY.removeWrappedElement(e);
+			var $self = $.single( this )
+			  , util  = INNERCONTEXT.UTILITY
+			  ;
+			  
+			if ($self.hasClass('CaabieImageEditor')) {
+				$self.removeClass('CaabieImageEditor');
+				util.closeDialogImageEditor(e, util);
+			}
+			$self.parent()
+			     .find('.dropBoxImage') // Any image in the drop box
+			     .appendTo($('#Main‿div‿imageHolder'))
+			     .addClass('localImage')
+			     .removeClass('dropBoxImage');
+			util.removeWrappedElement(e);
 		},
 
-		closeDialogImageEditor : function closeDialogImageEditor (e) {
+		closeDialogImageEditor : function closeDialogImageEditor (e, util) {
+			var dom = INNERCONTEXT.DOM;
+			
 			dom['ImageEditor‿div‿ie'].animate({ height  : 'toggle'
 			                                   , opacity : 'toggle'
 			                                   }, 'slow');
 			dom['ImageEditor‿div‿CAAoverlay'].fadeOut('fast');
-			dom['ImageEditor‿div‿ie'].add(dom['ImageEditor‿div‿CAAoverlay']).hide();
-			INNERCONTEXT.UTILITY.closeDialogGeneric(e);
+			[util || INNERCONTEXT.UTILITY].closeDialogGeneric(e);
 		},
 
 		getEditColor : function getEditColor ($ele) {
@@ -2121,31 +2130,34 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	INNERCONTEXT.EVENTS.handleDrag.dragend = function handleDrag_dragend (e, handleDrag) {
 		handleDrag.$draggedImage.removeClass('beingDragged');
 		$('figure').removeClass('over');
-//		handleDrag.$draggedImage = null;
 	};
 	
 	INNERCONTEXT.EVENTS.handleDrag.dragenter = function handleDrag_dragenter (e, handleDrag) {
 		this.inChild = !$(e.target).hasClass('newCAAimage');
 		$('figure').removeClass('over');
-		$.single(this).addClass('over');
+		$.single(e.target).addClass('over');
 	};
 	
 	INNERCONTEXT.EVENTS.handleDrag.dragleave = function handleDrag_dragleave (e, handleDrag) {
 		if (!this.inChild) { // https://bugs.webkit.org/show_bug.cgi?id=66547
-			$.single(this).removeClass('over');
+			$.single(e.target).removeClass('over');
 		}
 	};
 
 	INNERCONTEXT.EVENTS.handleDrag.dragstart = function handleDrag_dragstart (e) {
         var handleDrag = INNERCONTEXT.EVENTS.handleDrag
-          , edT = e.dataTransfer
+          , edT = e.originalEvent.dataTransfer
           ;
+		edT.setDragImage(this, 0, 0);
 		handleDrag.$draggedImage = $(this).addClass('beingDragged');
 		edT.dropEffect = 'move';
 		edT.effectAllowed = 'move';
 	};
 
 	INNERCONTEXT.EVENTS.handleDrag.drop = function handleDrag_drop (e, handleDrag, self) {
+		if (!$.single(e.target).hasClass('newCAAimage')) {
+			return;
+		}	
 		self.parentNode.replaceChild(this.$draggedImage[0], self);
 		this.$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
 		                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
@@ -2155,7 +2167,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	/* A generic close button.  */
-	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
+	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = function () {
+		return { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
+	};
 
 	INNERCONTEXT.TEMPLATES.CONTROLS.crop = function makeControl_crop (where) {
 		return [
@@ -2248,6 +2262,65 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			 , { ele: 'div', id: 'note', text: $.l('take effect next time') }
 			 ]
 		];
+		
+	INNERCONTEXT.TEMPLATES.imageEditor = function template_imageEditor () {
+		var controls = INNERCONTEXT.TEMPLATES.CONTROLS
+		  , crop     = controls.crop
+		  , flip     = controls.flip
+		  , mask     = controls.mask
+          , button   = 'button'
+		  , div      = 'div'
+		  , fieldset = 'fieldset'
+		  , input    = 'input'
+		  , label    = 'label'
+		  , legend   = 'legend'
+		  ;
+
+		return [ { ele: div, id:'CAAoverlay', 'class': 'ie' }
+			   , { ele: div, id: 'ie', 'class': 'ie' }
+			   ,	[ controls.closeButton()
+					, { ele: div, id: 'ieDiv' }
+					,	[ { ele: div, id: 'ieCanvasDiv' }
+						,	[ mask('Left', 'Horizontal')
+							, mask('Right', 'Horizontal')
+							, mask('Top', 'Vertical')
+							, mask('Bottom', 'Vertical')
+							, { ele: 'canvas', id: 'ieCanvas' }
+							]
+						, { ele: div, id: 'ieMenu' }
+						,	[ { ele: fieldset }
+							,	[ { ele: legend, text: $.l('Rotate image') }
+								, { ele: label, title: $.l('How many degrees'), 'for': 'ImageEditor‿input‿number‿ieRotateControl' }
+								,	[ { ele: input, id: 'ieRotateControl', max: 360, min: -360, step: 1, type: 'number', value: 0 }
+									, $.l('degrees')
+									]
+								]
+							, { ele: fieldset }
+							,	[ { ele: legend, text: $.l('Flip image') }
+								, flip('Vertical')
+								, flip('Horizontal')
+								]
+							, { ele: fieldset }
+							,	[ { ele: legend, text: $.l('Crop image') }
+								, crop('Top')
+								, crop('Bottom')
+								, crop('Left')
+								, crop('Right')
+								, { ele: label, 'class': 'cropLabel', title: $.l('Crop mask color'), 'for': 'ImageEditor‿input‿color‿ieMaskColorControl'}
+								,	[ { ele: input, 'class': 'cropControl', id: 'ieMaskColorControl', type: 'color', value: INNERCONTEXT.UTILITY.getColor('MASK') }
+									, $.l('Crop mask color')
+									]
+								, { ele: input, id: 'ieApplyCropBtn', title: $.l('Apply'), type: button, value: $.l('Apply') }
+								]
+							, { ele: fieldset }
+							,	[ { ele: input, id: 'ieSaveImageBtn', title: $.l('Save changes'), type: button, value: $.l('Save') }
+								, { ele: input, id: 'ieCancelBtn', title: $.l('Cancel'), type: button, value: $.l('Cancel') }
+								]
+							]
+						]
+					]
+			   ];
+	};
 
 	INNERCONTEXT.TEMPLATES.image_row = function (info) {
 			return [ { ele: 'tr', 'class': info.$row.prop('class') }
@@ -2267,7 +2340,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	INNERCONTEXT.TEMPLATES.dropbox =
 		[ { ele: 'figure', 'class': 'CAAdropbox', noid: true }
-		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton
+		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton()
 			, { ele: 'div', noid: true }
 			,	[ { ele: 'img', 'class': 'dropBoxImage newCAAimage previewable', draggable : false, noid: true }
 				]
@@ -2400,66 +2473,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					,	util.assemble('PreviewElement', templates.image_preview)
 					]
 				];
-				
-			templates.imageEditor = function template_imageEditor () {
-				var controls = INNERCONTEXT.TEMPLATES.CONTROLS
-				  , crop     = controls.crop
-				  , flip     = controls.flip
-				  , mask     = controls.mask
-		          , button   = 'button'
-				  , div      = 'div'
-				  , fieldset = 'fieldset'
-				  , input    = 'input'
-				  , label    = 'label'
-				  , legend   = 'legend'
-				  ;
-	
-				return [ { ele: div, id:'CAAoverlay', hide: true, 'class': 'ie' }
-					   , { ele: div, id: 'ie', hide: true, 'class': 'ie' }
-					   ,	[ controls.closeButton
-							, { ele: div, id: 'ieDiv' }
-							,	[ { ele: div, id: 'ieCanvasDiv' }
-								,	[ mask('Left', 'Horizontal')
-									, mask('Right', 'Horizontal')
-									, mask('Top', 'Vertical')
-									, mask('Bottom', 'Vertical')
-									, { ele: 'canvas', id: 'ieCanvas' }
-									]
-								, { ele: div, id: 'ieMenu' }
-								,	[ { ele: fieldset }
-									,	[ { ele: legend, text: $.l('Rotate image') }
-										, { ele: label, title: $.l('How many degrees'), 'for': 'ImageEditor‿input‿number‿ieRotateControl' }
-										,	[ { ele: input, id: 'ieRotateControl', max: 360, min: -360, step: 1, type: 'number', value: 0 }
-											, $.l('degrees')
-											]
-										]
-									, { ele: fieldset }
-									,	[ { ele: legend, text: $.l('Flip image') }
-										, flip('Vertical')
-										, flip('Horizontal')
-										]
-									, { ele: fieldset }
-									,	[ { ele: legend, text: $.l('Crop image') }
-										, crop('Top')
-										, crop('Bottom')
-										, crop('Left')
-										, crop('Right')
-										, { ele: label, 'class': 'cropLabel', title: $.l('Crop mask color'), 'for': 'ImageEditor‿input‿color‿ieMaskColorControl'}
-										,	[ { ele: input, 'class': 'cropControl', id: 'ieMaskColorControl', type: 'color', value: INNERCONTEXT.UTILITY.getColor('MASK') }
-											, $.l('Crop mask color')
-											]
-										, { ele: input, id: 'ieApplyCropBtn', title: $.l('Apply'), type: button, value: $.l('Apply') }
-										]
-									, { ele: fieldset }
-									,	[ { ele: input, id: 'ieSaveImageBtn', title: $.l('Save changes'), type: button, value: $.l('Save') }
-										, { ele: input, id: 'ieCancelBtn', title: $.l('Cancel'), type: button, value: $.l('Cancel') }
-										]
-									]
-								]
-							]
-					   ];
-			};
-			templates.imageEditor = templates.imageEditor();
 		},
 
 		initializeColorPicker : function initializeColorPicker (util, dom) {
@@ -2513,12 +2526,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                , value: $.l('Load CAA images for all')
 			                })
 			 .insertBefore('table.tbl');
-			 
-			// Create image editor
-			$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor));
 		},
 
-		initializeSubscribers : function initializeSubscribers (ui, util, dom, events) {
+		initializeSubscribers : function initializeSubscribers (ui, util, dom, events, templates) {
 			var change  = 'change'
 			  , click   = 'click'
 			  ;
@@ -2557,8 +2567,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        // Add functionality to allow dragging from the images box to a specific CAA image box.
 			        .on( 'dragstart', '.localImage', events.handleDrag.dragstart )
 			        .on( 'dragend', '.localImage', events.handleDrag.check )
+			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
+			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
 			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
-					.on('click', '#Preview‿img‿preview_image', function (e) { $('.ie').show(); });
+					.on( click, '#Preview‿img‿preview_image',
+						function (e) {
+							$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor()));
+						}
+					);
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -2608,7 +2624,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeRegexps(constants);
 			this.initializeFileSystem(constants, data);
 			this.initializeUI(dom, templates, ui, util);
-			this.initializeSubscribers(ui, util, dom, events);
+			this.initializeSubscribers(ui, util, dom, events, templates);
 
 			delete templates.main;
 			delete templates.image_preview;
@@ -2875,7 +2891,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	  , cssStr
 	  ;
 
-	CSSCONTEXT.UTILITY.extend(CSSObj['.dropBoxImage'], { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' });
+	CSSObj['.dropBoxImage, .localImage '] = { cursor: $.browser.mozilla ? '-moz-zoom-in' : '-webkit-zoom-in' };
+	CSSCONTEXT.UTILITY.extend(CSSObj['.beingDragged'], { cursor: $.browser.mozilla ? '-moz-grabbing;' : '-webkit-grabbing' });
 
 	$.make('link').attr({ rel  : 'stylesheet'
 						, type : 'text/css'
