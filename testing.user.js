@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0613
+// @version     0.02.0614
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1415,7 +1415,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
 		},
-
+		
 		getLSValue : function getLSValue (key, unprefixed) {
 			var storedValue = INNERCONTEXT.DATA[key];
 
@@ -1583,6 +1583,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		removeWrappedElement : function removeWrappedItem (e) {
 			$(e.target).parent().remove();
+		},
+
+		requestFullScreen: function getFullScreenMethod(ele) {
+			if (ele.requestFullscreen) { // W3C API
+				ele.requestFullscreen();
+			} else if (ele.requestFullScreen) { // Mozilla proposed API
+				ele.requestFullscreen();
+			} else if (ele.mozRequestFullScreen) { // Mozilla current API
+				ele.mozRequestFullScreen();
+			} else if (ele.webkitRequestFullScreen) { // Webkit current API
+				ele.webkitRequestFullScreen();
+			}
 		},
 		
 		resetColorToDefault : function resetColorToDefault (e) {
@@ -2604,10 +2616,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					)
 					.on( click, '#ImageEditor‿header‿maximize', // image editor maximize button
 						function (e) {
-							dom['ImageEditor‿div‿ieDiv'][0].webkitRequestFullScreen();
+							util.requestFullScreen(dom['ImageEditor‿div‿ieDiv'][0]);
 						}
 					);
-
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
