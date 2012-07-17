@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0609
+// @version     0.02.0613
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -818,15 +818,32 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border-radius'          : '8px'
 		,  cursor                  : 'pointer'
 		, 'float'                  : 'right'
-		, 'line-height'            : '.8em'
+		, 'line-height'            : '9px'
 		, 'margin-right'           : '-1em'
-		, 'margin-top'             : '-.95em'
+		, 'margin-top'             : '-11px'
 		,  opacity                 : 0.9
 		,  padding                 : '2px 4px 5px'
 		}
 	, '.closeButton:hover':
 		{ 'background-color'       : '#FF82AB'
 		, 'font-weight'            : 900
+		,  opacity                 : 1
+		}
+	, '.maximizeButton':
+		{ 'background-color'       : '#EEF'
+		,  border                  : '1px solid #444'
+		, 'border-top-width'       : '7px'
+		, 'border-radius'          : '2px'
+		,  cursor                  : 'pointer'
+		, 'float'                  : 'right'
+		,  height                  : '17px'
+		, 'margin-right'           : '0.75em'
+		, 'margin-top'             : '-10px'
+		,  opacity                 : 0.7
+		,  width                   : '16px'
+		}
+	, '.maximizeButton:hover':
+		{ 'background-color'       : '#DDF'
 		,  opacity                 : 1
 		}
 	, '.existingCAAimage':
@@ -1219,8 +1236,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
 				    // Create a blob containing the code.
 				  , blob       = $.makeBlob( workerCode )
-				    // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
-				  , objURL     = URL.createObjectURL( blob.getBlob() )
+				  ;
+				  
+				blob = blob.getBlob ? /* BlobBuilder */      blob.getBlob()
+                                    : /* Blob constructor */ blob;
+
+			        // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
+				var objURL     = URL.createObjectURL( blob )
 				    // Create a new web worker, point it to the ObjectURL as the path to its source.
 				  , worker     = new Worker( objURL )
 				  ;
@@ -1367,7 +1389,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  
 			if ($self.hasClass('CaabieImageEditor')) {
 				$self.removeClass('CaabieImageEditor');
-				util.closeDialogImageEditor(e, util);
+				util.closeDialogImageEditor(e);
 			}
 			$self.parent()
 			     .find('.dropBoxImage') // Any image in the drop box
@@ -1377,14 +1399,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			util.removeWrappedElement(e);
 		},
 
-		closeDialogImageEditor : function closeDialogImageEditor (e, util) {
+		closeDialogImageEditor : function closeDialogImageEditor (e) {
 			var dom = INNERCONTEXT.DOM;
 			
 			dom['ImageEditor‿div‿ie'].animate({ height  : 'toggle'
 			                                   , opacity : 'toggle'
-			                                   }, 'slow');
-			dom['ImageEditor‿div‿CAAoverlay'].fadeOut('fast');
-			[util || INNERCONTEXT.UTILITY].closeDialogGeneric(e);
+			                                   }, 'slow').remove();
+			dom['ImageEditor‿div‿CAAoverlay'].fadeOut('fast').remove();
 		},
 
 		getEditColor : function getEditColor ($ele) {
@@ -1426,7 +1447,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , textData     = dataTransfer.getData( 'Text' )
 			  ;
 
-			$.single(this).removeClass( 'over' ); // clear the drop highlight
+			$('#Main‿div‿imageContainer').removeClass( 'over' ); // clear the drop highlight
 
 			var dropped = { file_list : dataTransfer.files
 			              , base      : $( textData ).find( 'base' ).attr( 'href' ) || ''
@@ -1451,7 +1472,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
 					break;
 				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
-					uris.uri.forEach(walkURIArray);
+					uris.uri.forEach && uris.uri.forEach(walkURIArray);
 					break;
 				case (!!uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
 					uris.text.forEach(walkURIArray);
@@ -2134,8 +2155,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	
 	INNERCONTEXT.EVENTS.handleDrag.dragenter = function handleDrag_dragenter (e, handleDrag) {
 		this.inChild = !$(e.target).hasClass('newCAAimage');
-		$('figure').removeClass('over');
-		$.single(e.target).addClass('over');
+		if (e.target.nodeName === 'IMG') {
+			$('figure').removeClass('over');
+			$.single(e.target).parents()
+			                  .andSelf()
+			                  .filter('figure')
+			                  .addClass('over');
+		}
 	};
 	
 	INNERCONTEXT.EVENTS.handleDrag.dragleave = function handleDrag_dragleave (e, handleDrag) {
@@ -2279,6 +2305,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		return [ { ele: div, id:'CAAoverlay', 'class': 'ie' }
 			   , { ele: div, id: 'ie', 'class': 'ie' }
 			   ,	[ controls.closeButton()
+					, { ele: 'header', id: 'maximize', 'class': 'maximizeButton', text: '' }
 					, { ele: div, id: 'ieDiv' }
 					,	[ { ele: div, id: 'ieCanvasDiv' }
 						,	[ mask('Left', 'Horizontal')
@@ -2570,16 +2597,24 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
 			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
 			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
-					.on( click, '#Preview‿img‿preview_image',
+					.on( click, '#Preview‿img‿preview_image',// open image editor on click of preview image
 						function (e) {
 							$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor()));
 						}
+					)
+					.on( click, '#ImageEditor‿header‿maximize', // image editor maximize button
+						function (e) {
+							dom['ImageEditor‿div‿ieDiv'][0].webkitRequestFullScreen();
+						}
 					);
+
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
 			                              .on({ dragenter : util.addClass // Highlight field
 			                                  , dragleave : util.removeClass // Unhighlight field
+			                                  , mouseleave: util.removeClass // Unhighlight field
+			                                  , drop      : util.removeClass // Unhighlight field
 			                                  }, { 'class': 'over' })
 			                              .on({  dragover    : util.preventDefault // Required for drag events to work
 			                                  ,  drop        : util.handleDroppedResources // Handle drops into the drop area
@@ -2588,7 +2623,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                          type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
 			                                      }
 			                                  , 'haveLocalFileList' : util.loadLocalFile // Handle local images to be loaded
-			                                      
 			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
@@ -2692,10 +2726,10 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			var thisBlob;
 					
 			try { // Old API
+				thisBlob = new Blob( [data] );
+			} catch ( e ) { // New API
 				thisBlob = new BlobBuilder();
 				thisBlob.append( data );
-			} catch ( e ) { // New API
-				thisBlob = new Blob( [data] );
 			}
 			
 			return thisBlob;
@@ -2720,6 +2754,9 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 
 			// write the ArrayBuffer to a blob, and you're done
 			var bb = $.makeBlob(ab);
+
+			bb = bb.getBlob ? /* BlobBuilder */      bb.getBlob()
+                            : /* Blob constructor */ bb;
 
 			return bb.getBlob('image/' + mime);
 		},
