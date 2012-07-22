@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0621
+// @version     0.02.0622
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -2705,7 +2705,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 						
 			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
-			                                .on( 'loaded', '.imageRow', ui.showImageRow);
+			                                .on( 'loaded', '.imageRow', ui.showImageRow)
+			                                // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
+			                                .find('tbody').on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
 		},
 
 		loadStoredImages : function loadStoredImages (util) {
@@ -3384,17 +3386,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 			window.addEventListener("storage", handleStorage, false);
 		}();
 
-//---------------------------------------------------------------------------------------------------------
-
-
-			// handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
-
-			var handleInsertedReleaseRow = function handleInsertedReleaseRow () {
-				$.single( this ).on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
-			};
-
-			$('form[action*="merge_queue"]').find('tbody')
-					 .each(handleInsertedReleaseRow);
 
 
 
