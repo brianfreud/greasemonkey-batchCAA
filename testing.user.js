@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0614
+// @version     0.02.0615
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -94,7 +94,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0597'
+	, VERSION        : '0.02.0615'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1442,7 +1442,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			e = e.originalEvent || e;
 			e.preventDefault(); // This has to be done before anything else.
 
-			var $util        = INNERCONTEXT.UTILITY
+			var util         = INNERCONTEXT.UTILITY
 			  , dataTransfer = e.dataTransfer
 			  , textData     = dataTransfer.getData( 'Text' )
 			  ;
@@ -1457,7 +1457,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			              };
 
 			$.log(dropped);
-			$util.handleURIs( dropped );
+			util.handleURIs( dropped );
 		},
 
 		handleURIs : function handleURIs (uris) {
@@ -1492,12 +1492,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		      , files = e.list
 		      , len = files.length
 		      , i = len
-		      , $util = INNERCONTEXT.UTILITY
+		      , util = INNERCONTEXT.UTILITY
 		      ;
 			while (0 < i--) {
 				file = files[i];
 				name = file.name;
-				type = $util.supportedImageType(name);
+				type = util.supportedImageType(name);
 				INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
 				if (!type) {
 					$.log(debugMsg + ', unusable file type detected');
@@ -2653,6 +2653,20 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                .on( 'loaded', '.imageRow', ui.showImageRow);
 		},
 
+		loadStoredImages : function loadStoredImages (util) {
+			var imageArray = JSON.parse(util.getLSValue('imageCache'));
+			
+			var loadImage = function loadImage (url) {
+				var image = decodeURIComponent(url)
+				  , type  = util.supportedImageType(image)
+				  ;
+				  
+				type && util.getRemoteFile(image, type);
+			};
+
+			null !== imageArray && imageArray.length && imageArray.forEach(loadImage);
+		},
+
 		init : function init (inner) {
 			var constants = inner.CONSTANTS
 			  , data      = inner.DATA
@@ -2670,6 +2684,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.initializeFileSystem(constants, data);
 			this.initializeUI(dom, templates, ui, util);
 			this.initializeSubscribers(ui, util, dom, events, templates);
+			this.loadStoredImages(util);
 
 			delete templates.main;
 			delete templates.image_preview;
@@ -3376,19 +3391,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 					 .each(handleInsertedReleaseRow);
 
 
-
-//---------------------------------------------------------------------------------------------------------
-
-		!function load_stored_images() {
-				var image
-				  , type
-				  , imageArray = JSON.parse(INNERCONTEXT.UTILITY.getLSValue('imageCache'))
-				  ;
-				null !== imageArray && imageArray.length && imageArray.forEach(function load_stored_images_internal (url) {
-					image = decodeURIComponent(url);
-					(type = supportedImageType(image)) && getRemoteFile(image, type);
-				});
-			}();
 
 //---------------------------------------------------------------------------------------------------------
 
