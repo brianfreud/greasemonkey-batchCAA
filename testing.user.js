@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0625
+// @version     0.02.0626
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1456,6 +1456,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 
 			return storedValue;
+		},
+
+		getMime : function getMime (imageType) {
+			switch (imageType) {
+				case ('jpg') : return (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg';
+				case ('ico') : return 'vnd.microsoft.icon';
+				case ('jng') : return 'x-jng';
+				case ('pic') : return 'x-lotus-pic';
+				default      : return imageType;
+			}
 		},
 
 		getRemoteFile : function getRemoteFile (uri, imageType) {
@@ -3154,6 +3164,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
+
+
+			
+
+
 		var addRemoteImage = function add_remote_image (e) {
 			$.log('dblclick detected on comlink; creating file and thumbnail.');
 			var $comlink = $(this)
@@ -3177,13 +3192,8 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			}
 			$.log('Comlink holds an image; addRemoteImage continuing.');
 
-			switch (imageType) {
-				case ('jpg'): mime = (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg'; break;
-				case ('ico'): mime = 'vnd.microsoft.icon';                     break;
-				case ('jng'): mime = 'x-jng';                                  break;
-				case ('pic'): mime = 'x-lotus-pic';                            break;
-				default:      mime = imageType;
-			}
+			utils.getMime(imageType);
+
 			var imageFile = $.dataURItoBlob(imageBase64, mime);
 			// Create a new file in the temp local file system.
 			loadStage = 'getFile';
@@ -3388,355 +3398,325 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 //---------------------------------------------------------------------------------------------------------
 
 		// Create image editor.
-		!function create_image_editor_handler () {
-			$.log('Adding handler for image editor.');
+!function create_image_editor_handler () {
+	$.log('Adding handler for image editor.');
 
-			
-			
-				var crop = { Left   : 0
-						   , Top	: 0
-						   , Right  : 0
-						   , Bottom : 0
-						   , height : 0
-						   , width  : 0
-						   };
+	var crop = {
+		Left: 0,
+		Top: 0,
+		Right: 0,
+		Bottom: 0,
+		height: 0,
+		width: 0
+	};
 
-				if ($('#Preview‿img‿preview_image').prop('src').length === 0) {
-					return;
-				}
+	if ($('#Preview‿img‿preview_image').prop('src').length === 0) {
+		return;
+	}
 
-				$.polyfillInputNumber();
+	$.polyfillInputNumber();
 
-				$.make('div', { 'class' : 'ui-state-error'
-							 , id	  : 'ieCropError'
-							 }).text($.l('Error too much cropping'))
-							   .dialog({ autoOpen	  : false
-									   , closeOnEscape : true
-									   , title		 : $.l('Error')
-									   });
+	$.make('div', {
+		'class': 'ui-state-error',
+		id: 'ieCropError'
+	}).text($.l('Error too much cropping')).dialog({
+		autoOpen: false,
+		closeOnEscape: true,
+		title: $.l('Error')
+	});
 
-				var imageRatio	 = $('#Preview‿img‿preview_image').quickWidth(0) / $('#Preview‿img‿preview_image').quickHeight(0)
-					, c			= {}
-				  , INNERCONTEXT.DATA.imageEditor.degreesRotated = 0
-				  ;
+	var imageRatio = $('#Preview‿img‿preview_image').quickWidth(0) / $('#Preview‿img‿preview_image').quickHeight(0),
+		c = {}, INNERCONTEXT.DATA.imageEditor.degreesRotated = 0;
 
 
-				c.height = $('#ImageEditor‿div‿ie').quickHeight(0) * 0.9 << 0;
-				c.width  = c.height * imageRatio << 0;
+	c.height = $('#ImageEditor‿div‿ie').quickHeight(0) * 0.9 << 0;
+	c.width = c.height * imageRatio << 0;
 
-				// If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
-				// then figure out the height based on the editor window's width instead of the other way around.
-				var editorWindowWidth = $('#ImageEditor‿div‿ieDiv').getHiddenDimensions().width;
+	// If the above would lead to a canvas that would be wider than the editor window (a short but *really* wide image),
+	// then figure out the height based on the editor window's width instead of the other way around.
+	var editorWindowWidth = $('#ImageEditor‿div‿ieDiv').getHiddenDimensions().width;
 
-				if (editorWindowWidth < (c.width - 230)) {
-					c.width  = editorWindowWidth - 230 << 0;
-					c.height = c.width / imageRatio << 0;
-				}
+	if (editorWindowWidth < (c.width - 230)) {
+		c.width = editorWindowWidth - 230 << 0;
+		c.height = c.width / imageRatio << 0;
+	}
 
-				$('#ImageEditor‿div‿ieCanvasDiv').css({ height : c.height + 'px'
-											 , width  : c.width + 'px'
-											 });
+	$('#ImageEditor‿div‿ieCanvasDiv').css({
+		height: c.height + 'px',
+		width: c.width + 'px'
+	});
 
-				// Load the image into the canvas.
-				var canvas = document.getElementById("ieCanvas")
-				  , ctx = canvas.getContext("2d")
-				  , img = new Image()
-				  ;
+	// Load the image into the canvas.
+	var canvas = document.getElementById("ieCanvas"),
+		ctx = canvas.getContext("2d"),
+		img = new Image();
 
-				img.onload = function load_image_handler () {
-					// Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas.
-					canvas.width  = crop.width  = img.width;
-					canvas.height = crop.height = img.height;
-					$('#ImageEditor‿input‿number‿ieCropControlTop, 'ImageEditor‿input‿number‿ieCropControlBottom').prop('max', img.height);
+	img.onload = function load_image_handler() {
+		// Set the canvas size attributes.  This defines the number of pixels *in* the canvas, not the size of the canvas.
+		canvas.width = crop.width = img.width;
+		canvas.height = crop.height = img.height;
+		$('#ImageEditor‿input‿number‿ieCropControlTop, '
+		ImageEditor‿input‿number‿ieCropControlBottom ').prop('
+		max ', img.height);
 					$('#ImageEditor‿input‿number‿ieCropControlLeft, 'ImageEditor‿input‿number‿ieCropControlRight').prop('max', img.width);
 
-					//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
+		//TODO: The image is resized/cropped in image pixels, not canvas pixels.  Adjust the mask drawing function to adjust image pixels to canvas pixels.
 
-					// Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas.
-					canvas.style.height = c.height + 'px';
-					canvas.style.width = c.width + 'px';
+		// Set the canvas css size.  This defines the size of the canvas, not the number of pixels *in* the canvas.
+		canvas.style.height = c.height + 'px';
+		canvas.style.width = c.width + 'px';
 
-					ctx.drawImage(img, 0, 0);
+		ctx.drawImage(img, 0, 0);
 
-					// create a backup canvas for storing the unmodified image.
-					INNERCONTEXT.DATA.imageEditor.backupCanvas = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
-				};
+		// create a backup canvas for storing the unmodified image.
+		INNERCONTEXT.DATA.imageEditor.backupCanvas = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
+	};
 
-				img.src = $('#Preview‿img‿preview_image').prop('src');
+	img.src = $('#Preview‿img‿preview_image').prop('src');
 
 
 	INNERCONTEXT.UTILITY.imageEditor = {
-		data : INNERCONTEXT.DATA.imageEditor,
+		data: INNERCONTEXT.DATA.imageEditor,
+		degreesInRadians : Math.PI / 180,
 
-		copyCanvas : function ( canvas ) {
-			// Create and return a copy of a canvas.
-			var copy = document.createElement( 'canvas' );
+		clearCanvas : function clearCanvas (ctx) { // clear the contents of a canvas
+			ctx.save();
+			ctx.setTransform(1, 0, 0, 1, 0, 0); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			ctx.restore();
+		},
+		
+		copyCanvas : function copyCanvas (canvas) { // Create and return a copy of a canvas.
+			var copy = document.createElement('canvas');
 
 			copy.height = canvas.height;
 			copy.width = canvas.width;
-			copy.getContext( '2d' )
-			    .drawImage( canvas, 0, 0 );
-			    
+			copy.getContext('2d').drawImage(canvas, 0, 0);
+
 			return copy;
 		},
-		
-		prepCanvas: function prep_canvas_handler ( callback ) {
-			var centerH = canvas.height / 2
-			  , centerW = canvas.width / 2;
 
-			// Clear the canvas
-			ctx.save();
-			ctx.setTransform( 1, 0, 0, 1, 0, 0 ); // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-			ctx.clearRect( 0, 0, canvas.width, canvas.height );
-			ctx.restore();
+		prepCanvas : function prepCanvas (canvas, callback) {
+			var centerH = canvas.height / 2
+			  , centerW = canvas.width / 2
+			  , ctx     = canvas.getContext("2d")
+			  ;
+
+			this.clearCanvas(ctx);
 
 			// Move the origin point to the center of the canvas
-			ctx.translate( centerW, centerH );
+			ctx.translate(centerW, centerH);
 
 			// Run the callback
 			callback();
 
 			// Move the origin point back to the top left corner of the canvas
-			ctx.translate( -centerW, -centerH );
+			ctx.translate(-centerW, - centerH);
 
 			// Draw the image into the canvas
-			ctx.drawImage( this.data.backupCanvas, 0, 0 );
-			return;
+			ctx.drawImage(this.data.backupCanvas, 0, 0);
 		},
 
-		flip: function flip_handler ( h, v ) {
+		flip: function flip (e) {
 			var flip = function flip_internal() {
-				ctx.scale( h ? -1 : 1, v ? -1 : 1 );
+				ctx.scale(e.data.h ? -1 : 1, e.data.v ? -1 : 1);
 			};
 
-			this.prepCanvas( flip );
+			this.prepCanvas(canvas, flip);
 			return;
 		},
 
-		rotate: function rotate_handler ( degrees ) {
+		rotate: function rotate (degrees) {
 			var rotate = function rotate_internal() {
-				ctx.rotate( -this.data.degreesRotated * Math.PI / 180 );
-				ctx.rotate( degrees * Math.PI / 180 );
+				ctx.rotate(-this.data.degreesRotated * this.degreesInRadians);
+				ctx.rotate(degrees * this.degreesInRadians);
 				this.data.degreesRotated = degrees;
 			};
 
-			this.prepCanvas( rotate );
+			this.prepCanvas(canvas, rotate);
 			return;
 		}
 	};
-	
-	
-	
 
-				var cropMask = function handle_crop_mask_change (where) {
-					var opposite
-					  , direction
-					  , $thisControl = $('#ImageEditor‿input‿number‿ieCropControl' + where)
-					  , value = +$thisControl.val()
-					  , background = '#FFF'
-					  , color	  = '#000'
-					  , limit = +$thisControl.prop('max')
-					  , $canvas
-					  , ratio
-					  ;
 
-					switch (where) {
-						case 'Top'    : opposite = 'Bottom'; direction = 'height'; break;
-						case 'Bottom' : opposite = 'Top';	direction = 'height'; break;
-						case 'Left'   : opposite = 'Right';  direction = 'width';  break;
-						case 'Right'  : opposite = 'Left';   direction = 'width';
-					}
+	var cropMask = function handle_crop_mask_change(e) {
+		var opposite, direction, where = e.data.where,
+			$thisControl = $('#ImageEditor‿input‿number‿ieCropControl' + where),
+			value = +$thisControl.val(),
+			background = '#FFF',
+			color = '#000',
+			limit = +$thisControl.prop('max'),
+			$canvas, ratio;
 
-					if (0 > where) {
-						value = 0;
-						$thisControl.val(0);
-					}
+		switch (where) {
+			case 'Top'    : opposite = 'Bottom';  direction = 'height'; break;
+			case 'Bottom' : opposite = 'Top';     direction = 'height'; break;
+			case 'Left'   : opposite = 'Right';   direction = 'width';  break;
+			case 'Right'  : opposite = 'Left';    direction = 'width'; 
+		}
 
-					if (limit < value) {
-						value = limit;
-						$thisControl.val(limit);
-					}
+		if (0 > where) {
+			value = 0;
+			$thisControl.val(0);
+		}
 
-					if (value + crop[opposite] >= limit) {
-						background = 'pink';
-						color	  = 'red';
-//bad id
-						$('#ieCropError').dialog('open');
-					}
-					$thisControl.add('#ImageEditor‿input‿number‿ieCropControl' + opposite)
-								.css({ background : background
-									 , color	  : color
-									 });
+		if (limit < value) {
+			value = limit;
+			$thisControl.val(limit);
+		}
 
-					crop[where] = value;
-					$canvas = $('#ImageEditor‿canvas‿ieCanvas');
-					ratio = $canvas[direction]()/limit;
-					$('#ImageEditor‿div‿CAAmask' + where).css(direction, value * ratio << 0);
-					return;
-				};
+		if (value + crop[opposite] >= limit) {
+			background = 'pink';
+			color = 'red';
+			//bad id
+			$('#ieCropError').dialog('open');
+		}
+		$thisControl.add('#ImageEditor‿input‿number‿ieCropControl' + opposite).css({
+			background: background,
+			color: color
+		});
 
-				var applyCrop = function handle_apply_crop_click () {
-					var canvas  = document.getElementById("ieCanvas")
-					  , $canvas = $.single(canvas)
-					  , ctx	 = canvas.getContext('2d')
-					  ;
-
-					// Create a copy of the current canvas.
-					var copy = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
-
-					// Clear the current canvas.
-					ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-					// Calculate the width and height of the cropped area.
-					crop.height = crop.height - crop.Top - crop.Bottom;
-					crop.width  = crop.width - crop.Left - crop.Right;
-
-					// Resize the current canvas (DOM).
-					canvas.height = crop.height >> 0;
-					canvas.width = crop.width >> 0;
-
-					// Resize the current canvas (CSS).
-					var dimensions = { base  : { // This is the max size to which the canvas can grow.
-												 height : $('#ImageEditor‿div‿ieCanvasDiv').quickHeight(0) << 0
-											   , width  : $('#ImageEditor‿div‿ieCanvasDiv').quickWidth(0) << 0
-											   }
-									 , css   : {}
-									 , image : { // This is the current size of the cropped image.
-												 height : canvas.height
-											   , width  : canvas.width
-											   }
-									 };
-
-					// This calculates the scaling ratio which will best fit the image.
-					// http://stackoverflow.com/questions/1373035/how-do-i-scale-one-rectangle-to-the-maximum-size-possible-within-another-rectang
-					dimensions.ratio = Math.min(dimensions.base.width  / dimensions.image.width,
-												dimensions.base.height / dimensions.image.height);
-
-					// This is the final calculated size for canvas.
-					dimensions.css = { height : dimensions.ratio * dimensions.image.height
-									 , width  : dimensions.ratio * dimensions.image.width
-									 };
-
-					// Apply the calculated size to the canvas.
-					$canvas.css('height', dimensions.css.height + 'px')
-						   .css('width',  dimensions.css.width  + 'px');
-
-					// Adjust the max for the crop controls.
-
-					$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom').prop('max', dimensions.image.height);
-					$('#ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').prop('max', dimensions.image.width);
-
-					// Draw the image from the backup canvas to the current canvas while applying the crop.
-					ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
-					return;
-				};
-
-				var resetCrop = function handle_apply_crop_click () {
-					$('.maskVertical').css('height', 0);
-					$('.maskHorizontal').css('width', 0);
-					$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom, #ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').val(0);
-					crop.Left = crop.Right = crop.Top = crop.Bottom = 0;
-					crop.width = canvas.width;
-					crop.height = canvas.height;
-					return;
-				};
-
-				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipVertical',
-					function flip_vertical_click_event_handler () {
-						flip(0, 1);
-					}
-				)
-				.on('click', '#ImageEditor‿input‿button‿ieFlipHorizontal',
-					function flip_horizontal_click_event_handler () {
-						flip(1, 0);
-					}
-				)
-				.on('change', '#ImageEditor‿input‿number‿ieRotateControl',
-					function rotate_controls_change_event_handler () {
-						INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
-					}
-				)
-				.on('change', '#ImageEditor‿input‿number‿ieCropControlTop',
-					function crop_controls_change_event_handler_top () {
-						cropMask('Top');
-					}
-				)
-				.on('change', '#ImageEditor‿input‿number‿ieCropControlBottom',
-					function crop_controls_change_event_handler_bottom () {
-						cropMask('Bottom');
-					}
-				)
-				.on('change', '#ImageEditor‿input‿number‿ieCropControlLeft',
-					function crop_controls_change_event_handler_left () {
-						cropMask('Left');
-					}
-				)
-				.on('change', '#ImageEditor‿input‿number‿ieCropControlRight',
-					function crop_controls_change_event_handler_right () {
-						cropMask('Right');
-					}
-				)
-				.on('click', '#ImageEditor‿input‿button‿ieApplyCropBtn',
-					function crop_controls_apply_crop_click_event_handler () {
-						var canvas = document.getElementById("ieCanvas");
-	
-						applyCrop();
-						resetCrop();
-					}
-				)
-				.on('click', '#ImageEditor‿input‿button‿ieSaveImageBtn',
-					function image_editor_save_button_click_handler () {
-					var canvas = document.getElementById("ieCanvas")
-					  , ctx = canvas.getContext("2d")
-					  ;
-
-					// Fill background of canvas with solid white box.  Without this, the default is a solid black background.
-					ctx.setTransform(1, 0, 0, 1, 0, 0);
-					ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
-					ctx.fillStyle = '#FFF';
-					ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-//TODO: Apply cropping to saved images
-
-					// Save the image.
-					INNERCONTEXT.UTILITY.addDropboxImage(
-									 $.dataURItoBlob(
-													canvas.toDataURL("image/jpeg"), 'jpeg'
-													),
-									 'edited image', ''
-									 );
-
-					// Close the image editor.
-					$('#ImageEditor‿input‿button‿ieCancelBtn').trigger('click');
-				});
-
-				// Create the css rule for the crop mask.
-				$.make('style', { id : 'ieMaskColorStyle' }).text('.CAAmask { background-color: ' + INNERCONTEXT.UTILITY.getColor('MASK') + '; }')
-																   .attr('type', 'text/css')
-																   .appendTo('head');
-
-				// Create the color picker.
-				$.log('Creating color picker for image editor');
-				var iePicker = new jscolor.color(document.getElementById('ieMaskColorControl'), {});
-				iePicker.hash = true;
-				iePicker.pickerFace = 5;
-				iePicker.pickerInsetColor = 'black';
-				iePicker.fromString(INNERCONTEXT.UTILITY.getColor('MASK'));
-
-				// Add functionality to the color picker to change the css rule for the crop mask.
-				
-				$('#ImageEditor‿input‿color‿ieMaskColorControl').on('change', function mask_controls_change_event_handler (e) {
-//bad id
-					$('#ieMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
-					iePicker.fromString(this.value);
-				});
-
-//TODO: Figure out why the image editor color picker isn't changing the color in Firefox
-//TODO: Figure out why the image mask is invisible in Firefox
-
-			});
-		}();
+		crop[where] = value;
+		$canvas = $('#ImageEditor‿canvas‿ieCanvas');
+		ratio = $canvas[direction]() / limit;
+		$('#ImageEditor‿div‿CAAmask' + where).css(direction, value * ratio << 0);
+		return;
 	};
 
+	var applyCrop = function handle_apply_crop_click() {
+		var canvas = document.getElementById("ieCanvas"),
+			$canvas = $.single(canvas),
+			ctx = canvas.getContext('2d');
+
+		// Create a copy of the current canvas.
+		var copy = INNERCONTEXT.UTILITY.imageEditor.copyCanvas(canvas);
+
+		// Clear the current canvas.
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		// Calculate the width and height of the cropped area.
+		crop.height = crop.height - crop.Top - crop.Bottom;
+		crop.width = crop.width - crop.Left - crop.Right;
+
+		// Resize the current canvas (DOM).
+		canvas.height = crop.height >> 0;
+		canvas.width = crop.width >> 0;
+
+		// Resize the current canvas (CSS).
+		var dimensions = {
+			base: { // This is the max size to which the canvas can grow.
+				height: $('#ImageEditor‿div‿ieCanvasDiv').quickHeight(0) << 0,
+				width: $('#ImageEditor‿div‿ieCanvasDiv').quickWidth(0) << 0
+			},
+			css: {},
+			image: { // This is the current size of the cropped image.
+				height: canvas.height,
+				width: canvas.width
+			}
+		};
+
+		// This calculates the scaling ratio which will best fit the image.
+		// http://stackoverflow.com/questions/1373035/how-do-i-scale-one-rectangle-to-the-maximum-size-possible-within-another-rectang
+		dimensions.ratio = Math.min(dimensions.base.width / dimensions.image.width,
+		dimensions.base.height / dimensions.image.height);
+
+		// This is the final calculated size for canvas.
+		dimensions.css = {
+			height: dimensions.ratio * dimensions.image.height,
+			width: dimensions.ratio * dimensions.image.width
+		};
+
+		// Apply the calculated size to the canvas.
+		$canvas.css('height', dimensions.css.height + 'px').css('width', dimensions.css.width + 'px');
+
+		// Adjust the max for the crop controls.
+
+		$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom').prop('max', dimensions.image.height);
+		$('#ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').prop('max', dimensions.image.width);
+
+		// Draw the image from the backup canvas to the current canvas while applying the crop.
+		ctx.drawImage(copy, crop.Left, crop.Top, crop.width, crop.height, 0, 0, crop.width, crop.height);
+		return;
+	};
+
+	var resetCrop = function handle_apply_crop_click() {
+		$('.maskVertical').css('height', 0);
+		$('.maskHorizontal').css('width', 0);
+		$('#ImageEditor‿input‿number‿ieCropControlTop, #ImageEditor‿input‿number‿ieCropControlBottom, #ImageEditor‿input‿number‿ieCropControlLeft, #ImageEditor‿input‿number‿ieCropControlRight').val(0);
+		crop.Left = crop.Right = crop.Top = crop.Bottom = 0;
+		crop.width = canvas.width;
+		crop.height = canvas.height;
+		return;
+	};
+
+$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipVertical', { h:0, v:1 }, flip)
+                           .on('click', '#ImageEditor‿input‿button‿ieFlipHorizontal', { h:1, v:0 }, flip)
+                           .on('change', '#ImageEditor‿input‿number‿ieCropControlTop', { where: 'Top' }, cropMask)
+                           .on('change', '#ImageEditor‿input‿number‿ieCropControlBottom', { where: 'Bottom' }, cropMask)
+                           .on('change', '#ImageEditor‿input‿number‿ieCropControlLeft', { where: 'Left' }, cropMask)
+                           .on('change', '#ImageEditor‿input‿number‿ieCropControlRight', { where: 'Right' }, cropMask)
+                           .on('change', '#ImageEditor‿input‿number‿ieRotateControl',
+								function rotate_controls_change_event_handler () {
+									INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
+								}
+							)
+                           .on('click', '#ImageEditor‿input‿button‿ieApplyCropBtn',
+								function crop_controls_apply_crop_click_event_handler () {
+									var canvas = document.getElementById("ieCanvas");
+									applyCrop();
+									resetCrop();
+								}
+							)
+                           .on('click', '#ImageEditor‿input‿button‿ieSaveImageBtn',
+								function image_editor_save_button_click_handler () {
+								var canvas = document.getElementById("ieCanvas")
+								  , ctx = canvas.getContext("2d")
+								  ;
+
+								// Fill background of canvas with solid white box.  Without this, the default is a solid black background.
+								ctx.setTransform(1, 0, 0, 1, 0, 0);
+								ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
+								ctx.fillStyle = '#FFF';
+								ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+			//TODO: Apply cropping to saved images
+
+								// Save the image.
+								INNERCONTEXT.UTILITY.addDropboxImage(
+												 $.dataURItoBlob(
+																canvas.toDataURL("image/jpeg"), 'jpeg'
+																),
+												 'edited image', ''
+												 );
+
+								// Close the image editor.
+								$('#ImageEditor‿input‿button‿ieCancelBtn').trigger('click');
+							});
+
+	// Create the css rule for the crop mask.
+	$.make('style', {
+		id: 'ieMaskColorStyle'
+	}).text('.CAAmask { background-color: ' + INNERCONTEXT.UTILITY.getColor('MASK') + '; }').attr('type', 'text/css').appendTo('head');
+
+	// Create the color picker.
+	$.log('Creating color picker for image editor');
+	var iePicker = new jscolor.color(document.getElementById('ieMaskColorControl'), {});
+	iePicker.hash = true;
+	iePicker.pickerFace = 5;
+	iePicker.pickerInsetColor = 'black';
+	iePicker.fromString(INNERCONTEXT.UTILITY.getColor('MASK'));
+
+	// Add functionality to the color picker to change the css rule for the crop mask.
+
+	$('#ImageEditor‿input‿color‿ieMaskColorControl').on('change', function mask_controls_change_event_handler(e) {
+//bad id
+		$('#ieMaskColorStyle').text('.CAAmask { background-color: ' + this.value + '; }');
+		iePicker.fromString(this.value);
+	});
+
+	//TODO: Figure out why the image editor color picker isn't changing the color in Firefox
+	//TODO: Figure out why the image mask is invisible in Firefox
+
+});
 
 */
