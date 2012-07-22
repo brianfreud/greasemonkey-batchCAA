@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0623
+// @version     0.02.0624
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -665,7 +665,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, 'figure.CaabieDropBox':
 		{ 'border-radius'          : '6px'
 		,  display                 : 'inline-block'
-		,  margin                  : '6px'
+		,  margin                  : '8px'
 		, 'min-height'             : '126px'
 		,  padding                 : '3px'
 		, 'vertical-align'         : 'middle'
@@ -2670,16 +2670,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( click, '.caaAdd', ui.addNewImageDropBox) // Add new image dropboxes
 			        .on( click, '.caaLoad', util.loadRowInfo) // Load release info
 			        .on( click, '.previewable:not(.newCAAimage)', { dom: dom, ui: ui }, util.previewImage ) // Image preview functionality
-			        .on( click, '.caaAll', events.caaAllBtn.click ) // Load all button functionality
+			        .on( click, '.caaAll', events.caaAllBtn.click ) // 'Load all' button functionality
+					.on( click, '#Preview‿img‿preview_image', ui.openEditor ) // open image editor on click of preview image
+					.on( click, '#ImageEditor‿header‿maximize', ui.maximizeEditor ) // image editor maximize button
+					.on( change, 'select.CaabieDropBox', ui.checkCompletion ) // Test edits for completeness
 			        // Add functionality to allow dragging from the images box to a specific CAA image box.
 			        .on( 'dragstart', '.localImage', events.handleDrag.dragstart )
 			        .on( 'dragend', '.localImage', events.handleDrag.check )
 			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
 			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
-			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
-					.on( click, '#Preview‿img‿preview_image', ui.openEditor ) // open image editor on click of preview image
-					.on( click, '#ImageEditor‿header‿maximize', ui.maximizeEditor ) // image editor maximize button
-					.on( change, 'select.CaabieDropBox', ui.checkCompletion ); // Test edits for completeness
+			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check );
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
