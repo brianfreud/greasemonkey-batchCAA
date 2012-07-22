@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0616
+// @version     0.02.0617
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -110,14 +110,16 @@ OUTERCONTEXT.CONSTANTS =
 		, MASK       : '#000'
 		}
 	, COVERTYPES     : /* The order of items in this array matters! */
-		[ 'Front'
-		, 'Back'
-		, 'Booklet'
-		, 'Medium'
-		, 'Obi'
-		, 'Spine'
-		, 'Track'
-		, 'Other'
+		[ 'Front'    // 1
+		, 'Back'     // 2
+		, 'Booklet'  // 3
+		, 'Medium'   // 4
+		, 'Obi'      // 5
+		, 'Spine'    // 6
+		, 'Track'    // 7
+		, 'Other'    // 8
+		, 'Tray'     // 9
+		, 'Sticker'  // 10
 		]
 	, IESHADOWLVL    : 75
 	, FILESYSTEMSIZE : 50 /* This indicates the number of megabytes to use for the temporary local file system. */
