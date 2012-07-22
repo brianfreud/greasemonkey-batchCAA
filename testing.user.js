@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0624
+// @version     0.02.0625
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -2045,11 +2045,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		maximizeEditor : function maximizeEditor (e) {
-			util.requestFullScreen(dom['ImageEditor‿div‿ieDiv'][0]);
+			INNERCONTEXT.UTILITY.requestFullScreen(INNERCONTEXT.DOM['ImageEditor‿div‿ieDiv'][0]);
 		},
 						
 		openEditor : function openEditor (e) {
-			$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor()));
+			var editor = INNERCONTEXT.UTILITY.assemble('ImageEditorElement', INNERCONTEXT.TEMPLATES.imageEditor());
+			$.fn.prepend.apply(INNERCONTEXT.DOM.body, editor);
 		},
 
 		previewImage : function previewImage ($img, dom) {
@@ -3640,42 +3641,51 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 					return;
 				};
 
-				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipVertical', function flip_vertical_click_event_handler () {
-					flip(0, 1);
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipHorizontal', function flip_vertical_click_event_horizontal () {
-					flip(1, 0);
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieRotateControl', function rotate_controls_change_event_handler () {
-					INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlTop', function crop_controls_change_event_handler_top () {
-					cropMask('Top');
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlBottom', function crop_controls_change_event_handler_bottom () {
-					cropMask('Bottom');
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlLeft', function crop_controls_change_event_handler_left () {
-					cropMask('Left');
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('change', '#ImageEditor‿input‿number‿ieCropControlRight', function crop_controls_change_event_handler_right () {
-					cropMask('Right');
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieApplyCropBtn', function crop_controls_apply_crop_click_event_handler () {
-					var canvas = document.getElementById("ieCanvas");
-
-					applyCrop();
-					resetCrop();
-				});
-
-				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieSaveImageBtn', function image_editor_save_button_click_handler () {
+				$('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieFlipVertical',
+					function flip_vertical_click_event_handler () {
+						flip(0, 1);
+					}
+				)
+				.on('click', '#ImageEditor‿input‿button‿ieFlipHorizontal',
+					function flip_horizontal_click_event_handler () {
+						flip(1, 0);
+					}
+				)
+				.on('change', '#ImageEditor‿input‿number‿ieRotateControl',
+					function rotate_controls_change_event_handler () {
+						INNERCONTEXT.UTILITY.imageEditor.rotate($.single( this ).val());
+					}
+				)
+				.on('change', '#ImageEditor‿input‿number‿ieCropControlTop',
+					function crop_controls_change_event_handler_top () {
+						cropMask('Top');
+					}
+				)
+				.on('change', '#ImageEditor‿input‿number‿ieCropControlBottom',
+					function crop_controls_change_event_handler_bottom () {
+						cropMask('Bottom');
+					}
+				)
+				.on('change', '#ImageEditor‿input‿number‿ieCropControlLeft',
+					function crop_controls_change_event_handler_left () {
+						cropMask('Left');
+					}
+				)
+				.on('change', '#ImageEditor‿input‿number‿ieCropControlRight',
+					function crop_controls_change_event_handler_right () {
+						cropMask('Right');
+					}
+				)
+				.on('click', '#ImageEditor‿input‿button‿ieApplyCropBtn',
+					function crop_controls_apply_crop_click_event_handler () {
+						var canvas = document.getElementById("ieCanvas");
+	
+						applyCrop();
+						resetCrop();
+					}
+				)
+				.on('click', '#ImageEditor‿input‿button‿ieSaveImageBtn',
+					function image_editor_save_button_click_handler () {
 					var canvas = document.getElementById("ieCanvas")
 					  , ctx = canvas.getContext("2d")
 					  ;
