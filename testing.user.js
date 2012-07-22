@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0618
+// @version     0.02.0619
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -42,7 +42,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
 //TODO: Refactor: util.addRemoteImage
-//TODO: Refactor: convertImage
 //------------------------------------
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
@@ -1414,6 +1413,36 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			dom['ImageEditor‿div‿CAAoverlay'].fadeOut('fast').remove();
 		},
 
+		convertImage : function convertImage (inputImage, type, source) {
+			var reader = new FileReader();
+
+			reader.onload = function convertImage_reader_onload_handler (e) {
+				if ($.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) + 1) {
+					var img = new Image();				
+				
+					img.onload = function convertImage_image_converter () {
+						var imgDataURL
+						  , imgBlob
+						  , canvas = document.createElement("canvas")
+						  , ctx = canvas.getContext("2d")
+						  ;
+				  
+						canvas.width = img.width;
+						canvas.height = img.height;
+						ctx.drawImage(img, 0, 0);
+
+						imgDataURL = canvas.toDataURL("image/jpeg"),
+						imgBlob = $.dataURItoBlob(imgDataURL, 'jpeg');
+						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, 'converted local ' + type, source);
+					};
+
+					img.src = reader.result;
+				}
+			};
+
+			reader.readAsDataURL(inputImage);
+		},
+
 		getEditColor : function getEditColor ($ele) {
 			// Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status.
 			$.log('Testing edit status to determine background color for dropbox.');
@@ -1511,8 +1540,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				}
 				$.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
 				"jpg" === type ? INNERCONTEXT.UTILITY.addDropboxImage(file, "local")
-/*temp code*/                  : true;
-//							   : convertImage(file, type, name);
+							   : util.convertImage(file, type, name);
 			}
 		},
 
@@ -2415,6 +2443,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Firefox renders slideToggle() badly; use toggle() instead.
 			$.browser.mozilla && ( $.fn.slideToggle = $.fn.toggle );
+
+			// WebP-support test
+			var img = new Image();
+			img.onload = img.onerror = function () {
+				if (img.height === 2) {
+					INNERCONTEXT.CONSTANTS.IMAGEFORMATS.push('webp');
+				}
+			};
+			img.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
 		}(),
 
 		initializeLocalStorage : function initializelocalStorage (util) {
@@ -3111,55 +3148,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 //---------------------------------------------------------------------------------------------------------
 
-		var convertImage = function convertImage (inputImage, type, source) {
-				$.log(['convertImage: received ', type, ' file: "', source, '"'].join(''));
-				var canvas = document.createElement("canvas"),
-					reader = new FileReader();
-				var ctx = canvas.getContext("2d");
-
-				reader.onload = function convertImage_reader_onload_handler (e) {
-					var img = new Image();
-					var useCanvasData = function useCanvasData () {
-						$.log('Appending temporary canvas item to the body.');
-						INNERCONTEXT.CONSTANTS.DEBUGMODE && $('body').append($(canvas)).prop('title', source);
-						$.log('Converting image to jpg, sending new blob to addDropboxImage.');
-						INNERCONTEXT.UTILITY.addDropboxImage(
-										 $.dataURItoBlob(
-														canvas.toDataURL("image/jpeg"), 'jpeg'
-														),
-										 'converted local ' + type, source
-										 );
-					};
-
-					if (type === 'webp' && $.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) === -1) {
-						// WebP-support test
-						img.onload = img.onerror = function convertImage_webp_test_handler () {
-							if (img.height === 2) {
-								INNERCONTEXT.CONSTANTS.IMAGEFORMATS.push('webp');
-							}
-						};
-						img.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
-					}
-
-					// Convert image if its image format is supported via either polyfill or native
-					if ($.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) + 1) {
-						img.onload = function convertImage_image_converter () {
-							canvas.width = img.width;
-							canvas.height = img.height;
-							ctx.drawImage(img, 0, 0);
-							useCanvasData();
-						};
-
-						img.src = reader.result;
-					}
-				};
-
-				reader.readAsDataURL(inputImage);
-				return;
-			};
-
-//---------------------------------------------------------------------------------------------------------
-
 		var addRemoteImage = function add_remote_image (e) {
 			$.log('dblclick detected on comlink; creating file and thumbnail.');
 			var $comlink = $(this)
@@ -3208,7 +3196,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 							$.log('Adding remote image to the drop zone.');
 							thisFile.file(function fileWriter_onwriteend_internal (file) {
 								if (imageType !== 'jpg') {
-									convertImage(file, imageType, uri);
+									INNERCONTEXT.UTILITY.convertImage(file, imageType, uri);
 									INNERCONTEXT.UTILITY.addDropboxImage(file, 'converted remote ' + imageType, uri);
 								} else {
 									INNERCONTEXT.UTILITY.addDropboxImage(file, 'Remote', uri);
