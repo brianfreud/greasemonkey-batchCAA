@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0615
+// @version     0.02.0616
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -94,7 +94,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0615'
+	, VERSION        : '0.02.0616'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -286,6 +286,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Changed colors note'      : 'Changes to the color settings will take effect the next time that this script is run.'
 			, 'Changed language note'    : 'Changes to the language setting will take effect the next time that this script is run.'
 			, 'Click to edit this image' : 'Left click to edit this image'
+			, 'Close'                    : 'Close'
 			, 'Colors'                   : 'Colors'
 			, 'Crop image'               : 'Crop'
 			, 'default'                  : 'default'
@@ -319,6 +320,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Shrink image'             : 'Zoom out'
 			, 'Submit as autoedits'      : 'Submit edits as autoedits'
 			, 'Submit edits'             : 'Submit edits'
+			, 'Switch to full screen'    : 'Switch to full screen view'
 			, 'take effect next time'    : 'Changes to the language and color settings will take effect the next time that this script is run.'
 			, 'Top'                      : 'Top'
 			, 'Version'                  : 'Version'
@@ -2206,7 +2208,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	/* A generic close button.  */
 	INNERCONTEXT.TEMPLATES.CONTROLS.closeButton = function () {
-		return { ele: 'header', 'class': 'closeButton', text: 'x', noid: true };
+		return { ele: 'header', title: $.l('Close'), 'class': 'closeButton', text: 'x', noid: true };
 	};
 
 	INNERCONTEXT.TEMPLATES.CONTROLS.crop = function makeControl_crop (where) {
@@ -2317,7 +2319,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		return [ { ele: div, id:'CAAoverlay', 'class': 'ie' }
 			   , { ele: div, id: 'ie', 'class': 'ie' }
 			   ,	[ controls.closeButton()
-					, { ele: 'header', id: 'maximize', 'class': 'maximizeButton', text: '' }
+					, { ele: 'header', id: 'maximize', title: $.l('Switch to full screen'), 'class': 'maximizeButton', text: '' }
 					, { ele: div, id: 'ieDiv' }
 					,	[ { ele: div, id: 'ieCanvasDiv' }
 						,	[ mask('Left', 'Horizontal')
