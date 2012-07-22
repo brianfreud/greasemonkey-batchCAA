@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0617
+// @version     0.02.0618
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -334,6 +334,8 @@ OUTERCONTEXT.CONSTANTS =
 			, 'coverType:Other'          : 'Other'
 			, 'coverType:Spine'          : 'Spine'
 			, 'coverType:Track'          : 'Track'
+			, 'coverType:Tray'           : 'Tray'
+			, 'coverType:Sticker'        : 'Sticker'
 			, 'About'                    : 'About'
 			, 'Developer and programmer' : 'Developer and programmer'
 			, 'Icons'                    : 'Icons'
@@ -684,7 +686,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'max-width'              : '120px'
 		}
 	, '.CAAdropbox > figcaption':
-		{  height                  : '15em'
+		{  height                  : '17em'
 		,  position                : 'relative'
 		, 'text-align'             : 'center'
 		}
@@ -704,7 +706,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{ 'appearance'             : 'caret'
 		, 'background-color'       : 'transparent'
 		,  clear                   : 'both'
-		,  clip                    : 'rect(2px, 49px, 145px, 2px)'
+		,  clip                    : 'rect(2px, 49px, 15em, 2px)'
 		,  color                   : '#555'
 		, 'font-size'              : 'inherit'
 		,  left                    : '30px'
@@ -1865,7 +1867,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					return $.make('option', { value : i+1 }).text($.l('coverType:' + type));
 				};
 
-				widgets.$coverTypeSelect = $typeList.appendAll(types.map($makeCoverTypeOption));
+				var compareOptions = function compareOptions (a, b) {
+					return $(a).text().toUpperCase().localeCompare($(b).text().toUpperCase());
+				};
+
+				widgets.$coverTypeSelect = $typeList.appendAll(types.map($makeCoverTypeOption).sort(compareOptions));
 			}
 			return widgets.$coverTypeSelect.quickClone(true);
 		},
@@ -1902,22 +1908,22 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		$makeColorsList : function $makeColorsList () {
-			var colors		= Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
-			  , colorsMap	 = []
+			var colors        = Object.keys(INNERCONTEXT.CONSTANTS.COLORS)
+			  , colorsMap     = []
 			  , $colorOptions = []
 			  ;
 
-			var prepColorList = function prep_color_list_for_sorting (color, i) {
+			var prepColorList = function prepColorList (color, i) {
 				colorsMap.push({ index: i
 							   , value: $.l(color).toLowerCase()
 							   });
 			};
 
-			var sortColors = function sort_color_list (a, b) {
+			var sortColors = function sortColors (a, b) {
 				return a.value > b.value ? 1 : -1;
 			};
 
-			var makeColorList = function make_colors_list (map) {
+			var makeColorList = function makeColorList (map) {
 				var colorItem   = colors[map.index]
 				  , color       = INNERCONTEXT.CONSTANTS.COLORS[colorItem]
 				  , lsItemName  = 'colors_' + colorItem

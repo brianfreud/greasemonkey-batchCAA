@@ -74,3 +74,5 @@ Cropping this much would remove the entire image!
 Apply
 Close
 Switch to full screen view
+Tray
+Sticker
