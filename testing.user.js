@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0622
+// @version     0.02.0623
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1805,6 +1805,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			e.data.picker.data('picker').fromString(color);
 		},
 
+		checkCompletion : function checkCompletion (e) {
+			var $figure = $(e.target).parents('figure:first');
+			$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
+		},
+						
 		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
 			$dropBox.detach(function convertEmptyDropbox_internal () {
 				$.single(this).removeClass('newCAAimage')
@@ -2037,6 +2042,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 																 }).text(language[1]);
 									  };
 			return languages.map(makeLanguageOptions);
+		},
+
+		maximizeEditor : function maximizeEditor (e) {
+			util.requestFullScreen(dom['ImageEditor‿div‿ieDiv'][0]);
+		},
+						
+		openEditor : function openEditor (e) {
+			$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor()));
 		},
 
 		previewImage : function previewImage ($img, dom) {
@@ -2664,16 +2677,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
 			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
 			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
-					.on( click, '#Preview‿img‿preview_image',// open image editor on click of preview image
-						function (e) {
-							$.fn.prepend.apply(dom.body, util.assemble('ImageEditorElement', templates.imageEditor()));
-						}
-					)
-					.on( click, '#ImageEditor‿header‿maximize', // image editor maximize button
-						function (e) {
-							util.requestFullScreen(dom['ImageEditor‿div‿ieDiv'][0]);
-						}
-					);
+					.on( click, '#Preview‿img‿preview_image', ui.openEditor ) // open image editor on click of preview image
+					.on( click, '#ImageEditor‿header‿maximize', ui.maximizeEditor ) // image editor maximize button
+					.on( change, 'select.CaabieDropBox', ui.checkCompletion ); // Test edits for completeness
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)
@@ -3143,17 +3149,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			INNERCONTEXT.UTILITY.checkScroll($.single( this ));
 		});
 	};
-
-
-//---------------------------------------------------------------------------------------------------------
-
-	// Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
-	   testing for completeness after an image is added is tested within that drop handler.
-	$('body').on('change', 'select.CaabieDropBox', function select_change_handler (e) {
-		var $figure = $(e.target).parents('figure:first');
-		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
-	});
-
 
 
 //---------------------------------------------------------------------------------------------------------
