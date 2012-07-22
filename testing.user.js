@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0619
+// @version     0.02.0621
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -662,7 +662,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  opacity                 : OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.OPACITY
 		,  transform               : OUTERCONTEXT.CSSSTRINGS.SHRINK
 		}
-	, '.CAAdropbox':
+	, 'figure.CaabieDropBox':
 		{ 'border-radius'          : '6px'
 		,  display                 : 'inline-block'
 		,  margin                  : '6px'
@@ -671,48 +671,44 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'vertical-align'         : 'middle'
 		,  width                   : '126px'
 		}
-	, '.CAAdropbox > div':
-		{  display                 : 'block'
+	, 'div.CaabieDropBox':
+		{  clear                   : 'both'
+		,  display                 : 'block'
+		, 'font-size'              : '80%'
 		,  height                  : '120px'
 		,  margin                  : '3px'
 		,  width                   : '100%'
 		}
-	, '.CAAdropbox > div > img':
+	, 'img.CaabieDropBox':
 		{  display                 : 'block'
 		, 'image-rendering'        : 'optimizeQuality'
 		,  margin                  : 0
 		, 'max-height'             : '120px'
 		, 'max-width'              : '120px'
 		}
-	, '.CAAdropbox > figcaption':
+	, 'figcaption.CaabieDropBox':
 		{  height                  : '17em'
 		,  position                : 'relative'
 		, 'text-align'             : 'center'
 		}
-	, '.CAAdropbox > figcaption > div':
-		{ 'font-size'              : '80%'
-		,  height                  : '2.5em'
-		}
-	, '.CAAdropbox > figcaption > input':
-		{ 'font-size'              : '12px'
+	, 'input.CaabieDropBox':
+		{  clear                   : 'both'
+		, 'font-size'              : '12px'
 		,  padding                 : '2px'
 		,  width                   : '94%'
 		}
-	, '.CAAdropbox > figcaption > input, .CAAdropbox > figcaption > div':
-		{  clear                   : 'both'
-		}
-	, '.caaSelect':
+	, 'select.CaabieDropBox':
 		{ 'appearance'             : 'caret'
 		, 'background-color'       : 'transparent'
 		,  clear                   : 'both'
-		,  clip                    : 'rect(2px, 49px, 15em, 2px)'
+		,  clip                    : 'rect(2px, 49px, 17em, 2px)'
 		,  color                   : '#555'
 		, 'font-size'              : 'inherit'
 		,  left                    : '30px'
 		,  margin                  : 0
 		, 'padding-bottom'         : '20px'
 		, 'padding-right'          : '20px'
-		, 'padding-top'            : '8px'
+		, 'padding-top'            : '3em'
 		,  position                : 'absolute'
 		, 'text-align'             : 'center'
 		}
@@ -743,6 +739,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '.caaDiv':
 		{  display                 : 'inline-block'
 		, 'overflow-x'             : 'auto!important'
+		, 'overflow-y'             : 'hidden'
 		, 'padding-left'           : '25px'
 		, 'white-space'            : 'nowrap'
 		,  width                   : '100%'
@@ -916,7 +913,6 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, 'fieldset':
 		{  border                  : '1px solid #D3D3D3'
 		, 'border-radius'          : '8px'
-		,  margin                  : '30px -4px 7px'
 		,  padding                 : '6px'
 		}
 	, '#ImageEditor‿div‿ieMenu > fieldset':
@@ -1373,7 +1369,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			void 0 === $caaDiv.data('width') && $caaDiv.data('width', $caaDiv.quickWidth(0));
 			var $parents   = $caaDiv.parents()
-			  , $dropboxes = $caaDiv.find('.CAAdropbox')
+			  , $dropboxes = $caaDiv.find('figure.CaabieDropBox')
 			  , divWidth   = $dropboxes.length * $dropboxes.filter(':first').outerWidth(true)
 			  ;
 
@@ -1884,7 +1880,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$coverTypeSelect) {
 				var types = INNERCONTEXT.CONSTANTS.COVERTYPES
-				  , $typeList = $.make('select', { 'class'  : 'caaSelect'
+				  , $typeList = $.make('select', { 'class'  : 'CaabieDropBox'
 				                                 , noid     : true
 				                                 , multiple : 'multiple'
 				                                 , size     : types.length
@@ -1910,7 +1906,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var widgets = INNERCONTEXT.WIDGETS;
 
 			if (void 0 === widgets.$dropBox) {
-				widgets.$dropBox = INNERCONTEXT.UTILITY.assemble(INNERCONTEXT.TEMPLATES.dropbox)[0];
+				widgets.$dropBox = INNERCONTEXT.UTILITY.assemble('DropBoxElement', INNERCONTEXT.TEMPLATES.dropbox)[0];
 			}
 			return widgets.$dropBox.quickClone(true);
 		},
@@ -2168,6 +2164,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 	INNERCONTEXT.UTILITY.inherit(INNERCONTEXT.UI.PreviewElement, INNERCONTEXT.UI.GenericElement);
 
+	/** @constructor */
+	INNERCONTEXT.UI.DropBoxElement = function DropBoxElement () {
+		if (!(this instanceof DropBoxElement)) {
+			return new DropBoxElement(arguments[0]);
+		}
+
+		INNERCONTEXT.UI.GenericElement.apply(this, arguments);
+		this.noid = true;
+		this.prefix = "DropBox";
+		this.addedClasses.push('DropBox');
+	};
+	INNERCONTEXT.UTILITY.inherit(INNERCONTEXT.UI.DropBoxElement, INNERCONTEXT.UI.GenericElement);
+
 	INNERCONTEXT.EVENTS = {
 		caaAllBtn : {
 			click : function caaAllBtn_click () {
@@ -2416,14 +2425,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	INNERCONTEXT.TEMPLATES.dropbox =
-		[ { ele: 'figure', 'class': 'CAAdropbox', noid: true }
+		[ { ele: 'figure' }
 		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton()
-			, { ele: 'div', noid: true }
-			,	[ { ele: 'img', 'class': 'dropBoxImage newCAAimage previewable', draggable : false, noid: true }
+			, { ele: 'div' }
+			,	[ { ele: 'img', 'class': 'dropBoxImage newCAAimage previewable', draggable : false }
 				]
-			, { ele: 'figcaption', noid: true }
-			,	[ { ele: 'input', type: 'text', placeholder : 'image comment', noid: true }
-				, { ele: 'br', noid: true }
+			, { ele: 'figcaption' }
+			,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
 				, INNERCONTEXT.UI.$makeCoverTypeSelect()
 				]
 			]
@@ -3139,7 +3147,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	// Edit completeness testing for the select list in each dropbox.  This tests for completeness after a change to a select;
 	   testing for completeness after an image is added is tested within that drop handler.
-	$('body').on('change', '.caaSelect', function select_change_handler (e) {
+	$('body').on('change', 'select.CaabieDropBox', function select_change_handler (e) {
 		var $figure = $(e.target).parents('figure:first');
 		$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
 	});
