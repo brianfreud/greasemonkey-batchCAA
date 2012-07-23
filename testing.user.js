@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0626
+// @version     0.02.0635
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -41,7 +41,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
-//TODO: Refactor: util.addRemoteImage
 //------------------------------------
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
@@ -402,35 +401,35 @@ if (OUTERCONTEXT.CONSTANTS.DEBUGMODE) {
 }
 
 OUTERCONTEXT.UTILITY.extend( OUTERCONTEXT.UTILITY,
-	                         { getColor:
-		                         // Gets a color value stored in localStorage.
-		                         function getColor(colors, color) {
-			                         'use strict';
-			                         var thisColor = localStorage.getItem('Caabie_colors_' + color);
+	{ getColor:
+		// Gets a color value stored in localStorage.
+		function getColor(colors, color) {
+			'use strict';
+			var thisColor = localStorage.getItem('Caabie_colors_' + color);
 
-			                         if (arguments.length === 1) {
-				                         color = colors;
-				                         colors = OUTERCONTEXT.CONSTANTS.COLORS;
-			                         }
+			if (arguments.length === 1) {
+				color = colors;
+				colors = OUTERCONTEXT.CONSTANTS.COLORS;
+			}
 
-			                         thisColor === null && (thisColor = colors[color]);
-			                         return thisColor;
-		                         }
-		                     , hexToRGBA:
-		                         // Converts a hex color string into an rgba color string
-		                         function hexToRGBA(hex, opacity) {
-			                         'use strict';
-			                         hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
+			thisColor === null && (thisColor = colors[color]);
+			return thisColor;
+		}
+	, hexToRGBA:
+		// Converts a hex color string into an rgba color string
+		function hexToRGBA(hex, opacity) {
+			'use strict';
+			hex = ('#' === hex.charAt(0) ? hex.substring(1, 7) : hex);
 
-			                         var R = parseInt(hex.substring(0, 2), 16)
-			                           , G = parseInt(hex.substring(2, 4), 16)
-			                           , B = parseInt(hex.substring(4, 6), 16)
-			                           ;
+			var R = parseInt(hex.substring(0, 2), 16)
+			  , G = parseInt(hex.substring(2, 4), 16)
+			  , B = parseInt(hex.substring(4, 6), 16)
+			  ;
 
-			                         return 'rgba(' + [R, G, B, opacity || 1].join(',') + ')';
-		                         }
-	                         }
-	                       );
+			return 'rgba(' + [R, G, B, opacity || 1].join(',') + ')';
+		}
+	}
+);
 
 /* Define repeated css strings used while defining the CSS constants. */
 OUTERCONTEXT.CSSSTRINGS = { SHRINK : ['scale', '(', OUTERCONTEXT.CONSTANTS.BEINGDRAGGED.SHRINK, ')'].join('') };
@@ -1265,7 +1264,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $img.prop('src', event.target.result) );
 			};
 
-            var readImage = function readImage () {
+			var readImage = function readImage () {
 				dataURLreader.readAsDataURL(file);
 				binaryReader.readAsBinaryString(file);
 			};
@@ -1458,7 +1457,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return storedValue;
 		},
 
-		getMime : function getMime (imageType) {
+		getMime : function getMime (imageType, uri) {
 			switch (imageType) {
 				case ('jpg') : return (/pjpeg$/i).test(uri) ? 'pjpeg' : 'jpeg';
 				case ('ico') : return 'vnd.microsoft.icon';
@@ -1513,7 +1512,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
 					break;
 				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
-					uris.uri.forEach && uris.uri.forEach(walkURIArray);
+					walkURIArray(uris.uri);
 					break;
 				case (!!uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
 					uris.text.forEach(walkURIArray);
@@ -1603,6 +1602,45 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			if (!dom['Options‿input‿checkbox‿remove_images'].prop( 'checked' )) {
 				e.data.ui.previewImage($img, dom);
 			}
+		},
+
+		processRemoteImage : function processRemoteImage (e) {
+			var ic          = INNERCONTEXT
+			  , utils       = ic.UTILITY
+			  , $target     = $(e.target)
+			  , uri         = $target.data('uri')
+			  , filename    = 'image' + Date.now() + '.jpg'
+			  , $comlink    = $(this)
+			  , imageBase64 = $comlink.text()
+			  , imageType   = $target.data('type')
+			  , imageFile   = $.dataURItoBlob(imageBase64, utils.getMime(imageType, uri))
+			  ;
+
+			if (!$comlink.hasClass('image')) { // This comlink isn't being used for an image file.
+				return;
+			}
+
+			var createNewFile = function createNewFile (thisFile) { // Create a new file in the temp local file system.
+				thisFile.createWriter(function (fileWriter) {   // Write to the new file.
+					fileWriter.onwriteend = function (e) {      // Writing has completed.
+						if (fileWriter.position) {              // fileWriter.position points to the next empty byte in the file.
+							thisFile.file(function (file) { 
+								if (imageType !== 'jpg') {
+									utils.convertImage(file, imageType, uri);
+									utils.addDropboxImage(file, 'converted remote ' + imageType, uri);
+								} else {
+									utils.addDropboxImage(file, 'Remote', uri);
+								}
+							});
+						}
+					};
+
+					fileWriter.write(imageFile);
+					$comlink.remove();
+				});
+			};
+
+			ic.DATA.localFileSystem.root.getFile(filename, { create: true, exclusive: true }, createNewFile);
 		},
 
 		removeClass : function removeClass (e, classToRemove) {
@@ -2703,13 +2741,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                  ,  drop        : util.handleDroppedResources // Handle drops into the drop area
 			                                  , 'haveRemote' : // Handle remote non-image resources to be loaded
 			                                      function ( e, type ) {
-			                                          type ? util.getRemoteFile( e.data.uri, type ) : util.getRemotePage( e.data.uri );
+			                                          type ? util.getRemoteFile( e.uri, type ) : util.getRemotePage( e.data.uri );
 			                                      }
 			                                  , 'haveLocalFileList' : util.loadLocalFile // Handle local images to be loaded
 			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
-			dom.xhrComlink.on( 'dblclick', '.image', util.addRemoteImage );
+			dom.xhrComlink.on( 'dblclick', '.image', util.processRemoteImage );
 
 			// Add functionality to the options color picker select.
 			dom['Options‿select‿colors'].on(change, { util: util, picker: dom['Options‿input‿color‿colors'] }, ui.changeSelectedColorOption);
@@ -2855,10 +2893,8 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			// write the ArrayBuffer to a blob, and you're done
 			var bb = $.makeBlob(ab);
 
-			bb = bb.getBlob ? /* BlobBuilder */      bb.getBlob()
-                            : /* Blob constructor */ bb;
-
-			return bb.getBlob('image/' + mime);
+			return bb.getBlob ? /* BlobBuilder */      bb.getBlob('image/' + mime)
+			                  : /* Blob constructor */ bb;
 		},
 		
 		// A very basic version of a gettext function.
@@ -3160,79 +3196,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			INNERCONTEXT.UTILITY.checkScroll($.single( this ));
 		});
 	};
-
-
-//---------------------------------------------------------------------------------------------------------
-
-
-
-			
-
-
-		var addRemoteImage = function add_remote_image (e) {
-			$.log('dblclick detected on comlink; creating file and thumbnail.');
-			var $comlink = $(this)
-			  , imageBase64 = $comlink.text()
-			  , loadStage = ''
-			  , mime
-			  , thisImageFilename = 'image' + Date.now() + '.jpg'
-			  , imageType = e.data.imageType
-			  , uri = e.data.uri
-			  , handleError = function error_handler_for_getRemoteFile_XHR (e, flagged) {
-								  void 0 === flagged && (flagged = false);
-								  $.log('getRemoteFile\'s XMLHttpRequest had an error during ' + loadStage + '.', flagged);
-								  $.log(e, flagged);
-							  }
-			  ;
-
-
-			if (!$comlink.hasClass('image')) { // This comlink isn't being used for an image file.
-				$.log('Comlink does not hold an image; quitting addRemoteImage.');
-				return;
-			}
-			$.log('Comlink holds an image; addRemoteImage continuing.');
-
-			utils.getMime(imageType);
-
-			var imageFile = $.dataURItoBlob(imageBase64, mime);
-			// Create a new file in the temp local file system.
-			loadStage = 'getFile';
-			INNERCONTEXT.DATA.localFileSystem.root.getFile(thisImageFilename, { create: true, exclusive: true }, function localFS_create_new_file (thisFile) {
-				// Write to the new file.
-				loadStage = 'createWriter';
-				thisFile.createWriter(function temp_file_system_file_writer_created (fileWriter) {
-					fileWriter.onwritestart = function fileWriter_onwritestart (e) {
-						// fileWriter.position points to 0.
-						$.log('fileWriter is writing a remote image file to a local file.');
-					};
-					fileWriter.onwriteend = function fileWriter_onwriteend (e) {
-						// fileWriter.position points to the next empty byte in the file.
-						$.log('fileWriter has ' + ((fileWriter.position) ? '' : 'NOT ') + 'successfully finished writing a remote image file to a local file.');
-						if (fileWriter.position) {
-							$.log('Adding remote image to the drop zone.');
-							thisFile.file(function fileWriter_onwriteend_internal (file) {
-								if (imageType !== 'jpg') {
-									INNERCONTEXT.UTILITY.convertImage(file, imageType, uri);
-									INNERCONTEXT.UTILITY.addDropboxImage(file, 'converted remote ' + imageType, uri);
-								} else {
-									INNERCONTEXT.UTILITY.addDropboxImage(file, 'Remote', uri);
-								}
-							});
-						}
-					};
-
-					loadStage = 'createWriter: problem within the writer. (But ignore this error.)';
-					fileWriter.onerror = handleError(e, 1);
-					loadStage = 'createWriter: abort within the writer. (But ignore this error.)';
-					fileWriter.onabort = handleError(e, 1);
-
-					fileWriter.write(imageFile);
-					$.log(['Remote file has been retrieved and writen.', INNERCONTEXT.DATA.localFileSystem]);
-					$comlink.remove();
-				}, handleError);
-			}, handleError);
-		};
-
+		
 //---------------------------------------------------------------------------------------------------------
 
 processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
