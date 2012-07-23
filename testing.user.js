@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0637
+// @version     0.02.0638
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -451,7 +451,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border'                     : '1px dotted navy'
 		, 'border-right'               : 0
 		,  outline                     : 'none'
-		}		
+		}
 	, 'input.CaabieOptions:hover, select.CaabieOptions:hover':
 		{ 'box-shadow'             : 'inset 0px 0px 20px 3px rgba(0, 0, 150, .15)'
         , 'background-color'       : 'rgba(100, 100, 100, .2)'
@@ -768,7 +768,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  height                  : '96%'
 		,  padding                 : '1%'
 		,  width                   : '96%'
-		}		
+		}
 	, '.newCAAimage':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABOX')
 		}
@@ -1237,7 +1237,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create a blob containing the code.
 				  , blob       = $.makeBlob( workerCode )
 				  ;
-				  
+
 				blob = blob.getBlob ? /* BlobBuilder */      blob.getBlob()
                                     : /* Blob constructor */ blob;
 
@@ -1246,10 +1246,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create a new web worker, point it to the ObjectURL as the path to its source.
 				  , worker     = new Worker( objURL )
 				  ;
-	
+
 				worker.onmessage = function ( e ) {
 					var jpeg = JSON.parse(e.data);
-					
+
 					$img.data({ depth      : jpeg.depth.value
 					          , name       : file.name || file.fileName || uri
 					          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
@@ -1274,7 +1274,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			setTimeout(readImage, 1);
 		},
-		
+
 		antiSquish: function antiSquish (init) {
 			/* http://musicbrainz.org/artist/{mbid} does not set a width for the title or checkbox columns.
 			   This prevents those columns getting squished when the table-layout is set to fixed layout. */
@@ -1322,7 +1322,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					eles.push( INNERCONTEXT.UI[constructor](component).make() );
 				}
 			});
-					
+
 			return eles;
 		},
 
@@ -1386,7 +1386,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var $self = $.single( this )
 			  , util  = INNERCONTEXT.UTILITY
 			  ;
-			  
+
 			if ($self.hasClass('CaabieImageEditor')) {
 				$self.removeClass('CaabieImageEditor');
 				util.closeDialogImageEditor(e);
@@ -1401,7 +1401,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		closeDialogImageEditor : function closeDialogImageEditor (e) {
 			var dom = INNERCONTEXT.DOM;
-			
+
 			dom['ImageEditor‿div‿ie'].animate({ height  : 'toggle'
 			                                   , opacity : 'toggle'
 			                                   }, 'slow').remove();
@@ -1413,15 +1413,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			reader.onload = function convertImage_reader_onload_handler (e) {
 				if ($.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) + 1) {
-					var img = new Image();				
-				
+					var img = new Image();
+
 					img.onload = function convertImage_image_converter () {
 						var imgDataURL
 						  , imgBlob
 						  , canvas = document.createElement("canvas")
 						  , ctx = canvas.getContext("2d")
 						  ;
-				  
+
 						canvas.width = img.width;
 						canvas.height = img.height;
 						ctx.drawImage(img, 0, 0);
@@ -1445,7 +1445,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
 			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
 		},
-		
+
 		getLSValue : function getLSValue (key, unprefixed) {
 			var storedValue = INNERCONTEXT.DATA[key];
 
@@ -1580,7 +1580,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				}
 			);
 		},
-		
+
 		makeEleName : function makeEleName ( prefix, eleType, disambig, type ) {
 			var name = [prefix, eleType];
 			if ( void 0 !== type ) {
@@ -1624,7 +1624,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				thisFile.createWriter(function (fileWriter) {   // Write to the new file.
 					fileWriter.onwriteend = function (e) {      // Writing has completed.
 						if (fileWriter.position) {              // fileWriter.position points to the next empty byte in the file.
-							thisFile.file(function (file) { 
+							thisFile.file(function (file) {
 								if (imageType !== 'jpg') {
 									utils.convertImage(file, imageType, uri);
 									utils.addDropboxImage(file, 'converted remote ' + imageType, uri);
@@ -1674,13 +1674,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				ele.webkitRequestFullScreen();
 			}
 		},
-		
+
 		resetColorToDefault : function resetColorToDefault (e) {
 			var $option = e.data.dom['Options‿select‿colors'].find(':selected')
 			  , color   = $option.data('default')
 			  , util    = e.data.util
 			  ;
-		  
+
 		    e.data.picker.data('picker').fromString(color);
 			util.setLSColorValue($option.val(), color, util);
 		},
@@ -1857,7 +1857,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var $figure = $(e.target).parents('figure:first');
 			$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
 		},
-						
+
 		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
 			$dropBox.detach(function convertEmptyDropbox_internal () {
 				$.single(this).removeClass('newCAAimage')
@@ -1878,10 +1878,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			picker.hash = true;
 			picker.pickerFace = 5;
 			picker.pickerInsetColor = 'black';
-			
+
 			// Store a reference to the color picker
 			$('#' + eleID).data('picker', picker);
-			
+
 			return picker;
 		},
 
@@ -2095,7 +2095,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		maximizeEditor : function maximizeEditor (e) {
 			INNERCONTEXT.UTILITY.requestFullScreen(INNERCONTEXT.DOM['ImageEditor‿div‿ieDiv'][0]);
 		},
-						
+
 		openEditor : function openEditor (e) {
 			var editor = INNERCONTEXT.UTILITY.assemble('ImageEditorElement', INNERCONTEXT.TEMPLATES.imageEditor());
 			$.fn.prepend.apply(INNERCONTEXT.DOM.body, editor);
@@ -2260,7 +2260,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 	INNERCONTEXT.EVENTS.handleStorage = function handleStorage (e) {
 		$.log('Storage event detected');
-	
+
 		if (e.key !== 'Caabie_imageCache' || INNERCONTEXT.DATA.cachedImages === e.newValue) {
 			return;
 		}
@@ -2268,7 +2268,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		$.log('Storage event modified the image cache.');
 
 		e.preventDefault();
-		
+
 		var ic     = INNERCONTEXT
 		  , utils  = ic.UTILITY
 		  , newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop())
@@ -2288,28 +2288,28 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			utils.setLSValue('imageCache', e.oldValue || '');
 			type && utils.getRemoteFile(newURL, type);
 		}
-				
+
 		return false;
 	};
 
 	INNERCONTEXT.EVENTS.handleDrag.check = function handleDrag_check (e) {
 	$.log(e.type);
         var handleDrag = INNERCONTEXT.EVENTS.handleDrag;
-        
+
 		e.preventDefault();
 		if (null === handleDrag.$draggedImage) {
 			return;
 		}
 		handleDrag.hasOwnProperty(e.type) && handleDrag[e.type](e, handleDrag, this);
-		
+
 		return false;
 	};
-	
+
 	INNERCONTEXT.EVENTS.handleDrag.dragend = function handleDrag_dragend (e, handleDrag) {
 		handleDrag.$draggedImage.removeClass('beingDragged');
 		$('figure').removeClass('over');
 	};
-	
+
 	INNERCONTEXT.EVENTS.handleDrag.dragenter = function handleDrag_dragenter (e, handleDrag) {
 		this.inChild = !$(e.target).hasClass('newCAAimage');
 		if (e.target.nodeName === 'IMG') {
@@ -2320,7 +2320,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                  .addClass('over');
 		}
 	};
-	
+
 	INNERCONTEXT.EVENTS.handleDrag.dragleave = function handleDrag_dragleave (e, handleDrag) {
 		if (!this.inChild) { // https://bugs.webkit.org/show_bug.cgi?id=66547
 			$.single(e.target).removeClass('over');
@@ -2331,7 +2331,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
         var handleDrag = INNERCONTEXT.EVENTS.handleDrag
           , edT = e.originalEvent.dataTransfer
           ;
-          
+
 		edT.setDragImage(this, 0, 0);
 		handleDrag.$draggedImage = $(this).addClass('beingDragged');
 		edT.dropEffect = 'move';
@@ -2341,7 +2341,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	INNERCONTEXT.EVENTS.handleDrag.drop = function handleDrag_drop (e, handleDrag, self) {
 		if (!$.single(e.target).hasClass('newCAAimage')) {
 			return;
-		}	
+		}
 		self.parentNode.replaceChild(this.$draggedImage[0], self);
 		this.$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
 		                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
@@ -2446,7 +2446,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			 , { ele: 'div', id: 'note', text: $.l('take effect next time') }
 			 ]
 		];
-		
+
 	INNERCONTEXT.TEMPLATES.imageEditor = function template_imageEditor () {
 		var controls = INNERCONTEXT.TEMPLATES.CONTROLS
 		  , crop     = controls.crop
@@ -2706,7 +2706,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			/* This must be added after the fact, rather than at initial element creation.  Otherwise, an empty
 			   box containing the title text will be displayed. */
 			dom['Preview‿img‿preview_image'].prop('title', $.l('Click to edit this image'));
-			
+
 			// Initialize the settings color picker
 			ui.createColorPicker('Options‿input‿color‿colors');
 			this.initializeColorPicker(util, dom);
@@ -2794,13 +2794,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			// Add functionality to the options color default button.
 			dom['Options‿input‿button‿default'].on('click', { dom: dom, util: util, picker: dom['Options‿input‿color‿colors'] }, util.resetColorToDefault);
-						
+
 			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
 			                                .on( 'loaded', '.imageRow', ui.showImageRow)
 			                                // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
 			                                .find('tbody').on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
-			                                
+
 			// Add listener for storage events from the Caabie helper script.
 			window.addEventListener("storage", INNERCONTEXT.EVENTS.handleStorage, false);
 
@@ -2808,12 +2808,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		loadStoredImages : function loadStoredImages (util) {
 			var imageArray = JSON.parse(util.getLSValue('imageCache'));
-			
+
 			var loadImage = function loadImage (url) {
 				var image = decodeURIComponent(url)
 				  , type  = util.supportedImageType(image)
 				  ;
-				  
+
 				type && util.getRemoteFile(image, type);
 			};
 
@@ -2893,27 +2893,27 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			script.textContent = localStorage.getItem(scriptSource);
 			document.head.appendChild(script);
 		},
-		
+
 		// Creates and adds a new css rule
 		addRule: function $_addRule (selector, rule, props) {
 			var $rule = $('<style type="text/css">').text(selector + rule);
 			void 0 !== props && $rule.prop(props);
 			$rule.appendTo('head');
 		},
-		
+
 		makeBlob : function makeBlob ( data ) {
 			var thisBlob;
-					
+
 			try { // Old API
 				thisBlob = new Blob( [data] );
 			} catch ( e ) { // New API
 				thisBlob = new BlobBuilder();
 				thisBlob.append( data );
 			}
-			
+
 			return thisBlob;
 		},
-		
+
 		// Modified from http://stackoverflow.com/questions/4998908/convert-data-uri-to-file-then-append-to-formdata
 		dataURItoBlob: function $_dataURItoBlob (dataURI, mime) {
 			// convert base64 to raw binary data held in a string
@@ -2937,12 +2937,12 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			return bb.getBlob ? /* BlobBuilder */      bb.getBlob('image/' + mime)
 			                  : /* Blob constructor */ bb;
 		},
-		
+
 		// A very basic version of a gettext function.
 		l: function $_l (str) {
 			return (THIRDCONTEXT.CONSTANTS.TEXT[localStorage.getItem('Caabie_language') || 'en'][str]);
 		},
-		
+
 		// Logs a message to the console if debug mode is on.
 		log: function $_log (str, verbose) {
 			if (!THIRDCONTEXT.CONSTANTS.DEBUGMODE) {
@@ -2955,7 +2955,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			}
 			return;
 		},
-		
+
 		/* Polyfill input[type=number], if needed. */
 		polyfillInputNumber : function $_polyfillInputNumber () {
 			var testEle = document.createElement('input');
@@ -3089,7 +3089,7 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			jq.fn.prop.call(domEl, options, true);
 			return jq.merge(jq(), domEl);
 	};
-	
+
 	// http://weblog.bocoup.com/using-datatransfer-with-jquery-events/
 	$.event.props.push('dataTransfer');
 };
@@ -3237,7 +3237,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 			INNERCONTEXT.UTILITY.checkScroll($.single( this ));
 		});
 	};
-		
+
 //---------------------------------------------------------------------------------------------------------
 
 processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
@@ -3249,7 +3249,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 		$.log('No images in CAA for this release.');
 		return;
 	}
-	
+
 	var ui = INNERCONTEXT.UI;
 
 	var parseCAAResponse = function parseCAAResponse ( i ) {
@@ -3448,7 +3448,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.restore();
 		},
-		
+
 		copyCanvas : function copyCanvas (canvas) { // Create and return a copy of a canvas.
 			var copy = document.createElement('canvas');
 
@@ -3515,7 +3515,7 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 			case 'Top'    : opposite = 'Bottom';  direction = 'height'; break;
 			case 'Bottom' : opposite = 'Top';     direction = 'height'; break;
 			case 'Left'   : opposite = 'Right';   direction = 'width';  break;
-			case 'Right'  : opposite = 'Left';    direction = 'width'; 
+			case 'Right'  : opposite = 'Left';    direction = 'width';
 		}
 
 		if (0 > where) {
