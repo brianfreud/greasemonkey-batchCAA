@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0638
+// @version     0.02.0639
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -1378,7 +1378,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		clearImageStore : function clearImageStore () {
 			INNERCONTEXT.UTILITY.setLSValue('imageCache', '[]');
-			INNERCONTEXT.DOM['Options‿input‿button‿clear_storage'].prop('disabled', true);
+			INNERCONTEXT.DOM['Options‿input‿button‿clear_storage'].disable();
 			INNERCONTEXT.DATA.cachedImages = [];
 		},
 
@@ -1868,7 +1868,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				              .remove()
 				              .end()
 				              .find('select')
-				              .prop('disabled', true);
+				              .disable();
 			});
 		},
 
@@ -2290,6 +2290,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		}
 
 		return false;
+	};
+	
+	INNERCONTEXT.EVENTS.resetLayout = function resetLayout (e) {
+		$.log('Screen resize detected, adjusting layout.');
+		var $style = $.single('#tblStyle1');
+		  
+		if (100 < window.outerHeight - window.innerHeight) {
+			$style.disable();
+			INNERCONTEXT.UTILITY.antiSquish();
+			$style.enable();
+		}
+
+		$('div.caaDiv').trigger('checkScroll');
 	};
 
 	INNERCONTEXT.EVENTS.handleDrag.check = function handleDrag_check (e) {
@@ -2760,6 +2773,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					.on( click, '#Preview‿img‿preview_image', ui.openEditor ) // open image editor on click of preview image
 					.on( click, '#ImageEditor‿header‿maximize', ui.maximizeEditor ) // image editor maximize button
 					.on( change, 'select.CaabieDropBox', ui.checkCompletion ) // Test edits for completeness
+					// Ensure that rows don't scroll vertically after a viewport resize
+					.on( 'checkScroll', 'div.caaDiv', function () { util.checkScroll($.single(this)); } )
 			        // Add functionality to allow dragging from the images box to a specific CAA image box.
 			        .on( 'dragstart', '.localImage', events.handleDrag.dragstart )
 			        .on( 'dragend', '.localImage', events.handleDrag.check )
@@ -2802,8 +2817,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                .find('tbody').on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
 
 			// Add listener for storage events from the Caabie helper script.
-			window.addEventListener("storage", INNERCONTEXT.EVENTS.handleStorage, false);
-
+			$(window).on( 'storage', events.handleStorage )
+					 // Adjust the table layout and CAA rows whenever the viewport is resized.
+			         .on( 'resize', events.resetLayout );
 		},
 
 		loadStoredImages : function loadStoredImages (util) {
@@ -3028,6 +3044,16 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 		return parseInt($.css(this[which || 0], 'height'), 10);
 	};
 
+	/* Enable an element */
+	$.fn.enable = function $_prototype_enable () {
+		return this.prop('disabled', false);
+	};
+
+	/* Disables an element */
+	$.fn.disable = function $_prototype_disable () {
+		return this.prop('disabled', true);
+	};
+
 	/* jQuery.single, by James Padolsey
 	   http://james.padolsey.com/javascript/76-bytes-for-faster-jquery/
 	*/
@@ -3225,20 +3251,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 }();
 
 /*
-	// Adjust the table layout and CAA rows after a screen resize event occurs.
-	window.onresize = function adjust_table_after_window_resize () {
-		$.log('Screen resize detected, adjusting layout.');
-		if ((window.outerHeight - window.innerHeight) > 100) {
-			$('#tblStyle1').prop('disabled',true);
-			INNERCONTEXT.UTILITY.antiSquish();
-			$('#tblStyle1').prop('disabled',false);
-		}
-		$('div.caaDiv').each(function window_resize_internal () {
-			INNERCONTEXT.UTILITY.checkScroll($.single( this ));
-		});
-	};
-
-//---------------------------------------------------------------------------------------------------------
 
 processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
 	if (Object !== response.constructor) { // Firefox
