@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0635
+// @version     0.02.0637
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -2257,15 +2257,51 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			INNERCONTEXT.DOM[e.data.element].slideToggle();
 		}
 	};
-             
+
+	INNERCONTEXT.EVENTS.handleStorage = function handleStorage (e) {
+		$.log('Storage event detected');
+	
+		if (e.key !== 'Caabie_imageCache' || INNERCONTEXT.DATA.cachedImages === e.newValue) {
+			return;
+		}
+
+		$.log('Storage event modified the image cache.');
+
+		e.preventDefault();
+		
+		var ic     = INNERCONTEXT
+		  , utils  = ic.UTILITY
+		  , newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop())
+		  , type   = utils.supportedImageType(newURL)
+		  ;
+
+		/* Testing whether: 1) the key that was changed is the one we care about here, or
+		*				    2) the new value of the key is different from when the script first initialized in this tab.
+		*
+		*  #2 is important; without it, if you have multiple tabs open, each with this script running, they would create
+		*  a feedback loop, each one triggering a new storage event on the other when they remove the new URL from the key.
+		*/
+
+		if ('undefined' !== e.oldValue && e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
+			ic.DATA.cachedImages = localStorage.getItem([ic.CONSTANTS.NAMESPACE, '_', 'imageCache'].join(''));
+		} else {
+			utils.setLSValue('imageCache', e.oldValue || '');
+			type && utils.getRemoteFile(newURL, type);
+		}
+				
+		return false;
+	};
+
 	INNERCONTEXT.EVENTS.handleDrag.check = function handleDrag_check (e) {
 	$.log(e.type);
         var handleDrag = INNERCONTEXT.EVENTS.handleDrag;
+        
 		e.preventDefault();
 		if (null === handleDrag.$draggedImage) {
 			return;
 		}
 		handleDrag.hasOwnProperty(e.type) && handleDrag[e.type](e, handleDrag, this);
+		
 		return false;
 	};
 	
@@ -2295,6 +2331,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
         var handleDrag = INNERCONTEXT.EVENTS.handleDrag
           , edT = e.originalEvent.dataTransfer
           ;
+          
 		edT.setDragImage(this, 0, 0);
 		handleDrag.$draggedImage = $(this).addClass('beingDragged');
 		edT.dropEffect = 'move';
@@ -2763,6 +2800,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                .on( 'loaded', '.imageRow', ui.showImageRow)
 			                                // handle dynamically added release rows (e.g. http://userscripts.org/scripts/show/93894 )
 			                                .find('tbody').on('DOMNodeInserted', 'table', INNERCONTEXT.UI.addImageRow);
+			                                
+			// Add listener for storage events from the Caabie helper script.
+			window.addEventListener("storage", INNERCONTEXT.EVENTS.handleStorage, false);
+
 		},
 
 		loadStoredImages : function loadStoredImages (util) {
@@ -3316,48 +3357,6 @@ processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, dat
 							  }
 				   });
 		};
-
-//---------------------------------------------------------------------------------------------------------
-
-		!function init_storage_event_handling () {
-			$.log('Attaching listener for storage events.');
-			var handleStorage = function handleStorage (e) {
-				$.log('Storage event detected');
-
-				// Testing whether: 1) the key that was changed is the one we care about here, or
-				//				  2) the new value of the key is different from when the script first initialized in this tab.
-				//
-				//  #2 is important; without it, if you have multiple tabs open, each with this script running, they would create
-				// a feedback loop, each triggering a new storage event on the other when they remove the new URL from the key.
-				//
-				if (e.key !== 'Caabie_imageCache' || INNERCONTEXT.DATA.cachedImages === e.newValue) {
-					return;
-				}
-
-				$.log('Storage event modified the image cache.');
-
-				e.preventDefault();
-
-				if ('undefined' !== e.oldValue && e.newValue.length < e.oldValue.length) { // Another instance modified the image cache
-					INNERCONTEXT.DATA.cachedImages = localStorage.getItem([INNERCONTEXT.CONSTANTS.NAMESPACE, '_', 'imageCache'].join(''));
-					return false;
-				}
-
-				var newURL = decodeURIComponent(JSON.parse(e.newValue || '[]').pop());
-				INNERCONTEXT.UTILITY.setLSValue('imageCache', e.oldValue || '');
-
-				var type = supportedImageType(newURL);
-				if (type) {
-					$.log('Received a new ' + type + ' URL: ' + newURL);
-					getRemoteFile(newURL, type);
-				}
-				return false;
-			};
-			window.addEventListener("storage", handleStorage, false);
-		}();
-
-
-
 
 //---------------------------------------------------------------------------------------------------------
 
