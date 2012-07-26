@@ -17,7 +17,7 @@
 // @exclude     http://musicbrainz.org/label/*/*
 
 // ==/UserScript==
-/*global console JpegMeta Blob BlobBuilder GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY URL postMessage */
+/*global console JpegMeta Blob BlobBuilder File GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY URL postMessage */
 /*jshint smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
 /* ----------------------------------------------------------------------------------------------------------|
@@ -1493,11 +1493,40 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			              , base      : $( textData ).find( 'base' ).attr( 'href' ) || ''
 			              , text      : textData.match( INNERCONTEXT.CONSTANTS.REGEXP.uri ) || ''
 			              , uri       : dataTransfer.getData( 'text/uri-list' )
-			              , e         : e
 			              };
+			              
+			var traverseFileTree = function traverseFileTree (item) {
+				if (item.isDirectory) {
+					var dirReader = item.createReader();
+					dirReader.readEntries(function dirReader_readEntries (entries) {
+						var handleFile = function handleFile (file) {
+							util.handleURIs({ file_list: file });
+						};
+						
+						for (var i = 0; i < entries.length; i++) {
+							var entry = entries[i];
+							if (entry.isFile) {
+								entry.file(handleFile);
+							} else if (entry.isDirectory) {
+								traverseFileTree(entry);
+							}
+						}
+					});
+				}
+			};
 
-			$.log(dropped);
-			util.handleURIs( dropped );
+			var items = e.dataTransfer.items;
+
+			if (items && items[0].webkitGetAsEntry) {
+				for (var i = 0; i < items.length; i++) {
+					var item = items[i].webkitGetAsEntry();
+					if (item) {
+						traverseFileTree(item);
+					}
+				}
+			}
+			
+			util.handleURIs(dropped);
 		},
 
 		handleURIs : function handleURIs (uris) {
@@ -1508,7 +1537,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			};
 
 			switch (!0) {
-				case (!!uris.file_list && !!uris.file_list.length): // local file(s)
+				case (!!uris.file_list && (!!uris.file_list.length || uris.file_list.constructor === File)): // local file(s)
 					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
 					break;
 				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
@@ -1530,12 +1559,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var file, name, type
 			  , debugMsg = ''
 		      , files = e.list
-		      , len = files.length
+		      , len = files.length || 0
 		      , i = len
 		      , util = INNERCONTEXT.UTILITY
 		      ;
-			while (0 < i--) {
-				file = files[i];
+			do {
+				file = files[i] || files;
 				name = file.name;
 				type = util.supportedImageType(name);
 				INNERCONTEXT.CONSTANTS.DEBUGMODE && (debugMsg = ['loadLocalFile: for file "', name, '", file ', (i+1), ' of ', len].join(''));
@@ -1544,9 +1573,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					continue;
 				}
 				$.log([debugMsg, ', usable file type "', type, '" detected'].join(''));
-				"jpg" === type ? INNERCONTEXT.UTILITY.addDropboxImage(file, "local")
+				"jpg" === type ? util.addDropboxImage(file, "local")
 							   : util.convertImage(file, type, name);
-			}
+			} while (0 < i--);
 		},
 
 		loadRowInfo : function loadRowInfo (e) {
