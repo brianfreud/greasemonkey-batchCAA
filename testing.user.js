@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0838
+// @version     0.02.0839
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -49,7 +49,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Add support for removing existing CAA images
 //TODO: Add support for positioning/repositioning CAA images
 //TODO: import images from linked ARs - Discogs, ASIN, other databases, others?  What UI?
-//TODO: Handle preview image dimensions when image is really wide.  Test w/ http://paulirish.com/wp-content/uploads/2011/12/mwf-ss.jpg
 //TODO: Add webp support for Firefox
 //TODO: Apply rotation, if any, after a flip is done in the image editor
 //TODO: Resize Images/Preview area on screen resize
@@ -804,10 +803,12 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#Preview‿img‿preview_image':
 		{  cursor                  : 'pointer'
 		,  display                 : 'block'
-		,  height                  : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+		,  height                  : 'auto'
 		,  margin                  : '0 auto'
 		, 'max-height'             : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
+		, 'max-width'              : (OUTERCONTEXT.CONSTANTS.PREVIEWSIZE + 15) + 'px'
 		,  padding                 : '15px 0 0 0'
+		,  width                   : 'auto'
 		}
 	, '.CAAsidebar':
 		{ 'border-left'            : OUTERCONTEXT.CONSTANTS.BORDERS
