@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0827
+// @version     0.02.0838
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -675,6 +675,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  display                 : 'block'
 		, 'font-size'              : '80%'
 		,  height                  : '120px'
+		,  margin                  : '0 auto'
 		,  width                   : '100%'
 		}
 	, 'img.CaabieDropBox':
@@ -687,30 +688,32 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  width                   : 'auto'
 		}
 	, 'figcaption.CaabieDropBox':
-		{  height                  : '17em'
-		,  position                : 'relative'
+		{  position                : 'relative'
 		, 'text-align'             : 'center'
 		}
 	, 'input.CaabieDropBox':
 		{  clear                   : 'both'
 		, 'font-size'              : '12px'
+	    , 'margin-bottom'          : '.4em'
+	    , 'margin-top'             : '.4em'
 		,  padding                 : '2px'
 		,  width                   : '94%'
 		}
 	, 'select.CaabieDropBox':
 		{ 'appearance'             : 'caret'
 		, 'background-color'       : 'transparent'
+		,  border                  : '0 none transparent'
 		,  clear                   : 'both'
-		,  clip                    : 'rect(2px, 49px, 17em, 2px)'
+		,  clip                    : 'rect(auto 7em auto auto)'
 		,  color                   : '#555'
+		,  display                 : 'block'
 		, 'font-size'              : 'inherit'
-		,  left                    : '30px'
-		,  margin                  : 0
-		, 'padding-bottom'         : '20px'
-		, 'padding-right'          : '20px'
-		, 'padding-top'            : '3em'
+		, 'margin-left'            : '40px'
+		,  outline                 : 'none'
+		, 'padding-right'          : '40px'
 		,  position                : 'absolute'
 		, 'text-align'             : 'center'
+		, 'vertical-align'         : 'top'
 		}
 	, '.caaAdd':
 		{ 'background-color'       : 'green!important'
@@ -772,6 +775,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '.newCAAimage':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABOX')
+		,  height                  : '120px!important'
+		,  width                   : '120px!important'
 		}
 	, '.newCAAimage > div':
 		{ 'background-color'       : '#E0E0FF'
@@ -2032,6 +2037,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			if (void 0 === widgets.$dropBox) {
 				widgets.$dropBox = INNERCONTEXT.UTILITY.assemble('DropBoxElement', INNERCONTEXT.TEMPLATES.dropbox)[0];
+
+				var $temp     = widgets.$dropBox.appendTo('body')
+				  , $fig      = $temp.find('figcaption')
+				  , $select   = $fig.find('select')
+				  , figHeight = $fig.getHiddenDimensions().height + $select.getHiddenDimensions().height + 10
+				  ;
+
+				$fig.css('height', figHeight + 'px');
+				$temp.remove();
 			}
 			return widgets.$dropBox.quickClone(true);
 		},
