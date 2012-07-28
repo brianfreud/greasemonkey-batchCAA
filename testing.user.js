@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0639
+// @version     0.02.0827
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -668,22 +668,23 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'min-height'             : '126px'
 		,  padding                 : '3px'
 		, 'vertical-align'         : 'middle'
-		,  width                   : '126px'
+		,  width                   : '140px'
 		}
 	, 'div.CaabieDropBox':
 		{  clear                   : 'both'
 		,  display                 : 'block'
 		, 'font-size'              : '80%'
 		,  height                  : '120px'
-		,  margin                  : '3px'
 		,  width                   : '100%'
 		}
 	, 'img.CaabieDropBox':
 		{  display                 : 'block'
+		,  height                  : 'auto'
 		, 'image-rendering'        : 'optimizeQuality'
-		,  margin                  : 0
+		,  margin                  : 'auto'
 		, 'max-height'             : '120px'
 		, 'max-width'              : '120px'
+		,  width                   : 'auto'
 		}
 	, 'figcaption.CaabieDropBox':
 		{  height                  : '17em'
@@ -1485,6 +1486,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var util         = INNERCONTEXT.UTILITY
 			  , dataTransfer = e.dataTransfer
 			  , textData     = dataTransfer.getData( 'Text' )
+			  , items        = e.dataTransfer.items
 			  ;
 
 			$('#Main‿div‿imageContainer').removeClass( 'over' ); // clear the drop highlight
@@ -1494,8 +1496,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			              , text      : textData.match( INNERCONTEXT.CONSTANTS.REGEXP.uri ) || ''
 			              , uri       : dataTransfer.getData( 'text/uri-list' )
 			              };
-			              
-			var traverseFileTree = function traverseFileTree (item) {
+
+			var traverseTree = function traverseTree (item) {
 				if (item.isDirectory) {
 					var dirReader = item.createReader();
 					dirReader.readEntries(function dirReader_readEntries (entries) {
@@ -1508,20 +1510,19 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 							if (entry.isFile) {
 								entry.file(handleFile);
 							} else if (entry.isDirectory) {
-								traverseFileTree(entry);
+								traverseTree(entry);
 							}
 						}
 					});
 				}
 			};
 
-			var items = e.dataTransfer.items;
-
+			// Load dropped local directories - This is a Chrome-specific (v21+) method at the moment.
 			if (items && items[0].webkitGetAsEntry) {
-				for (var i = 0; i < items.length; i++) {
-					var item = items[i].webkitGetAsEntry();
-					if (item) {
-						traverseFileTree(item);
+				for (var i = 0, len = items.length, thisItem; len > i; i++) {
+					thisItem = items[i].webkitGetAsEntry();
+					if (thisItem) {
+						traverseTree(thisItem);
 					}
 				}
 			}
@@ -1631,6 +1632,49 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			if (!dom['Options‿input‿checkbox‿remove_images'].prop( 'checked' )) {
 				e.data.ui.previewImage($img, dom);
 			}
+		},
+
+		processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
+			if (Object !== response.constructor) { // Firefox
+				response = JSON.parse(response);
+			}
+
+			if ($.isEmptyObject(response)) {
+				$.log('No images in CAA for this release.');
+				return;
+			}
+
+			var ui         = INNERCONTEXT.UI
+			  , $row       = data.$row
+			  , needed     = response.images.length - $row.find('.newCAAimage').length
+			  , coverTypes = INNERCONTEXT.CONSTANTS.COVERTYPES
+			  ;
+
+			var parseCAAResponse = function parseCAAResponse (i) {
+				// Get the first empty dropbox for this row
+				var value
+				  , $dropBox = $row.find('.newCAAimage:first')
+				  ;
+
+				ui.convertEmptyDropbox($dropBox, this.comment);
+				ui.lowsrc($dropBox, this.image);
+
+				$.each(this.types, function assign_image_type(i) {
+					value = $.inArray(this, coverTypes) + 1;
+					$dropBox.find('option[value="' + value + '"]').prop('selected', true);
+				});
+
+				INNERCONTEXT.UTILITY.checkScroll($row.find('div.loadingDiv'));
+			};
+
+			// If the CAA has more images than there currently are empty dropboxes, add more empty dropboxes.
+			while ( needed >= 0 && needed-- ) {
+				ui.addNewImageDropBox( $row.find('.caaDiv') );
+			}
+
+			$.each(response.images, parseCAAResponse);
+
+			$row.trigger('loaded');
 		},
 
 		processRemoteImage : function processRemoteImage (e) {
@@ -1914,14 +1958,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			return picker;
 		},
 
-		lowsrc : function lowsrc ($dropBox, imageURI) {
+		lowsrc : function lowsrc ($img, imageURI) {
 
 			/* This code does the same thing as the lowsrc attribute used to do.  This should
 			   be easy, but lowsrc no longer exists in HTML5, and Chrome has dropped support for it.
 
 			   reference: http://www.ssdtutorials.com/tutorials/title/html5-obsolete-features.html */
 
-			var $img = $dropBox.find( 'img' );
 			$img[0].src = INNERCONTEXT.CONSTANTS.THROBBER;
 			$img.css( 'padding-top', '20px' );
 			var realImg = new Image();
@@ -3280,50 +3323,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 }();
 
 /*
-
-processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
-	if (Object !== response.constructor) { // Firefox
-		response = JSON.parse(response);
-	}
-
-	if ($.isEmptyObject(response)) {
-		$.log('No images in CAA for this release.');
-		return;
-	}
-
-	var ui = INNERCONTEXT.UI;
-
-	var parseCAAResponse = function parseCAAResponse ( i ) {
-		$.log('Parsing CAA response: image #' + i);
-
-		var $dropBox = $row.find('.newCAAimage:first');
-
-		ui.convertEmptyDropbox($dropBox, this.comment)
-		ui.lowsrc($dropBox, this.image);
-
-		$.each(this.types, function assign_image_type(i) {
-			var value = $.inArray(this, INNERCONTEXT.CONSTANTS.COVERTYPES) + 1;
-			$dropBox.find('option[value="' + value + '"]').prop('selected', true);
-		});
-
-		INNERCONTEXT.UTILITY.checkScroll($row.find('div.loadingDiv'));
-	};
-
-	var $row = data.$row
-		, $addButton = $row.find('input.caaAdd');
-
-    var neededDropboxes = $row.find('.newCAAimage').length - response.images.length;
-
-	while ( neededDropboxes >= 0 && neededDropboxes-- ) {
-		ui.addNewImageDropBox( $row.find('.caaDiv') );
-	}
-
-	$.each(response.images, parseCAAResponse);
-
-	$row.trigger('loaded');
-};
-
-//---------------------------------------------------------------------------------------------------------
 
 		var getRemotePage = function getRemotePage (uri) {
 			$.log('Loading ' + uri);
