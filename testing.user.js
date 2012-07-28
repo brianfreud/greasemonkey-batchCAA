@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0839
+// @version     0.02.0845
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -90,8 +90,8 @@ var OUTERCONTEXT =
 	};
 
 OUTERCONTEXT.CONSTANTS =
-	{ DEBUGMODE      : true
-	, VERSION        : '0.02.0616'
+	{ DEBUGMODE      : false
+	, VERSION        : '0.02.0845'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1217,7 +1217,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		addDropboxImage : function addDropboxImage (file, source, uri) {
 			var title         = (source === 'local') ? 'Local file: ' + (file.name)
 			                                         : source + ' file: ' + uri
-			  , dataURLreader = new FileReader()
 			  , binaryReader  = new FileReader()
 			  ;
 
@@ -1242,7 +1241,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create the code to be used by the web worker.
 				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
 				    // Create a blob containing the code.
-				  , blob       = $.makeBlob( workerCode )
+				  , blob       = $.makeBlob( workerCode, 'image/jpeg' )
 				  ;
 
 				blob = blob.getBlob ? /* BlobBuilder */      blob.getBlob()
@@ -1255,6 +1254,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				  ;
 
 				worker.onmessage = function ( e ) {
+					worker.terminate();
 					var jpeg = JSON.parse(e.data);
 
 					$img.data({ depth      : jpeg.depth.value
@@ -1267,16 +1267,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				worker.postMessage( this.result );
 			};
 
-			var addImageToDOM = function addImageToDOM (event) {
-				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $img.prop('src', event.target.result) );
+			var addImageToDOM = function addImageToDOM (url) {
+				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $img.prop('src', url) );
 			};
 
 			var readImage = function readImage () {
-				dataURLreader.readAsDataURL(file);
+				addImageToDOM(URL.createObjectURL(file));
 				binaryReader.readAsBinaryString(file);
 			};
 
-			dataURLreader.onload = addImageToDOM;
 			binaryReader.onloadend = getExif;
 
 			setTimeout(readImage, 1);
@@ -3004,12 +3003,17 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			$rule.appendTo('head');
 		},
 
-		makeBlob : function makeBlob ( data ) {
+		makeBlob : function makeBlob ( data, mime ) {
 			var thisBlob;
 
-			try { // Old API
-				thisBlob = new Blob( [data] );
-			} catch ( e ) { // New API
+			try { // New API
+				try { // 2012-05 File API spec , http://trac.webkit.org/changeset/119791
+					  // Ref: https://bugzilla.mozilla.org/show_bug.cgi?id=752402 
+					thisBlob = new Blob( [new DataView(data)], { type: mime } );
+				} catch (e) { // pre-2012-05 File API spec
+					thisBlob = new Blob( [data] );
+				}
+			} catch ( e ) { // Old API
 				thisBlob = new BlobBuilder();
 				thisBlob.append( data );
 			}
@@ -3026,6 +3030,8 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			} else {
 				byteString = atob(dataURI); // The followup at stackoverflow is wrong here; this version is fixed.
 			}
+			
+			mime = 'image/' + mime;
 
 			// write the bytes of the string to an ArrayBuffer
 			var ab = new ArrayBuffer(byteString.length),
@@ -3035,9 +3041,9 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			}
 
 			// write the ArrayBuffer to a blob, and you're done
-			var bb = $.makeBlob(ab);
+			var bb = $.makeBlob(ab, mime);
 
-			return bb.getBlob ? /* BlobBuilder */      bb.getBlob('image/' + mime)
+			return bb.getBlob ? /* BlobBuilder */      bb.getBlob(mime)
 			                  : /* Blob constructor */ bb;
 		},
 
