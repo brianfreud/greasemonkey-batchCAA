@@ -205,6 +205,11 @@ OUTERCONTEXT.CONSTANTS =
 			  , urlN: 'benalman.com'
 			  , urlW: 'gist.github.com/978520'
 			  }
+			, { name: 'Mathieu \'P01\' Henri'
+			  , what: 'chain method and CanvasRenderingContext2D chaining from "Hypno trip down the fractal rug"'
+			  , urlN: 'www.p01.org'
+			  , urlW: 'www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug'
+			  }			  
 			]
 		, Polyfills:
 			[
@@ -3512,7 +3517,82 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 	INNERCONTEXT.UTILITY.imageEditor = {
 		data: INNERCONTEXT.DATA.imageEditor,
+
 		degreesInRadians : Math.PI / 180,
+		
+		Canvas : (function () {
+			var Canvas = function () {
+				this.canvas = document.createElement('canvas');
+				this.canvas.ctx = this.canvas.getContext("2d");
+
+				// ---------------------------------------------------------------------------
+				// This next bit of code is modified from code by Mathieu 'P01' Henri
+				// From http://www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug
+				// ---------------------------------------------------------------------------
+				
+				this.canvas.set = this.canvas.style.set = this.canvas.ctx.set = function (what, to) {
+					this[what] = to;
+				};
+
+				function chain ( a ) {
+					return function () {
+						return a.apply(this, arguments) || this;
+					};
+				}
+
+				Object.keys({ arc       : 1
+				            , beginPath : 1
+				            , clearRect : 1
+				            , closePath : 1
+				            , drawImage : 1
+				            , fill      : 1
+				            , fillRect  : 1
+				            , lineTo    : 1
+				            , moveTo    : 1
+				            , restore   : 1
+				            , rotate    : 1
+				            , save      : 1
+				            , scale     : 1
+				            , set       : 1
+				            , stroke    : 1
+				            , switchTo  : 1
+				            , translate : 1
+				            }).forEach(function (what) {
+					            this.canvas.ctx[what] = chain(this.canvas.ctx[what]);
+				            });
+				
+				// ---------------------------------------------------------------------------
+				// End code by Mathieu 'P01' Henri 
+				// ---------------------------------------------------------------------------
+
+				function setSize (x, y, what) {
+					var dims = { height : y
+					           , width  : x
+					           };
+
+					Object.keys(dims).forEach(function (i) {
+						what.set(i, dims[i]);
+					});
+					
+					return what;
+				}
+
+				INNERCONTEXT.UTILITY.extend(this.canvas, {
+					init : function (x, y) {
+						return setSize(x, y, this);
+					},
+					
+					cssInit : function (x, y) {
+						return setSize(x, y, this.style);
+					}
+				});
+			};
+
+			return function () {
+				return new Canvas().canvas;
+			};
+		})()
+	};		
 
 		clearCanvas : function clearCanvas (ctx) { // clear the contents of a canvas
 			ctx.save();
