@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0845
+// @version     0.02.0863
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -27,9 +27,13 @@ Installation and requirements:
 Firefox: Requires version 11 or higher.  Install as normal.  When the script is run the first time, a
 confirmation prompt will be displayed.  Make sure to click "accept"!
 
-Chrome: Install script.  Go to settings --> extensions ( chrome://chrome/extensions/ ) and make sure that
-the checkbox next to "Allow access to file URLs" for this extension is checked.  Then restart Chrome.  If
-you reinstall or upgrade the script, you may need to restart the browser before the script works again.
+Chrome: 
+1) Install script.
+2) (Newer versions of Chrome have removed this checkbox and the need for this step.)
+	Go to settings --> extensions ( chrome://chrome/extensions/ ).  If there is an 
+	"Allow access to file URLs" checkbox next to this extension, make sure that it is checked.
+3) Restart Chrome.
+If you reinstall or upgrade the script, you may need to restart the browser before the script works again.
 
 Opera: Not compatible, sorry.
 
@@ -42,6 +46,9 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
 //------------------------------------
+//TODO: Fix remove image
+//TODO: Add remove all images button
+//TODO: Refactor loading images from helper script while this script is running (load at start already works)
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
 //TODO: Clean up the temp file system after edit submissions and when images are removed
@@ -91,7 +98,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : false
-	, VERSION        : '0.02.0845'
+	, VERSION        : '0.02.0863'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -1444,6 +1451,33 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			reader.readAsDataURL(inputImage);
 		},
 
+		getBaseURI : function getBaseURI ( $ele ) {
+			return $ele.filter('base').attr('href') || '';
+		},
+
+		getBlockedPage: function getBlockedPage ( uri ) {
+			$.make('pre', { 'class': 'page' })
+			 .text(uri)
+			 .appendTo('#xhrComlink')
+			 .trigger('click');
+			// At this point, the event handler in the other javascript scope takes over.
+			// It will then trigger a dblclick event, which will then continue the process.
+		},
+
+		getContainedImages : function getContainedImages ( $ele ) {
+			var getProps = function (selector, property) {
+				return $.map($ele.filter(selector).add($ele.find(selector)), function (ele, i) { return $.single(ele).prop(property); });
+			};
+
+			var testURIForValidImage = function testURIForValidImage ( uri ) {
+				return INNERCONTEXT.CONSTANTS.REGEXP.image.test( uri );
+			};
+
+			var uris = getProps('a', 'href').concat(getProps('img', 'src'));
+
+			return $.grep( uris, testURIForValidImage);
+		},
+
 		getEditColor : function getEditColor ($ele) {
 			// Checks that an editbox has both an image and a cover type.  Returns the associated color for the current editbox' status.
 			$.log('Testing edit status to determine background color for dropbox.');
@@ -1484,6 +1518,20 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			// At this point, the event handler for #xhrComlink, in the other javascript scope, takes over.
 		},
 
+		getRemotePage : function getRemotePage ( uri ) {
+			var url = "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" +
+				      encodeURIComponent(uri) +
+				      "%22%20and%20xpath%3D%22/html%22" + // Tells YQL to include the <head> as well as the <body>
+				      "&format=xml&callback=?";
+				      
+			$.ajax({ dataType : 'jsonp'
+				   , success  : INNERCONTEXT.UTILITY.handleYQLResponse
+			       , uri      : uri
+				   , url      : url
+				   });
+
+		},
+		
 		handleDroppedResources : function handleDroppedResources (e) {
 			e = e.originalEvent || e;
 			e.preventDefault(); // This has to be done before anything else.
@@ -1507,7 +1555,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					var dirReader = item.createReader();
 					dirReader.readEntries(function dirReader_readEntries (entries) {
 						var handleFile = function handleFile (file) {
-							util.handleURIs({ file_list: file });
+							util.processIncomingResources({ file_list: file });
 						};
 						
 						for (var i = 0; i < entries.length; i++) {
@@ -1532,28 +1580,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				}
 			}
 			
-			util.handleURIs(dropped);
+			util.processIncomingResources(dropped);
 		},
 
-		handleURIs : function handleURIs (uris) {
-			var $domIC = INNERCONTEXT.DOM['Main‿div‿imageContainer'];
+		handleYQLResponse : function handleYQLResponse (data, textStatus, jqXHR) {
+			var util  = INNERCONTEXT.UTILITY;
 
-			var walkURIArray = function walkURIArray (uri) {
-				$domIC.trigger({ type: 'haveRemote', uri: uri }, [INNERCONTEXT.UTILITY.supportedImageType(uri)]);
-			};
-
-			switch (!0) {
-				case (!!uris.file_list && (!!uris.file_list.length || uris.file_list.constructor === File)): // local file(s)
-					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
-					break;
-				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
-					walkURIArray(uris.uri);
-					break;
-				case (!!uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
-					uris.text.forEach(walkURIArray);
-					break;
-				default:
-					$.log('This is not something which can provide a usable image.');
+			if (!data.results[0]) { // Received an empty response from YQL - means that the page blocks YQL with robots.txt.
+				util.getBlockedPage(this.uri);
+			} else {
+				util.processRemotePage(data);
 			}
 		},
 
@@ -1639,6 +1675,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			}
 		},
 
+		processBlockedPage: function processBlockedPage ( e ) {
+			var $comlink    = $(e.target)
+			  , remoteHTML  = atob($comlink.text())
+			  ;
+			  
+			INNERCONTEXT.UTILITY.processRemotePage( e, remoteHTML );
+		},
+	
 		processCAAResponse: function processCAAResponse(response, textStatus, jqXHR, data) {
 			if (Object !== response.constructor) { // Firefox
 				response = JSON.parse(response);
@@ -1681,6 +1725,28 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 			$row.trigger('loaded');
 		},
+		
+		processIncomingResources : function processIncomingResources (uris) {
+			var $domIC = INNERCONTEXT.DOM['Main‿div‿imageContainer'];
+
+			var walkURIArray = function walkURIArray (uri) {
+				$domIC.trigger({ type: 'haveRemote', uri: uri }, [INNERCONTEXT.UTILITY.supportedImageType(uri)]);
+			};
+
+			switch (!0) {
+				case (!!uris.file_list && (!!uris.file_list.length || uris.file_list.constructor === File)): // local file(s)
+					$domIC.trigger({ type: 'haveLocalFileList' , list: uris.file_list });
+					break;
+				case (!!uris.uri && !!uris.uri.length): // remote image drag/dropped
+					walkURIArray(uris.uri);
+					break;
+				case (!!uris.text && !!uris.text.length): // plaintext list of urls drag/dropped
+					uris.text.forEach(walkURIArray);
+					break;
+				default:
+					$.log('This is not something which can provide a usable image.');
+			}
+		},
 
 		processRemoteImage : function processRemoteImage (e) {
 			var ic          = INNERCONTEXT
@@ -1693,10 +1759,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			  , imageType   = $target.data('type')
 			  , imageFile   = $.dataURItoBlob(imageBase64, utils.getMime(imageType, uri))
 			  ;
-
-			if (!$comlink.hasClass('image')) { // This comlink isn't being used for an image file.
-				return;
-			}
 
 			var createNewFile = function createNewFile (thisFile) { // Create a new file in the temp local file system.
 				thisFile.createWriter(function (fileWriter) {   // Write to the new file.
@@ -1719,6 +1781,26 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			};
 
 			ic.DATA.localFileSystem.root.getFile(filename, { create: true, exclusive: true }, createNewFile);
+		},
+
+		processRemotePage: function processRemotePage ( data, remoteHTML ) {
+			var imageArr    = []
+			  , util        = INNERCONTEXT.UTILITY
+			  , $remotePage = $(remoteHTML || data.results[0])
+			  , base        = util.getBaseURI($remotePage)
+			  ;
+	
+			var unique = function unique ( uri, index ) {
+				return imageArr.indexOf( uri ) === index;
+			};
+		
+			util.setBaseURI(base);
+			imageArr = util.getContainedImages($remotePage);
+			if (imageArr.length) {
+				util.processIncomingResources({ base: base
+					                          , text: imageArr.filter(unique)
+					                          });
+			}
 		},
 
 		removeClass : function removeClass (e, classToRemove) {
@@ -1761,6 +1843,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		    e.data.picker.data('picker').fromString(color);
 			util.setLSColorValue($option.val(), color, util);
+		},
+
+		setBaseURI : function setBaseURI ( uri ) {
+			$('base').prop('href', uri);
 		},
 
 		setLSColorValue : function setLSColorValue (color, value, util) {
@@ -2879,13 +2965,14 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                                  ,  drop        : util.handleDroppedResources // Handle drops into the drop area
 			                                  , 'haveRemote' : // Handle remote non-image resources to be loaded
 			                                      function ( e, type ) {
-			                                          type ? util.getRemoteFile( e.uri, type ) : util.getRemotePage( e.data.uri );
+			                                          type ? util.getRemoteFile( e.uri, type ) : util.getRemotePage( e.uri );
 			                                      }
 			                                  , 'haveLocalFileList' : util.loadLocalFile // Handle local images to be loaded
 			                                  });
 
 			// Handle a signal that a new remote image has been retreived and is ready to use
-			dom.xhrComlink.on( 'dblclick', '.image', util.processRemoteImage );
+			dom.xhrComlink.on( 'dblclick', '.image', util.processRemoteImage )
+			              .on( 'dblclick', '.page', util.processBlockedPage );
 
 			// Add functionality to the options color picker select.
 			dom['Options‿select‿colors'].on(change, { util: util, picker: dom['Options‿input‿color‿colors'] }, ui.changeSelectedColorOption);
@@ -2894,7 +2981,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			dom['Options‿input‿color‿colors'].on(change, { util: util, color: dom['Options‿select‿colors'].find(':selected').val() }, util.storeColor);
 
 			// Add functionality to the options color default button.
-			dom['Options‿input‿button‿default'].on('click', { dom: dom, util: util, picker: dom['Options‿input‿color‿colors'] }, util.resetColorToDefault);
+			dom['Options‿input‿button‿default'].on(click, { dom: dom, util: util, picker: dom['Options‿input‿color‿colors'] }, util.resetColorToDefault);
 
 			// Data loading transition handlers for image rows
 			$('form[action*="merge_queue"]').on( 'loading', '.imageRow', ui.showLoading)
@@ -3345,82 +3432,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 
 /*
 
-		var getRemotePage = function getRemotePage (uri) {
-			$.log('Loading ' + uri);
-
-			$.ajax({ url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" +
-						  encodeURIComponent(uri) +
-						  "%22%20and%20xpath%3D%22/html%22" + // Tells YQL to include the <head> as well as the <body>
-						  "&format=xml&callback=?"
-				   , dataType: "jsonp"
-				   , context: this
-				   , success: function yqlResponseHandler(data, textStatus, jqXHR) {
-								  var links = []
-									, processURI = function getRemotePage_processURI (uri) {
-											INNERCONTEXT.CONSTANTS.REGEXP.image.test(uri) && links.push(uri);
-										}
-									, unique = function getRemotePage_unique (uri, index) {
-											return links.indexOf(uri) === index;
-										}
-									, sendLinksToHandler = function getRemotePage_sendLinksToHandler (base) {
-											links.length && INNERCONTEXT.UTILITY.handleURIs({ base: base
-																	   , text: links.filter(unique)
-																	   });
-										}
-									, handleBaseTag = function getRemotePage_handleBaseTag ($remotePage) {
-											var base = $remotePage.filter('base').attr('href') || '';
-											$('base').prop('href', base);
-											return base;
-										}
-									, populateImageLinks = function getRemotePage_populateImageLinks ($remotePage) {
-											$remotePage.find('img')
-													   .each(function getRemotePage_populateImageLinks_img_handler () {
-																 processURI(this.src);
-															 })
-													   .end()
-													   .find('a')
-													   .each(function getRemotePage_populateImageLinks_a_handler () {
-																 processURI(this.href);
-													   });
-										}
-									;
-
-								  if (!data.results[0]) { // Received an empty response from YQL - means that the page blocks YQL with robots.txt.
-									  $.log('Page is blocked from YQL via robots.txt, ' + uri);
-									  $.log('Creating comlink to trigger other context to get the file.');
-									  $.make('pre', { 'class': 'page' }).text(uri)
-																	   .appendTo('#xhrComlink')
-																	   .trigger('click')
-												   // At this point, the event handler in the other javascript scope takes over.
-												   // It will then trigger a dblclick event, which will then continue the process.
-																	   .on('dblclick', function processRobotsWebpage (e) {
-																		   var $comlink   = $(this)
-																			 , remoteHTML = atob($comlink(this).text())
-																			 , $remotePage = $(remoteHTML)
-																			 ;
-
-																		   if (!$comlink.hasClass('page')) { // This comlink isn't being used for an webpage.
-																			   $.log('Comlink does not hold a webpage; quitting processRobotsWebpage.');
-																			   return;
-																		   }
-																		   $.log('Comlink holds a webpage; processRobotsWebpage continuing.');
-																		   var base = handleBaseTag($remotePage);
-																		   populateImageLinks($remotePage);
-																		   sendLinksToHandler(base);
-																	   });
-								  } else {
-									  $.log('Processing ' + uri);
-									  var $remotePage = $(data.results[0]);
-									  var base = handleBaseTag($remotePage);
-									  populateImageLinks($remotePage);
-									  sendLinksToHandler(base);
-								  }
-							  }
-				   });
-		};
-
-//---------------------------------------------------------------------------------------------------------
-
 		// Create image editor.
 !function create_image_editor_handler () {
 	$.log('Adding handler for image editor.');
@@ -3697,7 +3708,7 @@ $('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieF
 								  , ctx = canvas.getContext("2d")
 								  ;
 
-								// Fill background of canvas with solid white box.  Without this, the default is a solid black background.
+								// Fill background of canvas with solid white box.  Without this, the API's default is a solid black background.
 								ctx.setTransform(1, 0, 0, 1, 0, 0);
 								ctx.globalCompositeOperation = 'destination-over'; // Draw the new box behind the image.
 								ctx.fillStyle = '#FFF';
