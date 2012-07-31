@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0864
+// @version     0.02.0865
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -3518,26 +3518,31 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	INNERCONTEXT.UTILITY.imageEditor = {
 		data: INNERCONTEXT.DATA.imageEditor,
 		
-		Canvas : (function () {
-			const Canvas = function () {
-				var degreesInRadians = Math.PI / 180;
+		JCanvas : (function () {
+			var JCanvas = function () {
+				const degreesInRadians = Math.PI / 180
+				    , self = this
+				    ;
+				    
+				var canvas
+				  , degreesRotated = 0
+				  ;
 
-				this.canvas = document.createElement('canvas');
-				this.canvas.ctx = this.canvas.getContext("2d");
-				this.degreesRotated = 0;
+				canvas = this.canvas = document.createElement( 'canvas' );
+				canvas.ctx = canvas.getContext( '2d' );
 
 				// ---------------------------------------------------------------------------
 				// This next bit of code is modified from code by Mathieu 'P01' Henri
 				// From http://www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug
 				// ---------------------------------------------------------------------------
 				
-				this.canvas.set = this.canvas.style.set = this.canvas.ctx.set = function (what, to) {
+				canvas.set = canvas.style.set = canvas.ctx.set = function ( what, to ) {
 					this[what] = to;
 				};
 
 				function chain ( a ) {
 					return function () {
-						return a.apply(this, arguments) || this;
+						return a.apply( this, arguments ) || this;
 					};
 				}
 
@@ -3559,7 +3564,7 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				            , switchTo  : 1
 				            , translate : 1
 				            }).forEach(function (what) {
-					            this.canvas.ctx[what] = chain(this.canvas.ctx[what]);
+					            self.canvas.ctx[what] = chain(self.canvas.ctx[what]);
 				            });
 				
 				// ---------------------------------------------------------------------------
@@ -3569,9 +3574,11 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 					           , width  : x
 					           };
 
-					Object.keys(dims).forEach(function (i) {
-						what.set(i, dims[i]);
-					});
+					var setWhat = function (i) {
+						what.set( i, dims[i] );
+					};
+
+					Object.keys( dims ).forEach( setWhat );
 					
 					return what;
 				}
@@ -3579,89 +3586,96 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 				function modifyCanvas () {
 					var centerH  = this.height / 2
 					  , centerW  = this.width / 2
-					  , callback = Array.prototype.shift.apply(arguments)
+					  , callback = Array.prototype.shift.apply( arguments )
 					  ;
 
-					this.canvas.clear()
-					           .ctx
-					           .translate(centerW, centerH);
-					callback.apply(this, arguments);
-					this.canvas.ctx
-					           .translate(-centerW, -centerH)
-					           .drawImage(this.backup, 0, 0);
+					canvas.clear()
+					      .ctx
+					      .translate( centerW, centerH );
+					callback.apply( this, arguments );
+					canvas.ctx
+					      .translate( -centerW, -centerH )
+					      .drawImage( this.backup, 0, 0 );
 
 					return this;
 				}
 				
-				function flip (horizontal, vertical) {
-					this.canvas.ctx
-					           .scale(horizontal ? -1 : 1, vertical ? -1 : 1);
+				function flip ( horizontal, vertical ) {
+					canvas.ctx
+					           .scale( horizontal ? -1 : 1, vertical ? -1 : 1 );
 				}
 
 				function rotate (degrees) {
-					this.canvas.ctx
-					           .rotate(-this.data.degreesRotated * degreesInRadians)
-					           .rotate(degrees * degreesInRadians);
+					canvas.ctx
+					      .rotate( -degreesRotated * degreesInRadians )
+					      .rotate( degrees * degreesInRadians );
 
-					this.degreesRotated = degrees;
+					degreesRotated = degrees;
 				}
 
-				INNERCONTEXT.UTILITY.extend(this.canvas, {
-					eleInit : function eleInit (x, y) {
-						return setSize(x, y, this);
-					},
-					
-					cssInit : function cssInit (x, y) {
-						return setSize(x, y, this.style);
-					},
-					
-					clear : function clear () {
-						this.ctx
-						    .save()
-						    .setTransform(1, 0, 0, 1, 0, 0) // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-						    .clearRect(0, 0, this.width, this.height)
-						    .restore();
+				canvas.eleInit = function eleInit (x, y) {
+					return setSize(x, y, this);
+				};
+				
+				canvas.cssInit = function cssInit (x, y) {
+					return setSize(x, y, this.style);
+				};
+				
+				canvas.clear = function clear () {
+					this.ctx
+					    .save()
+					    .setTransform(1, 0, 0, 1, 0, 0) // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+					    .clearRect(0, 0, this.width, this.height)
+					    .restore();
 
-						return this;
-					},
-					
-					getCopy : function getCopy () {
-						var copy = new Canvas().canvas;
-						
-						copy.init(this.width, this.height)
-						    .ctx
-						    .drawImage(this, 0, 0);
-						    
-						return copy;
-					},
-					
-					flip : function flip (e) {
-						modifyCanvas(flip, e.data.h, e.data.v);
-
-						return this;
-					},
-					
-					rotate: function rotate (e) {
-						modifyCanvas(rotate, $.single( e.target ).val());
-
-						return this;
-					},
-				});
+					return this;
+				};
+				
+				canvas.getCopy = function getCopy () {
+					var copy = new JCanvas().canvas;
+				
+					copy.eleInit( this.width, this.height )
+					    .ctx
+					    .drawImage(this, 0, 0, true); // The last argument here prevents a backup being made on this backup.
+					    
+					return copy;
+				};
+				
+				canvas.flip = function flip (e) {
+					return modifyCanvas( flip, e.data.h, e.data.v );
+				};
+				
+				canvas.rotate = function rotate (e) {
+					return modifyCanvas( rotate, $.single( e.target ).val() );
+				};
 
 				// Duck-punch drawImage so that it creates a stored backup of the canvas as well.
-				var _drawImage = this.canvas.ctx.drawImage;
-				this.canvas.ctx.drawImage = function () {
-					_drawImage.apply(this,arguments);
-					this.backup = this.canvas.getCopy();
+				var _drawImage = canvas.ctx.drawImage;
+				canvas.ctx.drawImage = function () {
+					_drawImage.apply( this, Array.prototype.slice.call(arguments, 0, 3) );
+					if ( arguments.length !== 4 ) { // Don't make a backup if this is called from a backup.
+						this.backup = canvas.getCopy();
+					}
 					return this;
 				};
 			};
 
 			return function () {
-				return new Canvas().canvas;
+				var retVal = new JCanvas().canvas
+				  , slice  = Array.prototype.slice
+				  ;
+				  
+				if (arguments.length === 2) {
+					retVal.eleInit.apply(retVal, arguments);
+				} else if (arguments.length === 4) {
+					retVal.eleInit.apply(retVal, slice.call(arguments, 0, 2))
+					      .cssInit.apply(retVal, slice.call(arguments, 2, 4));
+				}
+				
+				return retVal;
 			};
 		}())
-	};		
+	};
 
 
 	var cropMask = function handle_crop_mask_change(e) {
@@ -3820,7 +3834,6 @@ $('#ImageEditor‿div‿ieDiv').on('click', '#ImageEditor‿input‿button‿ieF
 	}).text('.CAAmask { background-color: ' + INNERCONTEXT.UTILITY.getColor('MASK') + '; }').attr('type', 'text/css').appendTo('head');
 
 	// Create the color picker.
-	$.log('Creating color picker for image editor');
 	var iePicker = new jscolor.color(document.getElementById('ieMaskColorControl'), {});
 	iePicker.hash = true;
 	iePicker.pickerFace = 5;
