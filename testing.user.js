@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0865
+// @version     0.02.0872
 // @description
 // @include     http://musicbrainz.org/artist/*
 // @include     http://beta.musicbrainz.org/artist/*
@@ -18,7 +18,7 @@
 
 // ==/UserScript==
 /*global console JpegMeta Blob BlobBuilder File GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY URL postMessage */
-/*jshint esnext:true, smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
+/*jshint regexp:true, latedef: true, nonew: true, esnext:true, smarttabs:true, bitwise:false, forin:true, noarg:true, noempty:true, eqeqeq:true, es5:true, expr:true, strict:true, undef:true, curly:true, nonstandard:true, browser:true, jquery:true, maxerr:500, laxbreak:true, newcap:true, laxcomma:true, evil:true */
 
 /* ----------------------------------------------------------------------------------------------------------|
 
@@ -98,7 +98,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : false
-	, VERSION        : '0.02.0863'
+	, VERSION        : '0.02.0872'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -360,8 +360,8 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Error too much cropping'  : 'Cropping this much would remove the entire image!'
 			, 'Apply'                    : 'Apply'
 			, 'ACTIVE'                   : 'Droppable area'
-			, 'CAABOX'                   : 'Empty CAA box'
-			, 'CAABUTTONS'               : 'Load CAA buttons'
+			, 'CAABOX'                   : 'Empty coverart box'
+			, 'CAABUTTONS'               : 'Load info buttons'
 			, 'EDITOR'                   : 'Image editor background'
 			, 'EDITORMENU'               : 'Image editor menu'
 			, 'INCOMPLETE'               : 'Incomplete edits'
@@ -478,7 +478,6 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#Options‿select‿colors':
 		{ 'float'                  : 'left'
 		,  padding                 : '5px'
-		,  width                   : '202px'
 		}
 	, '#Options‿input‿number‿shadow':
 		{ 'margin-left'            : '5px'
@@ -580,10 +579,8 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#Options‿select‿language':
 		{  height                  : '5em'
-		,  margin                  : '10px 10px -27px 6px'
 		,  padding                 : '6px'
 		, 'text-transform'         : 'capitalize'
-		,  width                   : '70%'
 		}
 	, '#Main‿div‿options_control, #Main‿div‿about_control':
 		{  display                 : 'inline-block'
@@ -608,6 +605,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#Options‿fieldset‿main * select':
 		{ 'font-size'              : '105%'
+		,  width                   : '100%'
 		}
 	, '#Options‿fieldset‿main > label > select':
 		{  padding                 : '3px'
@@ -933,6 +931,9 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border-radius'          : '8px'
 		,  padding                 : '6px'
 		}
+	, 'fieldset.CaabieOptions':
+		{  margin                  : '0'
+		}
 	, '#ImageEditor‿div‿ieMenu > fieldset':
 		{  border                  : 'none'
 		,  margin                  : '16px -4px 7px'
@@ -1204,6 +1205,163 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		, TEMPLATES : { CONTROLS: {}, MENUS: {} }
 		}
 	);
+
+	var JCanvas = (function () {
+		var JCanvas = function () {
+			var degreesInRadians = Math.PI / 180
+			    , self           = this
+			    , canvas         = document.createElement( 'canvas' )
+			    , degreesRotated = 0
+			    ;
+
+			this.canvas = canvas;
+			canvas.ctx = canvas.getContext( '2d' );
+
+			// ---------------------------------------------------------------------------
+			// This next bit of code is modified from code by Mathieu 'P01' Henri
+			// From http://www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug
+			// ---------------------------------------------------------------------------
+			
+			canvas.set = canvas.style.set = canvas.ctx.set = function ( what, to ) {
+				this[what] = to;
+			};
+
+			function chain ( a ) {
+				return function () {
+					return a.apply( this, arguments ) || this;
+				};
+			}
+
+			Object.keys({ arc       : 1
+			            , beginPath : 1
+			            , clearRect : 1
+			            , closePath : 1
+			            , drawImage : 1
+			            , fill      : 1
+			            , fillRect  : 1
+			            , lineTo    : 1
+			            , moveTo    : 1
+			            , restore   : 1
+			            , rotate    : 1
+			            , save      : 1
+			            , scale     : 1
+			            , set       : 1
+			            , stroke    : 1
+			            , switchTo  : 1
+			            , translate : 1
+			            }).forEach(function (what) {
+				            self.canvas.ctx[what] = chain(self.canvas.ctx[what]);
+			            });
+			
+			// ---------------------------------------------------------------------------
+
+			function setSize (x, y, what) {
+				var dims = { height : y
+				           , width  : x
+				           };
+
+				var setWhat = function (i) {
+					what.set( i, dims[i] );
+				};
+
+				Object.keys( dims ).forEach( setWhat );
+				
+				return what;
+			}
+
+			function modifyCanvas () {
+				/*jshint validthis: true */
+				var centerH  = this.height / 2
+				  , centerW  = this.width / 2
+				  , callback = Array.prototype.shift.apply( arguments )
+				  ;
+
+				canvas.clear()
+				      .ctx
+				      .translate( centerW, centerH );
+				callback.apply( this, arguments );
+				canvas.ctx
+				      .translate( -centerW, -centerH )
+				      .drawImage( this.backup, 0, 0 );
+
+				return this;
+			}
+			
+			function flip ( horizontal, vertical ) {
+				canvas.ctx
+				           .scale( horizontal ? -1 : 1, vertical ? -1 : 1 );
+			}
+
+			function rotate (degrees) {
+				canvas.ctx
+				      .rotate( -degreesRotated * degreesInRadians )
+				      .rotate( degrees * degreesInRadians );
+
+				degreesRotated = degrees;
+			}
+
+			canvas.eleInit = function eleInit (x, y) {
+				return setSize(x, y, this);
+			};
+			
+			canvas.cssInit = function cssInit (x, y) {
+				return setSize(x, y, this.style);
+			};
+			
+			canvas.clear = function clear () {
+				this.ctx
+				    .save()
+				    .setTransform(1, 0, 0, 1, 0, 0) // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
+				    .clearRect(0, 0, this.width, this.height)
+				    .restore();
+
+				return this;
+			};
+			
+			canvas.getCopy = function getCopy () {
+				var copy = new JCanvas().canvas;
+			
+				copy.eleInit( this.width, this.height )
+				    .ctx
+				    .drawImage(this, 0, 0, true); // The last argument here prevents a backup being made on this backup.
+				    
+				return copy;
+			};
+			
+			canvas.flip = function flip (e) {
+				return modifyCanvas( flip, e.data.h, e.data.v );
+			};
+			
+			canvas.rotate = function rotate (e) {
+				return modifyCanvas( rotate, $.single( e.target ).val() );
+			};
+
+			// Duck-punch drawImage so that it creates a stored backup of the canvas as well.
+			var _drawImage = canvas.ctx.drawImage;
+			canvas.ctx.drawImage = function () {
+				_drawImage.apply( this, Array.prototype.slice.call(arguments, 0, 3) );
+				if ( arguments.length !== 4 ) { // Don't make a backup if this is called from a backup.
+					this.backup = canvas.getCopy();
+				}
+				return this;
+			};
+		};
+
+		return function () {
+			var retVal = new JCanvas().canvas
+			  , slice  = Array.prototype.slice
+			  ;
+			  
+			if (arguments.length === 2) {
+				retVal.eleInit.apply(retVal, arguments);
+			} else if (arguments.length === 4) {
+				retVal.eleInit.apply(retVal, slice.call(arguments, 0, 2))
+				      .cssInit.apply(retVal, slice.call(arguments, 2, 4));
+			}
+			
+			return retVal;
+		};
+	}());
 
 	INNERCONTEXT.UTILITY.extend(INNERCONTEXT.UTILITY, {
 		addClass : function addClass (e) {
@@ -2616,9 +2774,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿autoedit', 'class': 'autoedit', id: 'autoedit', title: $.l('Submit as autoedits'), text: $.l('Submit as autoedits'), hide: true }
 			, { ele: 'br' }
 			, { ele: 'input', id: 'clear_storage', title: $.l('Remove stored images nfo'), type: 'button', value: $.l('Remove stored images'), disabled: INNERCONTEXT.UTILITY.getLSValue('imageCache') === '[]' }
-			, { ele: 'br' }
-			, { ele: 'label', 'for': 'Options‿select‿language', id: 'language', title: $.l('Changed language note'), text: $.l('Language') + ':' }
-			,	[ { ele: 'select', id: 'language', size: 3, title: $.l('Changed language note') }
+			, { ele: 'fieldset', id: 'language' }
+			,	[ { ele: 'legend', text: $.l('Language'), title: $.l('Changed language note') }
+			,	, { ele: 'select', id: 'language', size: 3, title: $.l('Changed language note') }
 				,	INNERCONTEXT.UI.$makeLanguagesList()
 				]
 			, { ele: 'fieldset', id: 'colors' }
@@ -3265,6 +3423,11 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 	  var detach = $.detach = function $_detach (node, async, fn) {
 			  var parent = node.parentNode;
 			  var next = node.nextSibling;
+
+			  function reattach() {
+				  parent.insertBefore(node, next);
+			  }            
+            
 			  if (!parent) {
 				  return;
 			  }
@@ -3278,10 +3441,6 @@ OUTERCONTEXT.CONTEXTS.THIRDPARTY = function THIRDPARTY ($, THIRDCONTEXT) {
 			  } else if (fn) {
 				  fn.call(node);
 				  reattach();
-			  }
-
-			  function reattach() {
-				  parent.insertBefore(node, next);
 			  }
 		  };
 
@@ -3518,163 +3677,6 @@ OUTERCONTEXT.CONTEXTS.CSS = function CSS ($, CSSCONTEXT) {
 	INNERCONTEXT.UTILITY.imageEditor = {
 		data: INNERCONTEXT.DATA.imageEditor,
 		
-		JCanvas : (function () {
-			var JCanvas = function () {
-				const degreesInRadians = Math.PI / 180
-				    , self = this
-				    ;
-				    
-				var canvas
-				  , degreesRotated = 0
-				  ;
-
-				canvas = this.canvas = document.createElement( 'canvas' );
-				canvas.ctx = canvas.getContext( '2d' );
-
-				// ---------------------------------------------------------------------------
-				// This next bit of code is modified from code by Mathieu 'P01' Henri
-				// From http://www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug
-				// ---------------------------------------------------------------------------
-				
-				canvas.set = canvas.style.set = canvas.ctx.set = function ( what, to ) {
-					this[what] = to;
-				};
-
-				function chain ( a ) {
-					return function () {
-						return a.apply( this, arguments ) || this;
-					};
-				}
-
-				Object.keys({ arc       : 1
-				            , beginPath : 1
-				            , clearRect : 1
-				            , closePath : 1
-				            , drawImage : 1
-				            , fill      : 1
-				            , fillRect  : 1
-				            , lineTo    : 1
-				            , moveTo    : 1
-				            , restore   : 1
-				            , rotate    : 1
-				            , save      : 1
-				            , scale     : 1
-				            , set       : 1
-				            , stroke    : 1
-				            , switchTo  : 1
-				            , translate : 1
-				            }).forEach(function (what) {
-					            self.canvas.ctx[what] = chain(self.canvas.ctx[what]);
-				            });
-				
-				// ---------------------------------------------------------------------------
-
-				function setSize (x, y, what) {
-					var dims = { height : y
-					           , width  : x
-					           };
-
-					var setWhat = function (i) {
-						what.set( i, dims[i] );
-					};
-
-					Object.keys( dims ).forEach( setWhat );
-					
-					return what;
-				}
-
-				function modifyCanvas () {
-					var centerH  = this.height / 2
-					  , centerW  = this.width / 2
-					  , callback = Array.prototype.shift.apply( arguments )
-					  ;
-
-					canvas.clear()
-					      .ctx
-					      .translate( centerW, centerH );
-					callback.apply( this, arguments );
-					canvas.ctx
-					      .translate( -centerW, -centerH )
-					      .drawImage( this.backup, 0, 0 );
-
-					return this;
-				}
-				
-				function flip ( horizontal, vertical ) {
-					canvas.ctx
-					           .scale( horizontal ? -1 : 1, vertical ? -1 : 1 );
-				}
-
-				function rotate (degrees) {
-					canvas.ctx
-					      .rotate( -degreesRotated * degreesInRadians )
-					      .rotate( degrees * degreesInRadians );
-
-					degreesRotated = degrees;
-				}
-
-				canvas.eleInit = function eleInit (x, y) {
-					return setSize(x, y, this);
-				};
-				
-				canvas.cssInit = function cssInit (x, y) {
-					return setSize(x, y, this.style);
-				};
-				
-				canvas.clear = function clear () {
-					this.ctx
-					    .save()
-					    .setTransform(1, 0, 0, 1, 0, 0) // http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing
-					    .clearRect(0, 0, this.width, this.height)
-					    .restore();
-
-					return this;
-				};
-				
-				canvas.getCopy = function getCopy () {
-					var copy = new JCanvas().canvas;
-				
-					copy.eleInit( this.width, this.height )
-					    .ctx
-					    .drawImage(this, 0, 0, true); // The last argument here prevents a backup being made on this backup.
-					    
-					return copy;
-				};
-				
-				canvas.flip = function flip (e) {
-					return modifyCanvas( flip, e.data.h, e.data.v );
-				};
-				
-				canvas.rotate = function rotate (e) {
-					return modifyCanvas( rotate, $.single( e.target ).val() );
-				};
-
-				// Duck-punch drawImage so that it creates a stored backup of the canvas as well.
-				var _drawImage = canvas.ctx.drawImage;
-				canvas.ctx.drawImage = function () {
-					_drawImage.apply( this, Array.prototype.slice.call(arguments, 0, 3) );
-					if ( arguments.length !== 4 ) { // Don't make a backup if this is called from a backup.
-						this.backup = canvas.getCopy();
-					}
-					return this;
-				};
-			};
-
-			return function () {
-				var retVal = new JCanvas().canvas
-				  , slice  = Array.prototype.slice
-				  ;
-				  
-				if (arguments.length === 2) {
-					retVal.eleInit.apply(retVal, arguments);
-				} else if (arguments.length === 4) {
-					retVal.eleInit.apply(retVal, slice.call(arguments, 0, 2))
-					      .cssInit.apply(retVal, slice.call(arguments, 2, 4));
-				}
-				
-				return retVal;
-			};
-		}())
 	};
 
 
