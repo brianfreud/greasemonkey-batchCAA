@@ -1,20 +1,43 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.02.0872
+// @version     0.03.0004
 // @description
-// @include     http://musicbrainz.org/artist/*
-// @include     http://beta.musicbrainz.org/artist/*
-// @include     http://test.musicbrainz.org/artist/*
-// @include     http://musicbrainz.org/artist/*/releases
-// @include     http://beta.musicbrainz.org/artist/*/releases
-// @include     http://test.musicbrainz.org/artist/*/releases
-// @include     http://musicbrainz.org/release-group/*
-// @include     http://beta.musicbrainz.org/release-group/*
-// @include     http://test.musicbrainz.org/release-group/*
-// @include     http://musicbrainz.org/label/*
-// @include     http://beta.musicbrainz.org/label/*
-// @include     http://test.musicbrainz.org/label/*
+// @exclude     http://beta.musicbrainz.org/artist/create*
+// @exclude     http://beta.musicbrainz.org/artist/*/credit
+// @exclude     http://beta.musicbrainz.org/artist/*/credit/*
+// @exclude     http://beta.musicbrainz.org/artist/*/credit/*/*
+// @exclude     http://beta.musicbrainz.org/artist/*/edit
+// @exclude     http://beta.musicbrainz.org/artist/*/edit_annotation
+// @exclude     http://beta.musicbrainz.org/artist/*/split
+// @exclude     http://beta.musicbrainz.org/label/*/*
+// @exclude     http://musicbrainz.org/artist/create*
+// @exclude     http://musicbrainz.org/artist/*/credit
+// @exclude     http://musicbrainz.org/artist/*/credit/*
+// @exclude     http://musicbrainz.org/artist/*/credit/*/*
+// @exclude     http://musicbrainz.org/artist/*/edit
+// @exclude     http://musicbrainz.org/artist/*/edit_annotation
+// @exclude     http://musicbrainz.org/artist/*/split
 // @exclude     http://musicbrainz.org/label/*/*
+// @exclude     http://test.musicbrainz.org/artist/create*
+// @exclude     http://test.musicbrainz.org/artist/*/credit
+// @exclude     http://test.musicbrainz.org/artist/*/credit/*
+// @exclude     http://test.musicbrainz.org/artist/*/credit/*/*
+// @exclude     http://test.musicbrainz.org/artist/*/edit
+// @exclude     http://test.musicbrainz.org/artist/*/edit_annotation
+// @exclude     http://test.musicbrainz.org/artist/*/split
+// @exclude     http://test.musicbrainz.org/label/*/*
+// @include     http://beta.musicbrainz.org/artist/*
+// @include     http://beta.musicbrainz.org/artist/*/releases
+// @include     http://beta.musicbrainz.org/label/*
+// @include     http://beta.musicbrainz.org/release-group/*
+// @include     http://musicbrainz.org/artist/*
+// @include     http://musicbrainz.org/artist/*/releases
+// @include     http://musicbrainz.org/label/*
+// @include     http://musicbrainz.org/release-group/*
+// @include     http://test.musicbrainz.org/artist/*
+// @include     http://test.musicbrainz.org/artist/*/releases
+// @include     http://test.musicbrainz.org/label/*
+// @include     http://test.musicbrainz.org/release-group/*
 
 // ==/UserScript==
 /*global console JpegMeta Blob BlobBuilder File GM_xmlhttpRequest jscolor requestFileSystem webkitRequestFileSystem TEMPORARY URL postMessage */
@@ -45,6 +68,12 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
+//TODO: Finish edit submission
+//TODO: "Submit all"
+//TODO: Edit submission queing
+//TODO: Fix loading CAA types (see http://musicbrainz.org/artist/056e19d1-e8aa-4b63-8e83-69556e8b31f3 )
+//TODO: Fix the overflow on the RG page (see http://musicbrainz.org/artist/056e19d1-e8aa-4b63-8e83-69556e8b31f3 )
+//      seems to only affect dropboxes added when CAA images need more boxes
 //------------------------------------
 //TODO: Fix remove image
 //TODO: Add remove all images button
@@ -61,6 +90,7 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Resize Images/Preview area on screen resize
 //TODO: Fullsize image editor option
 //TODO: HSL controls in image editor
+//TODO: handle http://e621.net/post/show/164512/
 
 document.body = document.body || document.getElementsByTagName('body')[0];
 
@@ -98,7 +128,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : false
-	, VERSION        : '0.02.0872'
+	, VERSION        : '0.03.0004'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -321,6 +351,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Parse (help)'             : 'Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.'
 			, 'Parse web pages'          : 'Parse web pages'
 			, 'Preview Image'            : 'Preview'
+			, 'Queued'                   : 'Queued'
 			, 'Remove (help)'            : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
 			, 'Remove image'             : 'Click to remove this image'
 			, 'Remove images'            : 'Remove images mode'
@@ -330,8 +361,10 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Rotate image'             : 'Rotate'
 			, 'Shrink image'             : 'Zoom out'
 			, 'Submit as autoedits'      : 'Submit edits as autoedits'
+			, 'Submit edit'              : 'Submit edit'
 			, 'Submit edits'             : 'Submit edits'
 			, 'Switch to full screen'    : 'Switch to full screen view'
+			, 'Submitting'               : 'Submitting'
 			, 'take effect next time'    : 'Changes to the language and color settings will take effect the next time that this script is run.'
 			, 'Top'                      : 'Top'
 			, 'Version'                  : 'Version'
@@ -450,8 +483,21 @@ null === localStorage.getItem('Caabie_editorShadow') && localStorage.setItem('Ca
 
 /* Define the CSS constants. */
 OUTERCONTEXT.CONSTANTS.CSS =
-	{ '#Options‿input‿color‿colors, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
+	{ '.CAAbutton':
 		{ 'background-color'       : '#C7C7C7'
+		,  border                  : '1px outset #EEE!important'
+		, 'border-radius'          : '6px'
+		,  cursor                  : 'pointer'
+		, 'font-family'            : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
+		, 'font-size'              : '100%'
+		, 'margin-right'           : 0
+		, 'outline'                : 'none'
+		,  padding                 : '3px'
+		,  width                   : '79px'
+		}
+	, '.CAAbutton:active':
+		{  border                  : '1px inset #D3D3D3'
+		,  opacity                 : 1
 		}
 	, 'select.CaabieOptions':
 		{ 'background-color'           : 'rgba(200, 200, 255, .8)'
@@ -463,7 +509,10 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'border-right'               : 0
 		,  outline                     : 'none'
 		}
-	, 'input.CaabieOptions:hover, select.CaabieOptions:hover':
+	, '#Options‿input‿button‿default, #Options‿input‿color‿colors':
+		{  float                   : 'right'
+		}
+	, '.CAAbutton:hover, select.CaabieOptions:hover':
 		{ 'box-shadow'             : 'inset 0px 0px 20px 3px rgba(0, 0, 150, .15)'
         , 'background-color'       : 'rgba(100, 100, 100, .2)'
 		}
@@ -492,6 +541,28 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, '#ImageEditor‿input‿number‿ieRotateControl':
 		{ 'margin-right'           : '2px'
 		,  width                   : '4em'
+		}
+	, 'figure.CAA_COMPLETE':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('COMPLETE')
+		}
+	, 'figure.CAA_INCOMPLETE':
+		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('INCOMPLETE')
+		}
+	, 'figure.CAA_NULL > fieldset, figure.CAA_INCOMPLETE > fieldset, div.CAAedit_Submitting, div.CAAedit_Queued':
+		{  display                 : 'none'
+		}
+	, 'figure.CAA_COMPLETE.CAA_SUBMITTING select, figure.CAA_COMPLETE.CAA_QUEUED select':
+		{  opacity                 : 0.2
+		}
+	, 'figure.CAA_COMPLETE.CAA_SUBMITTING div.CAAedit_Submitting, figure.CAA_COMPLETE.CAA_QUEUED div.CAAedit_Queued':
+		{  display                 : 'block!important'
+		, 'font-size'              : '125%'
+		, 'font-weight'            : 900
+		, 'padding-top'            : '3em'
+		, 'font-weight'            : '900'
+		, 'text-shadow'            : '0 0 3px white, 0 0 7px white, 0 0 12px white, 0 0 25px navy, 0 0 45px navy, 0 0 100px navy, 0 0 150px purple'
+		, 'color'                  : '#020'
+		, 'font-family'            : 'Georgia'
 		}
 	, '#ImageEditor‿div‿ieMenu':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('EDITORMENU')
@@ -676,7 +747,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  margin                  : '8px'
 		, 'min-height'             : '126px'
 		,  padding                 : '3px'
-		, 'vertical-align'         : 'middle'
+		, 'vertical-align'         : 'top'
 		,  width                   : '140px'
 		}
 	, 'div.CaabieDropBox':
@@ -686,6 +757,10 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  height                  : '120px'
 		,  margin                  : '0 auto'
 		,  width                   : '100%'
+		}
+	, 'fieldset.CaabieDropBox':
+		{  border                  : 'none'
+		, 'text-align'             : 'center'
 		}
 	, 'img.CaabieDropBox':
 		{  display                 : 'block'
@@ -917,9 +992,6 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{ 'padding-left'           : '1px'
 		, 'padding-right'          : '1px'
 		}
-	, '.workingCAAimage > div':
-		{ 'margin-bottom'          : '8px!important'
-		}
 	, 'div.loadingDiv > img':
 		{  height                  : '30px'
 		, 'image-rendering'        : 'optimizeQuality'
@@ -951,17 +1023,6 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{  border                  : 'none'
         , 'border-radius'          : '5px'
 		}
-	, 'input[type="color"], #Options‿input‿button‿colors, #Options‿input‿button‿default, #Options‿input‿button‿clear_storage, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
-		{  border                  : '1px outset #EEE!important'
-		, 'border-radius'          : '6px'
-		,  cursor                  : 'pointer'
-		, 'font-family'            : 'Bitstream Vera Sans, Verdana, Arial, sans-serif'
-		, 'font-size'              : '100%'
-		, 'margin-right'           : 0
-		, 'outline'                : 'none'
-		,  padding                 : '3px'
-		, 'text-align'             : 'center'
-		}
 	, '#Options‿input‿button‿clear_storage':
 		{ 'background-color'       : 'red'
 		,  color                   : '#FFF'
@@ -976,14 +1037,6 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{ 'background-color'       : 'grey'
 		,  color                   : '#000'
 		, 'text-decoration'        : 'line-through'
-		}
-	, '#Options‿input‿color‿colors, #Options‿input‿button‿colors, #Options‿input‿button‿default, #ImageEditor‿input‿button‿ieSaveImageBtn, #ImageEditor‿input‿button‿ieCancelBtn, #ImageEditor‿input‿button‿ieApplyCropBtn':
-		{ 'float'                  : 'right'
-		,  width                   : '79px'
-		}
-	, '#Options‿input‿color‿colors:active, #Options‿input‿button‿colors:active, #Options‿input‿button‿default:active, #Options‿input‿button‿clear_storage:active, #ImageEditor‿input‿color‿ieMaskColorControl:active, #ImageEditor‿input‿button‿ieSaveImageBtn:active, #ImageEditor‿input‿button‿ieCancelBtn:active, #ImageEditor‿input‿button‿ieApplyCropBtn:active':
-		{  border                  : '1px inset #D3D3D3'
-		,  opacity                 : 1
 		}
 	, 'legend':
 		{ color                    : '#000!important'
@@ -1385,9 +1438,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		addDropboxImage : function addDropboxImage (file, source, uri) {
-			var title         = (source === 'local') ? 'Local file: ' + (file.name)
+			var title = (source === 'local') ? 'Local file: ' + (file.name)
 			                                         : source + ' file: ' + uri
-			  , binaryReader  = new FileReader()
+			  , binaryReader = new FileReader()
 			  ;
 
 			var $img = $.make('img', { 'class'   : 'localImage previewable'
@@ -1414,7 +1467,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				  , blob       = $.makeBlob( workerCode, 'image/jpeg' )
 				  ;
 
-				blob = blob.getBlob ? /* BlobBuilder */      blob.getBlob()
+				blob = blob.getBlob ? /* BlobBuilder      */ blob.getBlob()
                                     : /* Blob constructor */ blob;
 
 			        // Create an ObjectURL pointing to the blob. (Prefixed methods have already been standardized.)
@@ -1425,20 +1478,21 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 				worker.onmessage = function ( e ) {
 					worker.terminate();
-					var jpeg = JSON.parse(e.data);
+					var jpeg = JSON.parse( e.data );
 
 					$img.data({ depth      : jpeg.depth.value
 					          , name       : file.name || file.fileName || uri
 					          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
-					          , size       : util.addCommas(file.size || file.fileSize)
+					          , size       : util.addCommas( file.size || file.fileSize )
 					          });
 				};
 
 				worker.postMessage( this.result );
 			};
 
-			var addImageToDOM = function addImageToDOM (url) {
-				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $img.prop('src', url) );
+			var addImageToDOM = function addImageToDOM ( url ) {
+				var $thisImg = $img.prop( 'src', url );
+				INNERCONTEXT.DOM['Main‿div‿imageHolder'].append( $thisImg );
 			};
 
 			var readImage = function readImage () {
@@ -1571,7 +1625,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			     .find('.dropBoxImage') // Any image in the drop box
 			     .appendTo($('#Main‿div‿imageHolder'))
 			     .addClass('localImage')
-			     .removeClass('dropBoxImage');
+			     .removeClass('dropBoxImage newCAAimage CaabieDropBox');
 			util.removeWrappedElement(e);
 		},
 
@@ -1602,7 +1656,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 						canvas.height = img.height;
 						ctx.drawImage(img, 0, 0);
 
-						imgDataURL = canvas.toDataURL("image/jpeg"),
+						imgDataURL = canvas.toDataURL('image/jpeg'),
 						imgBlob = $.dataURItoBlob(imgDataURL, 'jpeg');
 						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, 'converted local ' + type, source);
 					};
@@ -1646,7 +1700,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			$.log('Testing edit status to determine background color for dropbox.');
 
 			var state = ($ele.find(':selected').length && $ele.find('img').hasProp('src'));
-			return INNERCONTEXT.UTILITY.getColor(state ? 'COMPLETE' : 'INCOMPLETE');
+			return state ? 'COMPLETE' : 'INCOMPLETE';
 		},
 
 		getLSValue : function getLSValue (key, unprefixed) {
@@ -1870,6 +1924,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 				ui.convertEmptyDropbox($dropBox, this.comment);
 				ui.lowsrc($dropBox, this.image);
+				$dropBox.toggleClass('CAA_NULL CAA_EXISTING');
 
 				$.each(this.types, function assign_image_type(i) {
 					value = $.inArray(this, coverTypes) + 1;
@@ -2181,8 +2236,10 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		checkCompletion : function checkCompletion (e) {
-			var $figure = $(e.target).parents('figure:first');
-			$figure.css('background-color', INNERCONTEXT.UTILITY.getEditColor($figure));
+			var $figure = e.constructor !== $ ? $(e.target).parents('figure:first')
+			                                  : e;
+			$figure.removeClass('CAA_NULL CAA_COMPLETE CAA_INCOMPLETE CAA_QUEUED CAA_SUBMITTING')
+			       .addClass('CAA_' + INNERCONTEXT.UTILITY.getEditColor($figure));
 		},
 
 		convertEmptyDropbox : function convertEmptyDropbox ($dropBox, comment) {
@@ -2372,7 +2429,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			};
 
 			var makeRoleListPerCredit = function makeRoleListPerCredit (credit) {
-//TODO: This function is UGLY!
 				$thisWho  = $who.quickClone().text(credit.name);
 				$thisWhat = $what.quickClone().text(credit.what);
 				void 0 !== credit.urlN && ($thisWho = $.make('a', { href : 'http://' + credit.urlN }).append($thisWho));
@@ -2687,14 +2743,16 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	INNERCONTEXT.EVENTS.handleDrag.drop = function handleDrag_drop (e, handleDrag, self) {
-		if (!$.single(e.target).hasClass('newCAAimage')) {
+		if (self.src.length > 0 || !$.single(e.target).hasClass('newCAAimage')) {
 			return;
 		}
 		self.parentNode.replaceChild(this.$draggedImage[0], self);
-		this.$draggedImage.toggleClass('beingDragged dropBoxImage localImage')
-		                  .parents('figure:first').toggleClass('newCAAimage workingCAAimage over')
-		                                          .css('background-color', INNERCONTEXT.UTILITY.getEditColor($.single(self)));
-		$('figure').removeClass('over');
+		var $thisFigure = this.$draggedImage.toggleClass('newCAAimage beingDragged dropBoxImage localImage')
+		                                    .addClass('Caabie CaabieDropBox')
+		                                    .parents('figure:first')
+		                                    .toggleClass('workingCAAimage')
+                                    		.removeClass('over');
+		INNERCONTEXT.UI.checkCompletion($thisFigure);
 		this.$draggedImage = null;
 	};
 
@@ -2773,7 +2831,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			, { ele: 'input', id: 'autoedit', 'class': 'autoedit', type: 'checkbox', title: $.l('Submit as autoedits'), hide: true }
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿autoedit', 'class': 'autoedit', id: 'autoedit', title: $.l('Submit as autoedits'), text: $.l('Submit as autoedits'), hide: true }
 			, { ele: 'br' }
-			, { ele: 'input', id: 'clear_storage', title: $.l('Remove stored images nfo'), type: 'button', value: $.l('Remove stored images'), disabled: INNERCONTEXT.UTILITY.getLSValue('imageCache') === '[]' }
+			, { ele: 'input', id: 'clear_storage', 'class': 'CAAbutton', title: $.l('Remove stored images nfo'), type: 'button', value: $.l('Remove stored images'), disabled: INNERCONTEXT.UTILITY.getLSValue('imageCache') === '[]' }
+			, { ele: 'br' }
 			, { ele: 'fieldset', id: 'language' }
 			,	[ { ele: 'legend', text: $.l('Language'), title: $.l('Changed language note') }
 			,	, { ele: 'select', id: 'language', size: 3, title: $.l('Changed language note') }
@@ -2872,7 +2931,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 	};
 
 	INNERCONTEXT.TEMPLATES.dropbox =
-		[ { ele: 'figure' }
+		[ { ele: 'figure', 'class': 'CAA_NULL' }
 		,   [ INNERCONTEXT.TEMPLATES.CONTROLS.closeButton()
 			, { ele: 'div' }
 			,	[ { ele: 'img', 'class': 'dropBoxImage newCAAimage previewable', draggable : false }
@@ -2880,6 +2939,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			, { ele: 'figcaption' }
 			,	[ { ele: 'input', type: 'text', placeholder : 'image comment' }
 				, INNERCONTEXT.UI.$makeCoverTypeSelect()
+				, { ele: 'div', 'class': 'CAAedit_Submitting', text: $.l('Submitting'), hide: true }
+				, { ele: 'div', 'class': 'CAAedit_Queued', text: $.l('Queued'), hide: true }
+				]
+			, { ele: 'fieldset' }
+			,	[ { ele: 'input', type: 'button', 'class': 'CAAbutton CAAeditSubmit', value: 'Submit edit' }
+			,	, { ele: 'iframe', 'class': 'CAAeditFrame', hide: true }
 				]
 			]
 		];
@@ -3115,7 +3180,112 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( 'dragend', '.localImage', events.handleDrag.check )
 			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
 			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
-			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check );
+			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
+			        .on( 'click', '.CAAeditSubmit', function () {
+			        	var data = {};
+			        	data.$self         = $(this);
+			        	data.$fieldset     = data.$self.parent();
+						data.$thisRow      = data.$self.parents('tr:first');
+						data.$thisFigure   = data.$self.parents('figure:first');
+						data.$iFrame       = data.$self.next();
+						data.$types        = data.$thisFigure.find('select > option:selected');
+						data.releaseAnchor = data.$thisRow.prev().find('a:first');
+						data.thisObjURL    = data.$thisFigure.find('img').prop('src');
+			        	data.mbid          = INNERCONTEXT.CONSTANTS.REGEXP.mbid.exec(data.releaseAnchor.prop('href'))[0];
+			        	data.uid           = new Date().getTime()
+
+						data.$fieldset.hide();
+			        	data.$thisFigure.addClass('CAA_QUEUED');
+			        	
+			        	// Get a blob from the object URL
+			        	var xhr = new XMLHttpRequest();
+			        	xhr.open('GET', data.thisObjURL, true);
+			        	xhr.responseType = 'blob';
+			        	xhr.onload = function(e) {
+		        			if (this.status == 200) {
+								data.thisImg = this.response;
+				        		return function () {
+				        			data.$thisFigure.toggleClass('CAA_QUEUED CAA_SUBMITTING');
+			        				var MBImgForm = [ 'http://'
+			        				                , document.location.host
+			        				                , '/release/'
+			        				                , data.mbid
+			        				                , '/cover-art-uploader?id='
+			        				                , data.uid
+			        				                ].join('');
+									$.get( MBImgForm, function (MBformResponse, status) {
+										if (status !== "success") {
+											// error in requesting s3 submission form from MusicBrainz
+										} else {
+											data.$s3Form = jQuery(MBformResponse).filter('form');
+											
+											// Remove the file input so it doesn't confuse things in the FormData we're going to create.
+											data.$s3Form.find('input[type=file]').remove();
+											
+											// Create a new FormData using the original form's fields.
+											var s3form = new FormData(data.$s3Form[0]);
+											
+											// Add the blob to the form
+											s3form.append('file', data.thisImg);
+											
+											// Submit the form to s3
+											var xhr = new XMLHttpRequest();
+											xhr.open('POST', data.$s3Form.prop('action'), true);
+											xhr.onloadend = function (s3response) {
+												// As there is no way to test that s3 really got the image, if the
+												// code has reached this point, we just have to assume that s3 got it.
+												
+												// TODO: Figure out how to detect errors in blob -> s3 step
+
+												// Create a new FormData for the MB edit
+												var mbform   = new FormData()
+												  , mbfields = { 'as_auto_editor' : Number($('#Options‿input‿checkbox‿autoedit').attr('checked'))
+												               , comment          : data.$thisFigure.find('input[type=text]').val()
+												               , 'edit_note'      : 'Image added using Caabie, version ' + INNERCONTEXT.CONSTANTS.VERSION
+												               , id               : data.uid
+												               , position         : data.$thisRow.find('.CAA_EXISTING').length + 1
+												               };
+												               
+												Object.keys(mbfields).forEach(function (key) {
+													mbform.append( 'add-cover-art.' + key, mbfields[key] );
+												});
+												
+												var len = data.$types.length;
+												while (len--) {
+													mbform.append('add-cover-art.type_id', $.single(data.$types[len]).val());
+												}
+												
+												$.ajax({ contentType: false   // tell jQuery not to set contentType
+												       , data: mbform
+												       , processData: false  // tell jQuery not to process the data
+												       , error : function () {
+												             // Error in edit-> MB step
+												       }
+												       , success : function () {
+												             data.$thisFigure.toggleClass('CAA_SUBMITTING CAA_EXISTING');
+												             // Do other stuff to convert the dropbox
+												       }
+												       , type: "POST"
+												       , url: [ 'http://musicbrainz.org/release/'
+												               , data.mbid
+												               , '/add-cover-art' ].join('')
+												       });
+												       				        			
+				        			
+												};
+											xhr.send(s3form);
+											}
+									});
+				        		}(data);
+		        			} else {
+		        				// error in object URL -> blob step
+		        			}
+			        	};
+			        	xhr.send();
+			        	  
+			        	  //CAA_SUBMITTING
+			        	
+			        });
 
 			dom['Main‿div‿imageContainer'].on( click, '.tintImage', util.removeWrappedElement )	// Remove images (in remove image mode)
 			                              .on( 'mouseenter mouseleave', '.localImage', util.toggleRedTint )	// Tint images (in remove image mode)

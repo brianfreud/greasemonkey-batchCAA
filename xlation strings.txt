@@ -37,6 +37,8 @@ Obi
 Other
 Spine
 Track
+Tray
+Sticker
 
 Droppable area
 Empty CAA box
@@ -44,12 +46,13 @@ Load CAA buttons
 Incomplete edits
 Edits ready to submit
 Remove image highlight
+Default crop mask color
+Image editor darkness level
+Image editor background
 
 Submit edits as autoedits
 Remove stored images
 This removes any images from other websites that you have stored while this script was not running.
-Image editor darkness level
-Image editor background
 Left click to edit this image
 degrees
 Rotate
@@ -60,7 +63,6 @@ Bottom
 Left
 Right
 Mask color
-Default crop mask color
 About
 Developer and programmer
 Icons
@@ -74,5 +76,6 @@ Cropping this much would remove the entire image!
 Apply
 Close
 Switch to full screen view
-Tray
-Sticker
+Submitting
+Queued
+Submit edit
