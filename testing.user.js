@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0021
+// @version     0.03.0022
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -66,20 +66,24 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 |---------------------------------------------------------------------------------------------------------- */
 
-//TODO: Finish refactoring:
-//TODO: Refactor: util.getRemotePage
+//TODO: Handle dataURL length limits; 2MB in Chrome, 
+//TODO: Check for the "improveable" URLS - http://wiki.musicbrainz.org/User:Nikki/CAA
+//TODO: Parse/load from URL ARs
+//TODO: Allow drag/drop directly onto dropbox, rather than only from sidebox
+//TODO: Display resolution info (somewhere) for each image
+//TODO: Add JSHint to tools
+//TODO: Move remove images toggle to top bar, instead of options menu
+//TODO: online/offline
+//TODO: Finish refactoring image editor
 //TODO: "Submit all"
 //TODO: Edit submission queing
 //TODO: Fix loading CAA types (see http://musicbrainz.org/artist/056e19d1-e8aa-4b63-8e83-69556e8b31f3 )
 //TODO: Fix the overflow on the RG page (see http://musicbrainz.org/artist/056e19d1-e8aa-4b63-8e83-69556e8b31f3 )
 //      seems to only affect dropboxes added when CAA images need more boxes
-//------------------------------------
-//TODO: Fix remove image
 //TODO: Add remove all images button
 //TODO: Refactor loading images from helper script while this script is running (load at start already works)
 //TODO: Use the persistent parse webpages setting
 //TODO: Edit submission
-//TODO: Clean up the temp file system after edit submissions and when images are removed
 //TODO: Add support for editing MB's existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Add support for positioning/repositioning CAA images
@@ -551,6 +555,9 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, 'figure.CAA_NULL > fieldset, figure.CAA_INCOMPLETE > fieldset, figure.CAA_EXISTING > fieldset, div.CAAedit_Submitting, div.CAAedit_Queued':
 		{  display                 : 'none'
 		}
+	, 'figure.CAA_EXISTING > fieldset':
+		{  border                  : 'none!important'
+		}
 	, 'figure.CAA_COMPLETE.CAA_SUBMITTING select, figure.CAA_COMPLETE.CAA_QUEUED select':
 		{  opacity                 : 0.2
 		}
@@ -815,7 +822,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		,  position                : 'absolute'
 		}
 	, '.caaSubmitAll':
-		{ 'margin-left'            : '2em'
+		{ 'margin-left'            : '2em!important'
 		}
 	, '.caaAdd:active, .caaSubmitAll:active, .caaAll:active, .caaLoad:active':
 		{ 'border-style'           : 'inset!important'
