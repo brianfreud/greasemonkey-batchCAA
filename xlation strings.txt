@@ -79,3 +79,4 @@ Switch to full screen view
 Submitting
 Queued
 Submit edit
+Submit all edits

@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0004
+// @version     0.03.0007
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -68,7 +68,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 //TODO: Finish refactoring:
 //TODO: Refactor: util.getRemotePage
-//TODO: Finish edit submission
 //TODO: "Submit all"
 //TODO: Edit submission queing
 //TODO: Fix loading CAA types (see http://musicbrainz.org/artist/056e19d1-e8aa-4b63-8e83-69556e8b31f3 )
@@ -128,7 +127,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : false
-	, VERSION        : '0.03.0004'
+	, VERSION        : '0.03.0007'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -143,7 +142,7 @@ OUTERCONTEXT.CONSTANTS =
 		, REMOVE     : '#B40000'
 		, MASK       : '#000'
 		}
-	, COVERTYPES     : /* The order of items in this array matters! */
+	, COVERTYPES     : /* The order of items in this array is important! */
 		[ 'Front'    // 1
 		, 'Back'     // 2
 		, 'Booklet'  // 3
@@ -342,6 +341,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Left'                     : 'Left'
 			, 'Load CAA images for all'  : 'Load image data for all releases'
 			, 'Load CAA images'          : 'Load image data for this release'
+			, 'Submit all complete edits': 'Submit all edits'
 			, 'loading'                  : 'Loading data from the Cover Art Archive, please wait...'
 			, 'Load text all releases'   : 'Loads images for all displayed releases.'
 			, 'Load text one release'    : 'Loads any images already in the Cover Art Archive for this release.'
@@ -548,7 +548,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 	, 'figure.CAA_INCOMPLETE':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('INCOMPLETE')
 		}
-	, 'figure.CAA_NULL > fieldset, figure.CAA_INCOMPLETE > fieldset, div.CAAedit_Submitting, div.CAAedit_Queued':
+	, 'figure.CAA_NULL > fieldset, figure.CAA_INCOMPLETE > fieldset, figure.CAA_EXISTING > fieldset, div.CAAedit_Submitting, div.CAAedit_Queued':
 		{  display                 : 'none'
 		}
 	, 'figure.CAA_COMPLETE.CAA_SUBMITTING select, figure.CAA_COMPLETE.CAA_QUEUED select':
@@ -814,12 +814,15 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'padding-top'            : 0
 		,  position                : 'absolute'
 		}
-	, '.caaAdd:active, .caaAll:active, .caaLoad:active':
+	, '.caaSubmitAll':
+		{ 'margin-left'            : '2em'
+		}
+	, '.caaAdd:active, .caaSubmitAll:active, .caaAll:active, .caaLoad:active':
 		{ 'border-style'           : 'inset!important'
 		,  color                   : '#FFF'
 		,  opacity                 : 1
 		}
-	, '.caaAdd:hover, .caaAll:hover, .caaLoad:hover':
+	, '.caaAdd:hover, .caaAll:hover, .caaSubmitAll:hover, .caaLoad:hover':
 		{  color                   : '#D3D3D3'
 		,  opacity                 : 0.9
 		}
@@ -831,7 +834,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'white-space'            : 'nowrap'
 		,  width                   : '100%'
 		}
-	, '.caaLoad, .caaAll':
+	, '.caaLoad, .caaAll, .caaSubmitAll':
 		{ 'background-color'       : OUTERCONTEXT.UTILITY.getColor('CAABUTTONS') + '!important'
 		,  border                  : '1px outset #FAFAFA!important'
 		, 'border-radius'          : '7px'
@@ -844,7 +847,7 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		{ 'margin-bottom'          : '16px'
 		, 'margin-top'             : '1px!important'
 		}
-	, '.caaAll':
+	, '.caaAll, .caaSubmitAll':
 		{  margin                  : '1em 0'
 		}
 	, '.caaMBCredit':
@@ -1919,17 +1922,22 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var parseCAAResponse = function parseCAAResponse (i) {
 				// Get the first empty dropbox for this row
 				var value
-				  , $dropBox = $row.find('.newCAAimage:first')
+				  , $dropBoxImg = $row.find('.newCAAimage:first')
+				  , $dropBox = $dropBoxImg.parents('figure')
 				  ;
 
-				ui.convertEmptyDropbox($dropBox, this.comment);
-				ui.lowsrc($dropBox, this.image);
-				$dropBox.toggleClass('CAA_NULL CAA_EXISTING');
+				ui.convertEmptyDropbox($dropBoxImg, this.comment);
+				ui.lowsrc($dropBoxImg, this.image);
+				$dropBox.toggleClass('CAA_NULL CAA_EXISTING')
+				        .find('header.closeButton')
+				        .css('visibility', 'hidden');
 
 				$.each(this.types, function assign_image_type(i) {
 					value = $.inArray(this, coverTypes) + 1;
 					$dropBox.find('option[value="' + value + '"]').prop('selected', true);
 				});
+
+				$dropBox.find('select').prop('disabled', true);
 
 				INNERCONTEXT.UTILITY.checkScroll($row.find('div.loadingDiv'));
 			};
@@ -3131,6 +3139,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			                , type: 'button'
 			                , value: $.l('Load CAA images for all')
 			                })
+			 .after($.make('input', { 'class': 'caaSubmitAll'
+			                , noid    : true
+			                , title: $.l('Submit all complete edits')
+			                , type: 'button'
+			                , value: $.l('Submit all complete edits')
+			                }))
 			 .insertBefore('table.tbl');
 		},
 
