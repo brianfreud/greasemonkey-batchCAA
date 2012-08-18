@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0008
+// @version     0.03.0021
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -127,7 +127,7 @@ var OUTERCONTEXT =
 
 OUTERCONTEXT.CONSTANTS =
 	{ DEBUGMODE      : false
-	, VERSION        : '0.03.0007'
+	, VERSION        : '0.03.0021'
 	, NAMESPACE      : 'Caabie'
 	, DEBUG_VERBOSE  : false
 	, BORDERS        : '1px dotted #808080'
@@ -2036,9 +2036,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		redTintImage : function redTintImage ($image) {
 			$.log('Tinting image');
 
-			var $tint = $.make('figure', { 'class': 'tintWrapper' }).css({ height : ($image.quickHeight(0) + 6) + 'px'
-			                                                             , width  : ($image.quickWidth(0) + 6) + 'px'
-			                                                             });
+			var $tint = $.make('div', { 'class': 'tintWrapper' }).css({ height : ($image.quickHeight(0) + 6) + 'px'
+			                                                          , width  : ($image.quickWidth(0) + 6) + 'px'
+			                                                          });
 			$image.wrap($tint)
 				  .data('oldtitle', $image.prop('title'))
 				  .prop('title', $.l('Remove image'))
@@ -2046,7 +2046,15 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		removeWrappedElement : function removeWrappedItem (e) {
-			$(e.target).parent().remove();
+			var $toRemove = $.single(e.target)
+			  , src       = $toRemove.prop('src')
+			  ;
+
+			if (void 0 !== src) {
+				window.URL.revokeObjectURL(src); // Avoid leaking memory through object URLs linked to removed blobs.
+			}
+
+			$toRemove.parent().remove();
 		},
 
 		requestFullScreen: function getFullScreenMethod(ele) {
@@ -2176,10 +2184,13 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		unTintImage : function unTintImage ($image) {
 			$.log('Untinting image');
 
-			if ($image.parents('.tintWrapper:first').length) {
+			var $wrapper = $image.parents('.tintWrapper:first');
+
+			if ($wrapper.length) {
 				$image.removeClass('tintImage')
 				      .prop('title', $image.data('oldtitle'))
-				      .unwrap();
+				      .insertBefore($image.parent())
+				$wrapper.remove();
 			}
 		}
 
@@ -2831,7 +2842,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		,	[ { ele: 'legend', text: $.l('Options') }
 			, { ele: 'span', text: [$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''), 'class': 'CAAversion' }
 			, { ele: 'input', id: 'remove_images', title: $.l('Remove (help)'), type: 'checkbox' }
-			, { ele: 'label', 'for': 'Options‿input‿checkbox‿remove_images', id: 'remove_images', title: $.l('Remove (help)'), text: ('Remove images mode') }
+			, { ele: 'label', 'for': 'Options‿input‿checkbox‿remove_images', id: 'remove_images', title: $.l('Remove (help)'), text: $.l('Remove images') }
 			, { ele: 'br' }
 			, { ele: 'input', id: 'parse', title: $.l('Parse (help)'), type: 'checkbox' }
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿parse', id: 'parse', title: $.l('Parse (help)'), text: $.l('Parse web pages') }
