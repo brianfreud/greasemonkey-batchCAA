@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0007
+// @version     0.03.0008
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -354,7 +354,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Queued'                   : 'Queued'
 			, 'Remove (help)'            : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
 			, 'Remove image'             : 'Click to remove this image'
-			, 'Remove images'            : 'Remove images mode'
+			, 'Remove images'            : 'Toggle remove images mode'
 			, 'Remove stored images nfo' : 'This removes any images from other websites that you have stored while this script was not running.'
 			, 'Remove stored images'     : 'Remove stored images'
 			, 'Right'                    : 'Right'
@@ -2831,7 +2831,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		,	[ { ele: 'legend', text: $.l('Options') }
 			, { ele: 'span', text: [$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''), 'class': 'CAAversion' }
 			, { ele: 'input', id: 'remove_images', title: $.l('Remove (help)'), type: 'checkbox' }
-			, { ele: 'label', 'for': 'Options‿input‿checkbox‿remove_images', id: 'remove_images', title: $.l('Remove (help)'), text: ('Remove images') }
+			, { ele: 'label', 'for': 'Options‿input‿checkbox‿remove_images', id: 'remove_images', title: $.l('Remove (help)'), text: ('Remove images mode') }
 			, { ele: 'br' }
 			, { ele: 'input', id: 'parse', title: $.l('Parse (help)'), type: 'checkbox' }
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿parse', id: 'parse', title: $.l('Parse (help)'), text: $.l('Parse web pages') }

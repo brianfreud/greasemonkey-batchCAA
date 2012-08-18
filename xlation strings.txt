@@ -21,7 +21,7 @@ Parse web pages
 Preview
 Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.
 Click to remove this image
-Remove images mode
+Toggle remove images mode
 Zoom out
 Submit edits
 Changes to the color settings will take effect the next time that this script is run.
