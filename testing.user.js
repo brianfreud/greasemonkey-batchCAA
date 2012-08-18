@@ -1465,9 +1465,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var getExif = function getExif ( event ) {
                 // This next function is used by the web worker
 				var process = function process ( e ) {
-					var exif = new JpegMeta.JpegFile( e.data );
-					exif = JSON.stringify( exif.general );
-					postMessage( exif );
+					try {
+						var exif = new JpegMeta.JpegFile( e.data );
+						exif = JSON.stringify( exif.general );
+						postMessage( exif );
+					} catch (error) {}
 				};
 
 				var util       = INNERCONTEXT.UTILITY
