@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0022
+// @version     0.03.0027
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -66,6 +66,7 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 |---------------------------------------------------------------------------------------------------------- */
 
+//TODO: Figure why the .pngs are getting a border when converted 
 //TODO: Handle dataURL length limits; 2MB in Chrome, 
 //TODO: Check for the "improveable" URLS - http://wiki.musicbrainz.org/User:Nikki/CAA
 //TODO: Parse/load from URL ARs
@@ -405,6 +406,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'COMPLETE'                 : 'Edits ready to submit'
 			, 'REMOVE'                   : 'Remove image highlight'
 			, 'MASK'                     : 'Default crop mask color'
+            , 'image with incorrect extension type':'image with incorrect extension type'
 		}
 	}
 };
@@ -1473,7 +1475,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 						var exif = new JpegMeta.JpegFile( e.data );
 						exif = JSON.stringify( exif.general );
 						postMessage( exif );
-					} catch (error) {}
+					} catch (error) {
+						postMessage( false );
+					}
 				};
 
 				var util       = INNERCONTEXT.UTILITY
@@ -1494,13 +1498,18 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 				worker.onmessage = function ( e ) {
 					worker.terminate();
-					var jpeg = JSON.parse( e.data );
 
-					$img.data({ depth      : jpeg.depth.value
-					          , name       : file.name || file.fileName || uri
-					          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
-					          , size       : util.addCommas( file.size || file.fileSize )
-					          });
+					if (!e.data) {
+						$img.remove();
+						util.convertImage(file, $.l('image with incorrect extension type'), uri);
+					} else {					
+						var jpeg = JSON.parse( e.data );
+						$img.data({ depth      : jpeg.depth.value
+						          , name       : file.name || file.fileName || uri
+						          , resolution : jpeg.pixelWidth.value + ' x ' + jpeg.pixelHeight.value
+						          , size       : util.addCommas( file.size || file.fileSize )
+						          });
+					}
 				};
 
 				worker.postMessage( this.result );
@@ -1659,7 +1668,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			var reader = new FileReader();
 
 			reader.onload = function convertImage_reader_onload_handler (e) {
-				if ($.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) + 1) {
+				if (type === $.l('image with incorrect extension type') || $.inArray(type, INNERCONTEXT.CONSTANTS.IMAGEFORMATS) + 1) {
 					var img = new Image();
 
 					img.onload = function convertImage_image_converter () {
