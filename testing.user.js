@@ -1280,6 +1280,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			this.canvas = canvas;
 			canvas.ctx = canvas.getContext( '2d' );
 
+			canvas.ctx.canvas = canvas; // Provides a means to move back up from the context to the parent canvas.
+
 			// ---------------------------------------------------------------------------
 			// This next bit of code is modified from code by Mathieu 'P01' Henri
 			// From http://www.p01.org/releases/20_lines_hypno_trip_down_the_fractal_rug
@@ -1311,6 +1313,8 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			            , set       : 1
 			            , stroke    : 1
 			            , switchTo  : 1
+			            , toBlob    : 1
+			            , toDataURL : 1
 			            , translate : 1
 			            }).forEach(function (what) {
 				            self.canvas.ctx[what] = chain(self.canvas.ctx[what]);
@@ -1476,7 +1480,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				    // Create the code to be used by the web worker.
 				  , workerCode = [util.getLSValue('jsjpegmeta', 1), 'self.onmessage=', process.toString()].join('')
 				    // Create a blob containing the code.
-				  , blob       = $.makeBlob( workerCode, 'image/jpeg' )
+				  , blob       = $.makeBlob( workerCode )
 				  ;
 
 				blob = blob.getBlob ? /* BlobBuilder      */ blob.getBlob()
@@ -1651,6 +1655,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		},
 
 		convertImage : function convertImage (inputImage, type, source) {
+//TODO: Use JCanvas
 			var reader = new FileReader();
 
 			reader.onload = function convertImage_reader_onload_handler (e) {
@@ -1670,7 +1675,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 						imgDataURL = canvas.toDataURL('image/jpeg'),
 						imgBlob = $.dataURItoBlob(imgDataURL, 'jpeg');
-						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, 'converted local ' + type, source);
+						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, 'converted ' + type, source);
 					};
 
 					img.src = reader.result;
@@ -2002,7 +2007,6 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 							thisFile.file(function (file) {
 								if (imageType !== 'jpg') {
 									utils.convertImage(file, imageType, uri);
-									utils.addDropboxImage(file, 'converted remote ' + imageType, uri);
 								} else {
 									utils.addDropboxImage(file, 'Remote', uri);
 								}
