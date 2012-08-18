@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 2
-// @version     0.02.0005
+// @version     0.02.0006
 // @description 
 // @include     http://*
 // ==/UserScript==
@@ -78,7 +78,7 @@ outerCAA.nonMB = function ($, DEBUG, ctrl, key) {
     innerCAA.addRule = function (selector, rule) {
         return $('<style>').text(selector + rule)
                            .addClass('tinterCAA')
-                           .appendTo($('head'));
+                           .appendTo($('body'));
     };
   
     innerCAA.tintImage = function (image) {
@@ -241,7 +241,7 @@ outerCAA.loader = function (i) {
     'use strict';
     var script
       , requires = ['http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js']
-      , head = document.getElementsByTagName('head')[0]
+      , body = document.getElementsByTagName('body')[0]
       ;
     function makeScript() {
         script = document.createElement('script');
@@ -260,10 +260,10 @@ outerCAA.loader = function (i) {
                                                                  outerCAA.ctrl , ',' ,
                                                                  outerCAA.key , ');' 
                                      ].join('');
-                head.appendChild(script);
+                body.appendChild(script);
             }
         }, !0);
-        head.appendChild(script);
+        body.appendChild(script);
     })(i || 0);
     return;
 };
