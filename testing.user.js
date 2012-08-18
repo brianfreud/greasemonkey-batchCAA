@@ -1475,7 +1475,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 						var exif = new JpegMeta.JpegFile( e.data );
 						exif = JSON.stringify( exif.general );
 						postMessage( exif );
-					} catch (error) {
+					} catch (error) { // jsJpegMeta throws error if file isn't a valid jpg.
 						postMessage( false );
 					}
 				};
@@ -1499,9 +1499,9 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 				worker.onmessage = function ( e ) {
 					worker.terminate();
 
-					if (!e.data) {
-						$img.remove();
-						util.convertImage(file, $.l('image with incorrect extension type'), uri);
+					if (!e.data) { // jsJpegMeta threw an error; the file may be an image, but it isn't a .jpg.  (ie, misnamed .png, etc.)
+						$img.remove(); // Remove the image we started to create,
+						util.convertImage(file, $.l('image with incorrect extension type'), uri); // and send the file for -> jpg conversion.
 					} else {					
 						var jpeg = JSON.parse( e.data );
 						$img.data({ depth      : jpeg.depth.value
