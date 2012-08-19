@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0032
+// @version     0.03.0034
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -542,6 +542,9 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		}
 	, '#ImageEditor‿canvas‿ieCanvas':
 		{ 'background-color'       : '#FFF'
+		}
+	, 'div.removeMode img.localImage':
+		{  cursor                  : 'crosshair!important'
 		}
 	, '#ImageEditor‿input‿number‿ieRotateControl':
 		{ 'margin-right'           : '2px'
@@ -3250,6 +3253,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( click, '.caaRemoveMode', function () {
 						var modeCheckbox = dom['Options‿input‿checkbox‿remove_images'];
 
+						dom['Main‿div‿imageHolder'].toggleClass('removeMode');
 						modeCheckbox.prop('checked', !modeCheckbox.prop('checked'));
 						dom['Main‿input‿button‿remove_mode'].toggleClass('caa_Active caa_Deactive');
 					})
