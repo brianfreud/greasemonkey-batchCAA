@@ -81,3 +81,4 @@ Queued
 Submit edit
 Submit all edits
 image with incorrect extension type
+converted

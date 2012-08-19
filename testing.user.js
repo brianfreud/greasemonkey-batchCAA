@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0027
+// @version     0.03.0029
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -66,6 +66,7 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 
 |---------------------------------------------------------------------------------------------------------- */
 
+//TODO: Make preview minimizable.
 //TODO: Figure why the .pngs are getting a border when converted 
 //TODO: Handle dataURL length limits; 2MB in Chrome, 
 //TODO: Check for the "improveable" URLS - http://wiki.musicbrainz.org/User:Nikki/CAA
@@ -84,7 +85,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Add remove all images button
 //TODO: Refactor loading images from helper script while this script is running (load at start already works)
 //TODO: Use the persistent parse webpages setting
-//TODO: Edit submission
 //TODO: Add support for editing MB's existing CAA image data
 //TODO: Add support for removing existing CAA images
 //TODO: Add support for positioning/repositioning CAA images
@@ -407,6 +407,7 @@ OUTERCONTEXT.CONSTANTS =
 			, 'REMOVE'                   : 'Remove image highlight'
 			, 'MASK'                     : 'Default crop mask color'
             , 'image with incorrect extension type':'image with incorrect extension type'
+			, 'converted'                : 'converted'
 		}
 	}
 };
@@ -1475,7 +1476,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 						var exif = new JpegMeta.JpegFile( e.data );
 						exif = JSON.stringify( exif.general );
 						postMessage( exif );
-					} catch (error) { // jsJpegMeta throws error if file isn't a valid jpg.
+					} catch (error) { // jsJpegMeta throws an error if the file isn't a valid jpg.
 						postMessage( false );
 					}
 				};
@@ -1684,7 +1685,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 						imgDataURL = canvas.toDataURL('image/jpeg'),
 						imgBlob = $.dataURItoBlob(imgDataURL, 'jpeg');
-						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, 'converted ' + type, source);
+						INNERCONTEXT.UTILITY.addDropboxImage(imgBlob, $.l('converted') + ' ' + type, source);
 					};
 
 					img.src = reader.result;
@@ -3377,6 +3378,11 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 
 		loadStoredImages : function loadStoredImages (util) {
 			var imageArray = JSON.parse(util.getLSValue('imageCache'));
+
+			// Eliminate any duplicate entries in the stored URL list.
+			imageArray = imageArray.filter(function (item, i, imageArray){
+				return i == imageArray.indexOf(item);
+			});
 
 			var loadImage = function loadImage (url) {
 				var image = decodeURIComponent(url)
