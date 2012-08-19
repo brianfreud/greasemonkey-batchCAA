@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        Testing 1
-// @version     0.03.0029
+// @version     0.03.0032
 // @description
 // @exclude     http://beta.musicbrainz.org/artist/create*
 // @exclude     http://beta.musicbrainz.org/artist/*/credit
@@ -74,7 +74,6 @@ Translations are handled at https://www.transifex.net/projects/p/CAABatch/
 //TODO: Allow drag/drop directly onto dropbox, rather than only from sidebox
 //TODO: Display resolution info (somewhere) for each image
 //TODO: Add JSHint to tools
-//TODO: Move remove images toggle to top bar, instead of options menu
 //TODO: online/offline
 //TODO: Finish refactoring image editor
 //TODO: "Submit all"
@@ -357,7 +356,6 @@ OUTERCONTEXT.CONSTANTS =
 			, 'Parse web pages'          : 'Parse web pages'
 			, 'Preview Image'            : 'Preview'
 			, 'Queued'                   : 'Queued'
-			, 'Remove (help)'            : 'Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.'
 			, 'Remove image'             : 'Click to remove this image'
 			, 'Remove images'            : 'Toggle remove images mode'
 			, 'Remove stored images nfo' : 'This removes any images from other websites that you have stored while this script was not running.'
@@ -809,30 +807,51 @@ OUTERCONTEXT.CONSTANTS.CSS =
 		, 'text-align'             : 'center'
 		, 'vertical-align'         : 'top'
 		}
-	, '.caaAdd':
-		{ 'background-color'       : 'green!important'
-		,  border                  : '0 none #FAFAFA!important'
-		, 'border-radius'          : '7px'
-		,  color                   : '#FFF!important'
-		, 'float'                  : 'left'
-		, 'font-size'              : '175%'
+	, '.caaAdd, .caaRemoveMode':
+		{ 'border-radius'          : '7px'
+		, 'font-size'              : '150%'
 		, 'font-weight'            : '900!important'
-		,  left                    : '2em'
-		, 'margin-left'            : '-1.2em'
 		,  opacity                 : 0.3
 		, 'padding-bottom'         : 0
 		, 'padding-top'            : 0
+		}	
+	, '.caaAdd':
+		{  border                  : '0 none #FAFAFA!important'
+		, 'background-color'       : 'green!important'
+		,  color                   : '#FFF!important'
+		, 'float'                  : 'left'
+		,  left                    : '2em'
+		, 'margin-left'            : '-1.2em'
 		,  position                : 'absolute'
+		}
+	, '.caaRemoveMode':
+		{  border                  : '1px solid red'
+		, 'float'                  : 'right'
+		,  height                  : '22px'
+		, 'margin-right'           : '5px'
+		, 'margin-top'             : 0
+		,  opacity                 : 0.3
+		, 'padding-bottom'         : 0
+		, 'padding-top'            : 0
+		,  width                   : '23px'
+		}
+	, '.caaRemoveMode.caa_Deactive':
+		{ 'background-color'       : 'red'
+		,  color                   : '#FFF'
+		}
+	, '.caaRemoveMode.caa_Active':
+		{ 'background-color'       : '#FFF'
+		,  color                   : 'red'
 		}
 	, '.caaSubmitAll':
 		{ 'margin-left'            : '2em!important'
 		}
-	, '.caaAdd:active, .caaSubmitAll:active, .caaAll:active, .caaLoad:active':
+	, '.caaAdd:active, .caaSubmitAll:active, .caaAll:active, .caaLoad:active: .caaRemoveMode:active':
 		{ 'border-style'           : 'inset!important'
 		,  color                   : '#FFF'
 		,  opacity                 : 1
 		}
-	, '.caaAdd:hover, .caaAll:hover, .caaSubmitAll:hover, .caaLoad:hover':
+	, '.caaAdd:hover, .caaAll:hover, .caaSubmitAll:hover, .caaLoad:hover, .caaRemoveMode:hover':
 		{  color                   : '#D3D3D3'
 		,  opacity                 : 0.9
 		}
@@ -2864,9 +2883,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 		[ { ele: 'fieldset', id: 'main', hide: true}
 		,	[ { ele: 'legend', text: $.l('Options') }
 			, { ele: 'span', text: [$.l('Version'), ' ', INNERCONTEXT.CONSTANTS.VERSION].join(''), 'class': 'CAAversion' }
-			, { ele: 'input', id: 'remove_images', title: $.l('Remove (help)'), type: 'checkbox' }
-			, { ele: 'label', 'for': 'Options‿input‿checkbox‿remove_images', id: 'remove_images', title: $.l('Remove (help)'), text: $.l('Remove images') }
-			, { ele: 'br' }
+			, { ele: 'input', id: 'remove_images', title: $.l('Remove (help)'), type: 'checkbox', hide: true }
 			, { ele: 'input', id: 'parse', title: $.l('Parse (help)'), type: 'checkbox' }
 			, { ele: 'label', 'for': 'Options‿input‿checkbox‿parse', id: 'parse', title: $.l('Parse (help)'), text: $.l('Parse web pages') }
 			, { ele: 'br' }
@@ -3113,6 +3130,7 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 					]
 				, { ele: 'div', id: 'options_control', title: $.l('Options') }
 				,	ui.$makeIcon('options')
+				, { ele: 'input', 'class': 'caaRemoveMode caa_Deactive', id: 'remove_mode', title: $.l('Remove images'), type: 'button', value: 'x' }
 				, { ele: 'div', id: 'imageContainer' }
 				,	[ { ele: 'div', id: 'imageHolder' }
 					,	util.assemble('AboutElement', templates.MENUS.about)
@@ -3229,6 +3247,12 @@ OUTERCONTEXT.CONTEXTS.INNER = function INNER ($, INNERCONTEXT) {
 			        .on( 'mousedown', '.localImage', function (e) {$(e.target).css('cursor', !!$.browser.mozilla ? '-moz-grab' : '-webkit-grab'); })
 			        .on( 'mouseup', '.localImage', function (e) { $(e.target).css('cursor', ''); })
 			        .on( 'dragover dragenter dragleave drop', '.newCAAimage', events.handleDrag.check )
+			        .on( click, '.caaRemoveMode', function () {
+						var modeCheckbox = dom['Options‿input‿checkbox‿remove_images'];
+
+						modeCheckbox.prop('checked', !modeCheckbox.prop('checked'));
+						dom['Main‿input‿button‿remove_mode'].toggleClass('caa_Active caa_Deactive');
+					})
 			        .on( 'click', '.CAAeditSubmit', function () {
 			        	var data = {};
 			        	data.$self         = $(this);

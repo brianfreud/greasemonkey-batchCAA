@@ -19,7 +19,6 @@ Options
 Check this box to enable parsing web pages whenever you drop in a link to a web page or a list of webpage URLs.
 Parse web pages
 Preview
-Check this box, then click on images to remove them.  Uncheck the box again to turn off remove image mode.
 Click to remove this image
 Toggle remove images mode
 Zoom out
